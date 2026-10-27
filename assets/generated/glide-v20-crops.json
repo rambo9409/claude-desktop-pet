@@ -1,0 +1,989 @@
+{
+  "hutao": {
+    "source": "assets/generated/hutao-glide-v20.png",
+    "size": [
+      1774,
+      887
+    ],
+    "alpha_threshold": 8,
+    "frames": [
+      {
+        "index": 1,
+        "crop": [
+          0,
+          0,
+          440,
+          444
+        ],
+        "local_visible_bounds": [
+          7,
+          14,
+          404,
+          416
+        ],
+        "visible_size": [
+          397,
+          402
+        ],
+        "shoulder_pivot": [
+          252,
+          260
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          45,
+          128,
+          386,
+          474
+        ],
+        "placement": [
+          39,
+          116
+        ]
+      },
+      {
+        "index": 2,
+        "crop": [
+          440,
+          0,
+          890,
+          444
+        ],
+        "local_visible_bounds": [
+          2,
+          11,
+          418,
+          421
+        ],
+        "visible_size": [
+          416,
+          410
+        ],
+        "shoulder_pivot": [
+          255,
+          261
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          39,
+          125,
+          396,
+          478
+        ],
+        "placement": [
+          37,
+          116
+        ]
+      },
+      {
+        "index": 3,
+        "crop": [
+          890,
+          0,
+          1320,
+          444
+        ],
+        "local_visible_bounds": [
+          6,
+          11,
+          413,
+          422
+        ],
+        "visible_size": [
+          407,
+          411
+        ],
+        "shoulder_pivot": [
+          257,
+          261
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          40,
+          125,
+          390,
+          479
+        ],
+        "placement": [
+          35,
+          116
+        ]
+      },
+      {
+        "index": 4,
+        "crop": [
+          1320,
+          0,
+          1774,
+          444
+        ],
+        "local_visible_bounds": [
+          22,
+          20,
+          446,
+          429
+        ],
+        "visible_size": [
+          424,
+          409
+        ],
+        "shoulder_pivot": [
+          290,
+          272
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          26,
+          123,
+          391,
+          475
+        ],
+        "placement": [
+          7,
+          106
+        ]
+      },
+      {
+        "index": 5,
+        "crop": [
+          0,
+          444,
+          440,
+          887
+        ],
+        "local_visible_bounds": [
+          24,
+          2,
+          438,
+          414
+        ],
+        "visible_size": [
+          414,
+          412
+        ],
+        "shoulder_pivot": [
+          273,
+          230
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          42,
+          144,
+          397,
+          498
+        ],
+        "placement": [
+          21,
+          142
+        ]
+      },
+      {
+        "index": 6,
+        "crop": [
+          440,
+          444,
+          890,
+          887
+        ],
+        "local_visible_bounds": [
+          31,
+          5,
+          446,
+          408
+        ],
+        "visible_size": [
+          415,
+          403
+        ],
+        "shoulder_pivot": [
+          283,
+          236
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          40,
+          141,
+          396,
+          488
+        ],
+        "placement": [
+          13,
+          137
+        ]
+      },
+      {
+        "index": 7,
+        "crop": [
+          890,
+          444,
+          1320,
+          887
+        ],
+        "local_visible_bounds": [
+          13,
+          8,
+          402,
+          427
+        ],
+        "visible_size": [
+          389,
+          419
+        ],
+        "shoulder_pivot": [
+          242,
+          240
+        ],
+        "phase": "land",
+        "landing_shift_y": -16,
+        "wing_root": [
+          256,
+          324
+        ],
+        "expected_visible_bounds": [
+          59,
+          125,
+          394,
+          486
+        ],
+        "placement": [
+          48,
+          118
+        ]
+      },
+      {
+        "index": 8,
+        "crop": [
+          1320,
+          444,
+          1774,
+          887
+        ],
+        "local_visible_bounds": [
+          45,
+          20,
+          407,
+          425
+        ],
+        "visible_size": [
+          362,
+          405
+        ],
+        "shoulder_pivot": [
+          257,
+          244
+        ],
+        "phase": "land",
+        "landing_shift_y": -10,
+        "wing_root": [
+          256,
+          330
+        ],
+        "expected_visible_bounds": [
+          74,
+          137,
+          385,
+          486
+        ],
+        "placement": [
+          35,
+          120
+        ]
+      }
+    ],
+    "recommended_common_scale": 0.86,
+    "render_pivot": [
+      256,
+      340
+    ],
+    "pivot_definition": "Manually measured collar/neckline center at shoulder level, relative to each crop. Use one common scale for all eight poses.",
+    "landing_alignment": "Only frames 7 and 8 translate vertically to feet baseline 486; move wing root by the same amount while retracting. All airborne frames keep shoulder root (256,340)."
+  },
+  "ganyu": {
+    "source": "assets/generated/ganyu-glide-v20.png",
+    "size": [
+      1774,
+      887
+    ],
+    "alpha_threshold": 8,
+    "frames": [
+      {
+        "index": 1,
+        "crop": [
+          0,
+          0,
+          430,
+          444
+        ],
+        "local_visible_bounds": [
+          10,
+          9,
+          392,
+          418
+        ],
+        "visible_size": [
+          382,
+          409
+        ],
+        "shoulder_pivot": [
+          267,
+          278
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          25,
+          98,
+          369,
+          467
+        ],
+        "placement": [
+          16,
+          90
+        ]
+      },
+      {
+        "index": 2,
+        "crop": [
+          430,
+          0,
+          875,
+          444
+        ],
+        "local_visible_bounds": [
+          15,
+          10,
+          420,
+          439
+        ],
+        "visible_size": [
+          405,
+          429
+        ],
+        "shoulder_pivot": [
+          286,
+          279
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          12,
+          98,
+          377,
+          484
+        ],
+        "placement": [
+          -1,
+          89
+        ]
+      },
+      {
+        "index": 3,
+        "crop": [
+          875,
+          0,
+          1320,
+          444
+        ],
+        "local_visible_bounds": [
+          18,
+          12,
+          417,
+          442
+        ],
+        "visible_size": [
+          399,
+          430
+        ],
+        "shoulder_pivot": [
+          284,
+          279
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          16,
+          100,
+          375,
+          487
+        ],
+        "placement": [
+          0,
+          89
+        ]
+      },
+      {
+        "index": 4,
+        "crop": [
+          1320,
+          0,
+          1774,
+          444
+        ],
+        "local_visible_bounds": [
+          10,
+          11,
+          414,
+          443
+        ],
+        "visible_size": [
+          404,
+          432
+        ],
+        "shoulder_pivot": [
+          280,
+          280
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          13,
+          97,
+          377,
+          487
+        ],
+        "placement": [
+          4,
+          88
+        ]
+      },
+      {
+        "index": 5,
+        "crop": [
+          0,
+          444,
+          430,
+          887
+        ],
+        "local_visible_bounds": [
+          13,
+          2,
+          406,
+          430
+        ],
+        "visible_size": [
+          393,
+          428
+        ],
+        "shoulder_pivot": [
+          272,
+          255
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          23,
+          112,
+          377,
+          498
+        ],
+        "placement": [
+          11,
+          110
+        ]
+      },
+      {
+        "index": 6,
+        "crop": [
+          430,
+          444,
+          875,
+          887
+        ],
+        "local_visible_bounds": [
+          24,
+          5,
+          421,
+          431
+        ],
+        "visible_size": [
+          397,
+          426
+        ],
+        "shoulder_pivot": [
+          298,
+          258
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          9,
+          112,
+          367,
+          497
+        ],
+        "placement": [
+          -12,
+          108
+        ]
+      },
+      {
+        "index": 7,
+        "crop": [
+          875,
+          444,
+          1320,
+          887
+        ],
+        "local_visible_bounds": [
+          39,
+          4,
+          416,
+          435
+        ],
+        "visible_size": [
+          377,
+          431
+        ],
+        "shoulder_pivot": [
+          293,
+          254
+        ],
+        "phase": "land",
+        "landing_shift_y": -17,
+        "wing_root": [
+          256,
+          323
+        ],
+        "expected_visible_bounds": [
+          27,
+          98,
+          366,
+          486
+        ],
+        "placement": [
+          -8,
+          94
+        ]
+      },
+      {
+        "index": 8,
+        "crop": [
+          1320,
+          444,
+          1774,
+          887
+        ],
+        "local_visible_bounds": [
+          47,
+          7,
+          405,
+          436
+        ],
+        "visible_size": [
+          358,
+          429
+        ],
+        "shoulder_pivot": [
+          286,
+          260
+        ],
+        "phase": "land",
+        "landing_shift_y": -13,
+        "wing_root": [
+          256,
+          327
+        ],
+        "expected_visible_bounds": [
+          42,
+          99,
+          364,
+          486
+        ],
+        "placement": [
+          -1,
+          93
+        ]
+      }
+    ],
+    "recommended_common_scale": 0.9,
+    "render_pivot": [
+      256,
+      340
+    ],
+    "pivot_definition": "Manually measured collar/neckline center at shoulder level, relative to each crop. Use one common scale for all eight poses.",
+    "landing_alignment": "Only frames 7 and 8 translate vertically to feet baseline 486; move wing root by the same amount while retracting. All airborne frames keep shoulder root (256,340)."
+  },
+  "varesa": {
+    "source": "assets/generated/varesa-glide-v20.png",
+    "size": [
+      1774,
+      887
+    ],
+    "alpha_threshold": 8,
+    "frames": [
+      {
+        "index": 1,
+        "crop": [
+          0,
+          0,
+          450,
+          444
+        ],
+        "local_visible_bounds": [
+          26,
+          11,
+          435,
+          430
+        ],
+        "visible_size": [
+          409,
+          419
+        ],
+        "shoulder_pivot": [
+          300,
+          264
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          14,
+          118,
+          375,
+          487
+        ],
+        "placement": [
+          -8,
+          108
+        ]
+      },
+      {
+        "index": 2,
+        "crop": [
+          450,
+          0,
+          892,
+          444
+        ],
+        "local_visible_bounds": [
+          14,
+          11,
+          436,
+          435
+        ],
+        "visible_size": [
+          422,
+          424
+        ],
+        "shoulder_pivot": [
+          288,
+          271
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          15,
+          112,
+          386,
+          485
+        ],
+        "placement": [
+          3,
+          102
+        ]
+      },
+      {
+        "index": 3,
+        "crop": [
+          892,
+          0,
+          1330,
+          444
+        ],
+        "local_visible_bounds": [
+          6,
+          14,
+          431,
+          437
+        ],
+        "visible_size": [
+          425,
+          423
+        ],
+        "shoulder_pivot": [
+          288,
+          274
+        ],
+        "phase": "deploy",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          8,
+          111,
+          382,
+          484
+        ],
+        "placement": [
+          3,
+          99
+        ]
+      },
+      {
+        "index": 4,
+        "crop": [
+          1330,
+          0,
+          1774,
+          444
+        ],
+        "local_visible_bounds": [
+          11,
+          16,
+          441,
+          436
+        ],
+        "visible_size": [
+          430,
+          420
+        ],
+        "shoulder_pivot": [
+          290,
+          274
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          11,
+          113,
+          391,
+          483
+        ],
+        "placement": [
+          1,
+          99
+        ]
+      },
+      {
+        "index": 5,
+        "crop": [
+          0,
+          444,
+          455,
+          887
+        ],
+        "local_visible_bounds": [
+          20,
+          6,
+          446,
+          414
+        ],
+        "visible_size": [
+          426,
+          408
+        ],
+        "shoulder_pivot": [
+          288,
+          244
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          20,
+          131,
+          395,
+          490
+        ],
+        "placement": [
+          3,
+          125
+        ]
+      },
+      {
+        "index": 6,
+        "crop": [
+          455,
+          444,
+          913,
+          887
+        ],
+        "local_visible_bounds": [
+          12,
+          10,
+          457,
+          420
+        ],
+        "visible_size": [
+          445,
+          410
+        ],
+        "shoulder_pivot": [
+          289,
+          246
+        ],
+        "phase": "glide",
+        "landing_shift_y": 0,
+        "wing_root": [
+          256,
+          340
+        ],
+        "expected_visible_bounds": [
+          13,
+          133,
+          404,
+          494
+        ],
+        "placement": [
+          2,
+          124
+        ]
+      },
+      {
+        "index": 7,
+        "crop": [
+          913,
+          444,
+          1330,
+          887
+        ],
+        "local_visible_bounds": [
+          1,
+          2,
+          406,
+          436
+        ],
+        "visible_size": [
+          405,
+          434
+        ],
+        "shoulder_pivot": [
+          267,
+          242
+        ],
+        "phase": "land",
+        "landing_shift_y": -24,
+        "wing_root": [
+          256,
+          316
+        ],
+        "expected_visible_bounds": [
+          22,
+          104,
+          378,
+          486
+        ],
+        "placement": [
+          21,
+          103
+        ]
+      },
+      {
+        "index": 8,
+        "crop": [
+          1330,
+          444,
+          1774,
+          887
+        ],
+        "local_visible_bounds": [
+          17,
+          12,
+          420,
+          437
+        ],
+        "visible_size": [
+          403,
+          425
+        ],
+        "shoulder_pivot": [
+          278,
+          249
+        ],
+        "phase": "land",
+        "landing_shift_y": -20,
+        "wing_root": [
+          256,
+          320
+        ],
+        "expected_visible_bounds": [
+          26,
+          112,
+          381,
+          486
+        ],
+        "placement": [
+          11,
+          101
+        ]
+      }
+    ],
+    "recommended_common_scale": 0.88,
+    "render_pivot": [
+      256,
+      340
+    ],
+    "pivot_definition": "Manually measured collar/neckline center at shoulder level, relative to each crop. Use one common scale for all eight poses.",
+    "landing_alignment": "Only frames 7 and 8 translate vertically to feet baseline 486; move wing root by the same amount while retracting. All airborne frames keep shoulder root (256,340)."
+  }
+}

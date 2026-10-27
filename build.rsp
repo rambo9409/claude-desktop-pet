@@ -1,0 +1,27 @@
+/nologo
+/target:winexe
+/optimize+
+/out:原神启动.exe
+/win32icon:assets\ClaudePet.ico
+/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationFramework.dll"
+/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationCore.dll"
+/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\WindowsBase.dll"
+/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xaml.dll"
+/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.IO.Compression.dll"
+/reference:System.Web.Extensions.dll
+/reference:System.Xml.Linq.dll
+/reference:System.Net.Http.dll
+/resource:assets\characters.zip,characters.zip
+src\ClaudePetMotion.cs
+src\PetAssets.cs
+src\PetMenu.cs
+src\PetMovement.cs
+src\PetGanyuTraversal.cs
+src\PetPointerGestures.cs
+src\PetEffects.cs
+src\PetWings.cs
+src\PetWindowAbility.cs
+src\PetAbilityEffects.cs
+src\PetNightsoul.cs
+src\DailyHighlights.cs
+src\GptResetPrediction.cs

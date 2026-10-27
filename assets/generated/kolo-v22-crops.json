@@ -1,0 +1,241 @@
+{
+  "version": "2.2",
+  "rows": [
+    {
+      "source": "kolo-motion-v22-ready.png",
+      "action": "walk",
+      "scale": 1.0704960835509139,
+      "frames": [
+        {
+          "crop": [
+            30,
+            112,
+            352,
+            489
+          ],
+          "placement": [
+            66,
+            82
+          ],
+          "source_head_center": 207.5
+        },
+        {
+          "crop": [
+            381,
+            113,
+            710,
+            496
+          ],
+          "placement": [
+            56,
+            76
+          ],
+          "source_head_center": 567.5
+        },
+        {
+          "crop": [
+            728,
+            113,
+            1056,
+            493
+          ],
+          "placement": [
+            58,
+            79
+          ],
+          "source_head_center": 912.5
+        },
+        {
+          "crop": [
+            1096,
+            114,
+            1423,
+            494
+          ],
+          "placement": [
+            60,
+            79
+          ],
+          "source_head_center": 1279.5
+        }
+      ]
+    },
+    {
+      "source": "kolo-motion-v22-ready.png",
+      "action": "climb-up",
+      "scale": 1.0649350649350648,
+      "frames": [
+        {
+          "crop": [
+            39,
+            605,
+            328,
+            990
+          ],
+          "placement": [
+            92,
+            76
+          ],
+          "source_head_center": 187.5
+        },
+        {
+          "crop": [
+            408,
+            609,
+            696,
+            990
+          ],
+          "placement": [
+            93,
+            80
+          ],
+          "source_head_center": 555.5
+        },
+        {
+          "crop": [
+            749,
+            608,
+            1052,
+            993
+          ],
+          "placement": [
+            77,
+            76
+          ],
+          "source_head_center": 907.5
+        },
+        {
+          "crop": [
+            1128,
+            609,
+            1420,
+            991
+          ],
+          "placement": [
+            89,
+            79
+          ],
+          "source_head_center": 1277.0
+        }
+      ]
+    },
+    {
+      "source": "kolo-stroll-v22.png",
+      "action": "stroll",
+      "scale": 0.6833333333333333,
+      "frames": [
+        {
+          "crop": [
+            96,
+            12,
+            567,
+            610
+          ],
+          "placement": [
+            72,
+            77
+          ],
+          "source_head_center": 365.5
+        },
+        {
+          "crop": [
+            690,
+            12,
+            1160,
+            612
+          ],
+          "placement": [
+            69,
+            76
+          ],
+          "source_head_center": 963.0
+        },
+        {
+          "crop": [
+            98,
+            635,
+            569,
+            1226
+          ],
+          "placement": [
+            69,
+            82
+          ],
+          "source_head_center": 371.5
+        },
+        {
+          "crop": [
+            694,
+            636,
+            1164,
+            1231
+          ],
+          "placement": [
+            69,
+            79
+          ],
+          "source_head_center": 967.5
+        }
+      ]
+    },
+    {
+      "source": "kolo-gait-ability-v22.png",
+      "action": "ability",
+      "scale": 0.9669811320754716,
+      "frames": [
+        {
+          "crop": [
+            46,
+            450,
+            408,
+            874
+          ],
+          "placement": [
+            83,
+            76
+          ],
+          "source_head_center": 225
+        },
+        {
+          "crop": [
+            489,
+            450,
+            854,
+            874
+          ],
+          "placement": [
+            83,
+            76
+          ],
+          "source_head_center": 668
+        },
+        {
+          "crop": [
+            932,
+            450,
+            1298,
+            874
+          ],
+          "placement": [
+            83,
+            76
+          ],
+          "source_head_center": 1111
+        },
+        {
+          "crop": [
+            1378,
+            450,
+            1736,
+            874
+          ],
+          "placement": [
+            85,
+            76
+          ],
+          "source_head_center": 1555
+        }
+      ]
+    }
+  ]
+}
