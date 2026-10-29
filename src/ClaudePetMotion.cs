@@ -14,10 +14,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 [assembly: AssemblyTitle("原神启动")]
-[assembly: AssemblyDescription("多形象桌宠、热点资讯、GPT重置预测与窗口魔法")]
+[assembly: AssemblyDescription("多形象桌宠、资讯、窗口魔法与原神战斗循环助手")]
 [assembly: AssemblyProduct("原神启动")]
-[assembly: AssemblyVersion("2.5.0.0")]
-[assembly: AssemblyFileVersion("2.5.0.0")]
+[assembly: AssemblyVersion("2.6.0.0")]
+[assembly: AssemblyFileVersion("2.6.0.0")]
 
 namespace ClaudePet
 {
@@ -479,6 +479,7 @@ namespace ClaudePet
             if (ContextMenu != null) ContextMenu.IsOpen = false;
             ContextMenu = BuildMenu();
             if (highlightsWindow != null) highlightsWindow.ApplyCharacterTheme(key, frames["idle"][0]);
+            if (combatPlannerWindow != null) combatPlannerWindow.ApplyCharacterTheme(key);
             if (gptResetWindow != null) gptResetWindow.ApplyCharacterTheme(key);
             ScheduleNextWalk(DateTime.Now);
             ShowSpeech("已换成" + CharacterNames[key] + "啦。");

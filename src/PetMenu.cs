@@ -82,6 +82,7 @@ namespace ClaudePet
 
             menu.Items.Add(SectionLabel("工具"));
             menu.Items.Add(StyledItem("◈", "每日看点", OpenHighlights));
+            menu.Items.Add(StyledItem("⚔", "战斗循环助手", OpenCombatPlanner));
             menu.Items.Add(StyledItem("◷", "GPT 重置预测", OpenGptResetPrediction));
 
             menu.Items.Add(SectionLabel("动作与大小"));

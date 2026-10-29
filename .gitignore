@@ -2,5 +2,6 @@
 /原神启动.exe
 /artifacts/
 /release/
+/archive/
 __pycache__/
 *.pyc

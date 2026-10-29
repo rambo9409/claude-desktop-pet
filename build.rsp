@@ -25,3 +25,5 @@ src\PetAbilityEffects.cs
 src\PetNightsoul.cs
 src\DailyHighlights.cs
 src\GptResetPrediction.cs
+src\GenshinCombatPlanner.cs
+src\GenshinCombatPlannerIntegration.cs
