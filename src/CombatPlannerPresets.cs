@@ -67,6 +67,7 @@ namespace ClaudePet
     internal static class CombatTeamPresets
     {
         internal const string ResourceName = "combat-teams.json";
+        private const int MaximumBytes = 512 * 1024;
         private static CombatTeamCatalog cached;
 
         internal static string OverridePath { get { return Path.Combine(PetStorage.RootDirectory, "combat-teams.json"); } }
@@ -76,12 +77,64 @@ namespace ClaudePet
             get { if (cached == null) cached = Load(OverridePath); return cached; }
         }
 
+        internal static CombatTeamCatalog Reload()
+        {
+            cached = Load(OverridePath);
+            return cached;
+        }
+
+        internal static CombatTeamCatalog Import(string sourcePath)
+        {
+            CombatTeamCatalog imported = Import(sourcePath, OverridePath);
+            cached = imported;
+            return imported;
+        }
+
+        // Destination overload keeps tests and maintenance tools isolated from
+        // the user's saved catalog. Only the real override refreshes the cache.
+        internal static CombatTeamCatalog Import(string sourcePath, string destinationPath)
+        {
+            if (String.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath)) throw new FileNotFoundException("找不到配队资料文件。", sourcePath);
+            if (String.IsNullOrWhiteSpace(destinationPath)) throw new ArgumentException("配队资料保存路径为空。", "destinationPath");
+            if (new FileInfo(sourcePath).Length > MaximumBytes) throw new InvalidDataException("配队资料超过512 KB。");
+            string json = File.ReadAllText(sourcePath);
+            CombatTeamCatalog candidate = Parse(json);
+            CombatTeamCatalog current = Load(destinationPath);
+            if (String.CompareOrdinal(candidate.Updated, current.Updated ?? "") < 0)
+                throw new InvalidDataException("导入资料的日期早于当前资料（" + current.Updated + "），已保留当前资料。");
+            if (File.Exists(destinationPath))
+            {
+                string previous = null;
+                bool damaged = false;
+                try
+                {
+                    if (new FileInfo(destinationPath).Length > MaximumBytes) throw new InvalidDataException();
+                    previous = File.ReadAllText(destinationPath);
+                    Parse(previous);
+                }
+                catch { damaged = true; }
+                if (damaged)
+                {
+                    if (PetStorage.Quarantine(destinationPath, "combat-teams-before-import") == null)
+                        throw new IOException("当前配队资料无法读取且备份失败，已停止导入以保护原文件。");
+                }
+                else
+                    PetStorage.WriteAllTextAtomic(destinationPath + ".previous.json", previous);
+            }
+            // Only a fully parsed and date-checked document can replace the
+            // active file. A write failure leaves the original and cache intact.
+            PetStorage.WriteAllTextAtomic(destinationPath, json);
+            candidate.Origin = "本地更新";
+            if (String.Equals(Path.GetFullPath(destinationPath), Path.GetFullPath(OverridePath), StringComparison.OrdinalIgnoreCase)) cached = candidate;
+            return candidate;
+        }
+
         internal static CombatTeamCatalog Load(string overridePath)
         {
             CombatTeamCatalog embedded = null;
             try { embedded = Parse(ReadEmbedded()); }
             catch (Exception error) { PetStorage.Log("combat-teams-embedded", error); }
-            string text = PetStorage.TryReadAllText(overridePath, 512 * 1024, "combat-teams-override");
+            string text = PetStorage.TryReadAllText(overridePath, MaximumBytes, "combat-teams-override");
             if (text != null) {
                 try {
                     CombatTeamCatalog local = Parse(text);
@@ -106,12 +159,17 @@ namespace ClaudePet
         // Throws InvalidDataException with the first problem found.
         internal static CombatTeamCatalog Parse(string json)
         {
-            JavaScriptSerializer serializer = new JavaScriptSerializer { MaxJsonLength = 512 * 1024, RecursionLimit = 20 };
+            if (String.IsNullOrWhiteSpace(json) || System.Text.Encoding.UTF8.GetByteCount(json) > MaximumBytes)
+                throw new InvalidDataException("配队资料为空或超过512 KB。");
+            JavaScriptSerializer serializer = new JavaScriptSerializer { MaxJsonLength = MaximumBytes, RecursionLimit = 20 };
             CombatTeamCatalog catalog = serializer.Deserialize<CombatTeamCatalog>(json);
             if (catalog == null || catalog.Teams == null || catalog.Teams.Count == 0) throw new InvalidDataException("没有配队。");
             DateTime updated;
             if (catalog.Version != 2 || !DateTime.TryParseExact(catalog.Updated, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out updated)) throw new InvalidDataException("配队数据格式版本或核验日期无效。");
+            if (String.IsNullOrWhiteSpace(catalog.GameVersion) || catalog.GameVersion.Length > 32 || String.IsNullOrWhiteSpace(catalog.Notice))
+                throw new InvalidDataException("配队资料缺少游戏版本或适用说明。");
+            if (catalog.Teams.Count > 500) throw new InvalidDataException("单份资料最多包含500套配队。");
             HashSet<string> ids = new HashSet<string>();
             foreach (CombatTeamPreset team in catalog.Teams) {
                 if (team == null || String.IsNullOrWhiteSpace(team.Id) || !ids.Add(team.Id)) throw new InvalidDataException("配队 id 缺失或重复。");
@@ -121,14 +179,18 @@ namespace ClaudePet
                 if (!DateTime.TryParseExact(team.VerifiedAt, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out verified) ||
                     String.IsNullOrWhiteSpace(team.VersionScope) || String.IsNullOrWhiteSpace(team.RotationBasis))
                     throw new InvalidDataException(team.Id + " 缺少核验日期、适用范围或手法依据。");
+                HashSet<string> memberNames = new HashSet<string>(StringComparer.Ordinal);
                 foreach (CombatTeamMember member in team.Members) {
                     if (member == null || String.IsNullOrWhiteSpace(member.Name) || member.Name.Trim().Length > 20) throw new InvalidDataException(team.Id + " 成员名无效。");
+                    if (!memberNames.Add(CombatRosterMatcher.Normalize(member.Name))) throw new InvalidDataException(team.Id + " 不能重复安排同一名角色。");
                     if (!CombatPlanner.IsRole(member.Role) || !CombatPlanner.IsScaling(member.Scaling)) throw new InvalidDataException(team.Id + " 的 " + member.Name + " 职责或基值无效。");
                 }
                 if (team.Rotation == null || team.Rotation.Count == 0) throw new InvalidDataException(team.Id + " 缺少手法。");
+                foreach (string step in team.Rotation)
+                    if (String.IsNullOrWhiteSpace(step) || step.Length > 2000) throw new InvalidDataException(team.Id + " 的手法步骤为空或过长。");
                 if (team.Sources == null || team.Sources.Count == 0) throw new InvalidDataException(team.Id + " 缺少来源。");
                 foreach (CombatTeamSource source in team.Sources)
-                    if (source == null || !IsSafeLink(source.Url)) throw new InvalidDataException(team.Id + " 的来源链接必须是 https。");
+                    if (source == null || String.IsNullOrWhiteSpace(source.Title) || !IsSafeLink(source.Url)) throw new InvalidDataException(team.Id + " 的来源需要名称和 https 链接。");
             }
             return catalog;
         }
@@ -136,7 +198,8 @@ namespace ClaudePet
         internal static bool IsSafeLink(string url)
         {
             Uri uri;
-            return !String.IsNullOrWhiteSpace(url) && Uri.TryCreate(url, UriKind.Absolute, out uri) && uri.Scheme == Uri.UriSchemeHttps;
+            return !String.IsNullOrWhiteSpace(url) && url.Length <= 2048 && Uri.TryCreate(url, UriKind.Absolute, out uri) &&
+                uri.Scheme == Uri.UriSchemeHttps && String.IsNullOrEmpty(uri.UserInfo);
         }
 
         // Fills slots with the preset's names, roles, elements and scaling.

@@ -1,0 +1,844 @@
+{
+  "Version": 1,
+  "Updated": "2026-10-29",
+  "Notice": "Genshin Optimizer 维护者角色词典快照，作为勾选基础名单；不是官方实时实装名册，不保证未来新增角色完整。目录成员和用户手动添加的名字会继续补入。旅行者各元素独立勾选。名单只有名称/别名，不代表已有攻略或已支持伤害机制。",
+  "Sources": [
+    {
+      "Title": "Genshin Optimizer 简体中文角色名（固定提交）",
+      "Url": "https://github.com/frzyc/genshin-optimizer/blob/c3586033db8a0e1717b494cfd845a87cf9ae79ec/libs/gi/dm-localization/assets/locales/chs/charNames_gen.json"
+    },
+    {
+      "Title": "Genshin Optimizer 英文角色名（固定提交）",
+      "Url": "https://github.com/frzyc/genshin-optimizer/blob/c3586033db8a0e1717b494cfd845a87cf9ae79ec/libs/gi/dm-localization/assets/locales/en/charNames_gen.json"
+    }
+  ],
+  "Characters": [
+    {
+      "Name": "神里绫华",
+      "Aliases": [
+        "Kamisato Ayaka",
+        "KamisatoAyaka"
+      ]
+    },
+    {
+      "Name": "琴",
+      "Aliases": [
+        "Jean"
+      ]
+    },
+    {
+      "Name": "丽莎",
+      "Aliases": [
+        "Lisa"
+      ]
+    },
+    {
+      "Name": "芭芭拉",
+      "Aliases": [
+        "Barbara"
+      ]
+    },
+    {
+      "Name": "凯亚",
+      "Aliases": [
+        "Kaeya"
+      ]
+    },
+    {
+      "Name": "迪卢克",
+      "Aliases": [
+        "Diluc"
+      ]
+    },
+    {
+      "Name": "雷泽",
+      "Aliases": [
+        "Razor"
+      ]
+    },
+    {
+      "Name": "安柏",
+      "Aliases": [
+        "Amber"
+      ]
+    },
+    {
+      "Name": "温迪",
+      "Aliases": [
+        "Venti"
+      ]
+    },
+    {
+      "Name": "香菱",
+      "Aliases": [
+        "Xiangling"
+      ]
+    },
+    {
+      "Name": "北斗",
+      "Aliases": [
+        "Beidou"
+      ]
+    },
+    {
+      "Name": "行秋",
+      "Aliases": [
+        "Xingqiu"
+      ]
+    },
+    {
+      "Name": "魈",
+      "Aliases": [
+        "Xiao"
+      ]
+    },
+    {
+      "Name": "凝光",
+      "Aliases": [
+        "Ningguang"
+      ]
+    },
+    {
+      "Name": "可莉",
+      "Aliases": [
+        "Klee"
+      ]
+    },
+    {
+      "Name": "钟离",
+      "Aliases": [
+        "Zhongli"
+      ]
+    },
+    {
+      "Name": "菲谢尔",
+      "Aliases": [
+        "Fischl"
+      ]
+    },
+    {
+      "Name": "班尼特",
+      "Aliases": [
+        "Bennett"
+      ]
+    },
+    {
+      "Name": "达达利亚",
+      "Aliases": [
+        "Tartaglia"
+      ]
+    },
+    {
+      "Name": "诺艾尔",
+      "Aliases": [
+        "Noelle"
+      ]
+    },
+    {
+      "Name": "七七",
+      "Aliases": [
+        "Qiqi"
+      ]
+    },
+    {
+      "Name": "重云",
+      "Aliases": [
+        "Chongyun"
+      ]
+    },
+    {
+      "Name": "甘雨",
+      "Aliases": [
+        "Ganyu"
+      ]
+    },
+    {
+      "Name": "阿贝多",
+      "Aliases": [
+        "Albedo"
+      ]
+    },
+    {
+      "Name": "迪奥娜",
+      "Aliases": [
+        "Diona"
+      ]
+    },
+    {
+      "Name": "莫娜",
+      "Aliases": [
+        "Mona"
+      ]
+    },
+    {
+      "Name": "刻晴",
+      "Aliases": [
+        "Keqing"
+      ]
+    },
+    {
+      "Name": "砂糖",
+      "Aliases": [
+        "Sucrose"
+      ]
+    },
+    {
+      "Name": "辛焱",
+      "Aliases": [
+        "Xinyan"
+      ]
+    },
+    {
+      "Name": "罗莎莉亚",
+      "Aliases": [
+        "Rosaria"
+      ]
+    },
+    {
+      "Name": "胡桃",
+      "Aliases": [
+        "Hu Tao",
+        "HuTao"
+      ]
+    },
+    {
+      "Name": "枫原万叶",
+      "Aliases": [
+        "Kaedehara Kazuha",
+        "KaedeharaKazuha"
+      ]
+    },
+    {
+      "Name": "烟绯",
+      "Aliases": [
+        "Yanfei"
+      ]
+    },
+    {
+      "Name": "宵宫",
+      "Aliases": [
+        "Yoimiya"
+      ]
+    },
+    {
+      "Name": "托马",
+      "Aliases": [
+        "Thoma"
+      ]
+    },
+    {
+      "Name": "优菈",
+      "Aliases": [
+        "Eula"
+      ]
+    },
+    {
+      "Name": "雷电将军",
+      "Aliases": [
+        "Raiden Shogun",
+        "RaidenShogun"
+      ]
+    },
+    {
+      "Name": "早柚",
+      "Aliases": [
+        "Sayu"
+      ]
+    },
+    {
+      "Name": "珊瑚宫心海",
+      "Aliases": [
+        "Sangonomiya Kokomi",
+        "SangonomiyaKokomi"
+      ]
+    },
+    {
+      "Name": "五郎",
+      "Aliases": [
+        "Gorou"
+      ]
+    },
+    {
+      "Name": "九条裟罗",
+      "Aliases": [
+        "Kujou Sara",
+        "KujouSara"
+      ]
+    },
+    {
+      "Name": "荒泷一斗",
+      "Aliases": [
+        "Arataki Itto",
+        "AratakiItto"
+      ]
+    },
+    {
+      "Name": "八重神子",
+      "Aliases": [
+        "Yae Miko",
+        "YaeMiko"
+      ]
+    },
+    {
+      "Name": "鹿野院平藏",
+      "Aliases": [
+        "Shikanoin Heizou",
+        "ShikanoinHeizou"
+      ]
+    },
+    {
+      "Name": "夜兰",
+      "Aliases": [
+        "Yelan"
+      ]
+    },
+    {
+      "Name": "绮良良",
+      "Aliases": [
+        "Kirara"
+      ]
+    },
+    {
+      "Name": "埃洛伊",
+      "Aliases": [
+        "Aloy"
+      ]
+    },
+    {
+      "Name": "申鹤",
+      "Aliases": [
+        "Shenhe"
+      ]
+    },
+    {
+      "Name": "云堇",
+      "Aliases": [
+        "Yun Jin",
+        "YunJin"
+      ]
+    },
+    {
+      "Name": "久岐忍",
+      "Aliases": [
+        "Kuki Shinobu",
+        "KukiShinobu"
+      ]
+    },
+    {
+      "Name": "神里绫人",
+      "Aliases": [
+        "Kamisato Ayato",
+        "KamisatoAyato"
+      ]
+    },
+    {
+      "Name": "柯莱",
+      "Aliases": [
+        "Collei"
+      ]
+    },
+    {
+      "Name": "多莉",
+      "Aliases": [
+        "Dori"
+      ]
+    },
+    {
+      "Name": "提纳里",
+      "Aliases": [
+        "Tighnari"
+      ]
+    },
+    {
+      "Name": "妮露",
+      "Aliases": [
+        "Nilou"
+      ]
+    },
+    {
+      "Name": "赛诺",
+      "Aliases": [
+        "Cyno"
+      ]
+    },
+    {
+      "Name": "坎蒂丝",
+      "Aliases": [
+        "Candace"
+      ]
+    },
+    {
+      "Name": "纳西妲",
+      "Aliases": [
+        "Nahida"
+      ]
+    },
+    {
+      "Name": "莱依拉",
+      "Aliases": [
+        "Layla"
+      ]
+    },
+    {
+      "Name": "流浪者",
+      "Aliases": [
+        "Wanderer"
+      ]
+    },
+    {
+      "Name": "珐露珊",
+      "Aliases": [
+        "Faruzan",
+        "法露珊"
+      ]
+    },
+    {
+      "Name": "瑶瑶",
+      "Aliases": [
+        "Yaoyao"
+      ]
+    },
+    {
+      "Name": "艾尔海森",
+      "Aliases": [
+        "Alhaitham"
+      ]
+    },
+    {
+      "Name": "迪希雅",
+      "Aliases": [
+        "Dehya"
+      ]
+    },
+    {
+      "Name": "米卡",
+      "Aliases": [
+        "Mika"
+      ]
+    },
+    {
+      "Name": "卡维",
+      "Aliases": [
+        "Kaveh"
+      ]
+    },
+    {
+      "Name": "白术",
+      "Aliases": [
+        "Baizhu"
+      ]
+    },
+    {
+      "Name": "琳妮特",
+      "Aliases": [
+        "Lynette"
+      ]
+    },
+    {
+      "Name": "林尼",
+      "Aliases": [
+        "Lyney"
+      ]
+    },
+    {
+      "Name": "菲米尼",
+      "Aliases": [
+        "Freminet"
+      ]
+    },
+    {
+      "Name": "莱欧斯利",
+      "Aliases": [
+        "Wriothesley"
+      ]
+    },
+    {
+      "Name": "那维莱特",
+      "Aliases": [
+        "Neuvillette"
+      ]
+    },
+    {
+      "Name": "夏洛蒂",
+      "Aliases": [
+        "Charlotte"
+      ]
+    },
+    {
+      "Name": "芙宁娜",
+      "Aliases": [
+        "Furina"
+      ]
+    },
+    {
+      "Name": "夏沃蕾",
+      "Aliases": [
+        "Chevreuse"
+      ]
+    },
+    {
+      "Name": "娜维娅",
+      "Aliases": [
+        "Navia"
+      ]
+    },
+    {
+      "Name": "嘉明",
+      "Aliases": [
+        "Gaming"
+      ]
+    },
+    {
+      "Name": "闲云",
+      "Aliases": [
+        "Xianyun"
+      ]
+    },
+    {
+      "Name": "千织",
+      "Aliases": [
+        "Chiori"
+      ]
+    },
+    {
+      "Name": "希格雯",
+      "Aliases": [
+        "Sigewinne"
+      ]
+    },
+    {
+      "Name": "阿蕾奇诺",
+      "Aliases": [
+        "Arlecchino"
+      ]
+    },
+    {
+      "Name": "赛索斯",
+      "Aliases": [
+        "Sethos"
+      ]
+    },
+    {
+      "Name": "克洛琳德",
+      "Aliases": [
+        "Clorinde"
+      ]
+    },
+    {
+      "Name": "艾梅莉埃",
+      "Aliases": [
+        "Emilie"
+      ]
+    },
+    {
+      "Name": "卡齐娜",
+      "Aliases": [
+        "Kachina"
+      ]
+    },
+    {
+      "Name": "基尼奇",
+      "Aliases": [
+        "Kinich"
+      ]
+    },
+    {
+      "Name": "玛拉妮",
+      "Aliases": [
+        "Mualani"
+      ]
+    },
+    {
+      "Name": "希诺宁",
+      "Aliases": [
+        "Xilonen"
+      ]
+    },
+    {
+      "Name": "恰斯卡",
+      "Aliases": [
+        "Chasca"
+      ]
+    },
+    {
+      "Name": "欧洛伦",
+      "Aliases": [
+        "Ororon"
+      ]
+    },
+    {
+      "Name": "玛薇卡",
+      "Aliases": [
+        "Mavuika"
+      ]
+    },
+    {
+      "Name": "茜特菈莉",
+      "Aliases": [
+        "Citlali"
+      ]
+    },
+    {
+      "Name": "蓝砚",
+      "Aliases": [
+        "Lan Yan",
+        "LanYan"
+      ]
+    },
+    {
+      "Name": "梦见月瑞希",
+      "Aliases": [
+        "Yumemizuki Mizuki",
+        "YumemizukiMizuki"
+      ]
+    },
+    {
+      "Name": "伊安珊",
+      "Aliases": [
+        "Iansan"
+      ]
+    },
+    {
+      "Name": "瓦雷莎",
+      "Aliases": [
+        "Varesa"
+      ]
+    },
+    {
+      "Name": "爱可菲",
+      "Aliases": [
+        "Escoffier"
+      ]
+    },
+    {
+      "Name": "伊法",
+      "Aliases": [
+        "Ifa"
+      ]
+    },
+    {
+      "Name": "丝柯克",
+      "Aliases": [
+        "Skirk"
+      ]
+    },
+    {
+      "Name": "塔利雅",
+      "Aliases": [
+        "Dahlia"
+      ]
+    },
+    {
+      "Name": "伊涅芙",
+      "Aliases": [
+        "Ineffa"
+      ]
+    },
+    {
+      "Name": "菈乌玛",
+      "Aliases": [
+        "Lauma"
+      ]
+    },
+    {
+      "Name": "菲林斯",
+      "Aliases": [
+        "Flins"
+      ]
+    },
+    {
+      "Name": "爱诺",
+      "Aliases": [
+        "Aino"
+      ]
+    },
+    {
+      "Name": "奈芙尔",
+      "Aliases": [
+        "Nefer"
+      ]
+    },
+    {
+      "Name": "杜林",
+      "Aliases": [
+        "Durin"
+      ]
+    },
+    {
+      "Name": "雅珂达",
+      "Aliases": [
+        "Jahoda"
+      ]
+    },
+    {
+      "Name": "哥伦比娅",
+      "Aliases": [
+        "Columbina"
+      ]
+    },
+    {
+      "Name": "兹白",
+      "Aliases": [
+        "Zibai"
+      ]
+    },
+    {
+      "Name": "叶洛亚",
+      "Aliases": [
+        "Illuga"
+      ]
+    },
+    {
+      "Name": "法尔伽",
+      "Aliases": [
+        "Varka"
+      ]
+    },
+    {
+      "Name": "洛恩",
+      "Aliases": [
+        "Lohen"
+      ]
+    },
+    {
+      "Name": "莉奈娅",
+      "Aliases": [
+        "Linnea"
+      ]
+    },
+    {
+      "Name": "尼可",
+      "Aliases": [
+        "Nicole"
+      ]
+    },
+    {
+      "Name": "布伦妮",
+      "Aliases": [
+        "Prune"
+      ]
+    },
+    {
+      "Name": "桑多涅",
+      "Aliases": [
+        "Sandrone"
+      ]
+    },
+    {
+      "Name": "Vodyanitsa",
+      "Aliases": [
+        "沃雅妮莎"
+      ]
+    },
+    {
+      "Name": "Vesna",
+      "Aliases": [
+        "薇斯纳",
+        "薇斯娜"
+      ]
+    },
+    {
+      "Name": "阿罗夏",
+      "Aliases": [
+        "Alyosha"
+      ]
+    },
+    {
+      "Name": "Odette",
+      "Aliases": [
+        "奥黛塔"
+      ]
+    },
+    {
+      "Name": "旅行者（风）",
+      "Aliases": [
+        "Traveler (Anemo)",
+        "TravelerAnemo",
+        "TravelerAnemoF",
+        "荧 (风)",
+        "Lumine (Anemo)",
+        "TravelerAnemoM",
+        "空 (风)",
+        "Aether (Anemo)"
+      ]
+    },
+    {
+      "Name": "旅行者（岩）",
+      "Aliases": [
+        "Traveler (Geo)",
+        "TravelerGeo",
+        "TravelerGeoF",
+        "荧 (岩元素)",
+        "Lumine (Geo)",
+        "TravelerGeoM",
+        "空 (岩元素)",
+        "Aether (Geo)"
+      ]
+    },
+    {
+      "Name": "旅行者（雷）",
+      "Aliases": [
+        "Traveler (Electro)",
+        "TravelerElectro",
+        "TravelerElectroF",
+        "荧 (雷)",
+        "Lumine (Electro)",
+        "TravelerElectroM",
+        "空 (雷)",
+        "Aether (Electro)"
+      ]
+    },
+    {
+      "Name": "旅行者（草）",
+      "Aliases": [
+        "Traveler (Dendro)",
+        "TravelerDendro",
+        "TravelerDendroF",
+        "荧 (草元素)",
+        "Lumine (Dendro)",
+        "TravelerDendroM",
+        "空 (草元素)",
+        "Aether (Dendro)"
+      ]
+    },
+    {
+      "Name": "旅行者（水）",
+      "Aliases": [
+        "Traveler (Hydro)",
+        "TravelerHydro",
+        "TravelerHydroF",
+        "荧 (水元素)",
+        "Lumine (Hydro)",
+        "TravelerHydroM",
+        "空 (水元素)",
+        "Aether (Hydro)"
+      ]
+    },
+    {
+      "Name": "旅行者（火）",
+      "Aliases": [
+        "Traveler (Pyro)",
+        "TravelerPyro",
+        "TravelerPyroF",
+        "荧 (火)",
+        "Lumine (Pyro)",
+        "TravelerPyroM",
+        "空 (火)",
+        "Aether (Pyro)"
+      ]
+    },
+    {
+      "Name": "旅行者（冰）",
+      "Aliases": [
+        "Traveler (Cryo)",
+        "TravelerCryo",
+        "TravelerCryoF",
+        "荧 (冰)",
+        "Lumine (Cryo)",
+        "TravelerCryoM",
+        "空 (冰)",
+        "Aether (Cryo)"
+      ]
+    }
+  ]
+}

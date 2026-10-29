@@ -143,7 +143,7 @@ namespace ClaudePet
         }
     }
 
-    internal sealed class CombatRotationWindow : Window
+    internal sealed partial class CombatRotationWindow : Window
     {
         private readonly List<CombatCharacterEditor> editors = new List<CombatCharacterEditor>();
         private readonly TextBox characterLevel, enemyLevel, enemyResistance, defenseReduction, reactionCoverage;
@@ -156,7 +156,8 @@ namespace ClaudePet
         private readonly StackPanel form, recommendationBody;
         private readonly ComboBox presets;
         private readonly Dictionary<string, Control> enemyFields = new Dictionary<string, Control>();
-        private readonly CombatTeamCatalog catalog;
+        private CombatTeamCatalog catalog;
+        private CombatTeamPreset appliedReference;
         private string presetId = "";
         private bool importing, closed;
 
@@ -201,6 +202,7 @@ namespace ClaudePet
             form.Children.Add(Card(safe));
             catalog = CombatTeamPresets.Current;
             form.Children.Add(SectionLabel("推荐配队"));
+            InitializeRosterControls(form);
             presets = new ComboBox { Margin = new Thickness(4, 0, 4, 8) };
             presets.Items.Add(new ComboBoxItem { Content = "自定义配队", Tag = "" });
             foreach (CombatTeamPreset team in catalog.Teams) presets.Items.Add(new ComboBoxItem { Content = CombatTeamPresets.Label(team), Tag = team.Id });
@@ -244,6 +246,7 @@ namespace ClaudePet
             status = Text("计算只保存在本机 %LocalAppData%\\KoloPet。", 11, false, true); status.Margin = new Thickness(0, 12, 0, 0); Grid.SetRow(status, 2); root.Children.Add(status);
 
             presets.SelectionChanged += delegate { ShowRecommendation(); };
+            RefreshRecommendations();
             CombatPlanLoad initial = persist ? CombatPlannerStorage.Load() : new CombatPlanLoad { Input = CombatPlanInput.CreateExample() };
             Load(initial.Input); Generate(false);
             if (!String.IsNullOrWhiteSpace(initial.Notice)) {
@@ -287,6 +290,7 @@ namespace ClaudePet
         {
             foreach (Control control in enemyFields.Values) ClearError(control);
             presetId = value.PresetId ?? "";
+            appliedReference = catalog.Find(presetId);
             Select(presets, presetId); ShowRecommendation();
             characterLevel.Text = value.CharacterLevel.ToString(CultureInfo.InvariantCulture);
             enemyLevel.Text = value.EnemyLevel.ToString(CultureInfo.InvariantCulture);
@@ -320,21 +324,29 @@ namespace ClaudePet
             foreach (CombatCharacterEditor editor in editors) editor.ClearErrors();
             try {
                 CombatPlanInput input = ReadInput();
-                CombatTeamPreset applied = catalog.Find(presetId);
+                CombatTeamPreset applied = CurrentAppliedReference();
                 if (applied != null) {
                     bool sameMembers = true;
                     for (int i = 0; i < editors.Count; i++) {
                         string expected = i < applied.Members.Count ? applied.Members[i].Name.Trim() : "";
-                        if (editors[i].CharacterName != expected) { sameMembers = false; break; }
+                        if (CombatRosterMatcher.Normalize(editors[i].CharacterName) != CombatRosterMatcher.Normalize(expected)) { sameMembers = false; break; }
                     }
-                    if (!sameMembers) { presetId = ""; input.PresetId = ""; }
+                    if (!sameMembers) { presetId = ""; input.PresetId = ""; appliedReference = null; }
                 }
-                CombatPlanResult result = CombatPlanner.Calculate(input);
+                bool missingReference = !String.IsNullOrEmpty(presetId) && CurrentAppliedReference() == null;
+                CombatPlanResult result = null;
+                if (missingReference) {
+                    // A retired reference may have required a special damage
+                    // model. A restart must not turn it into a generic team.
+                    List<CombatFieldError> errors = CombatPlanner.Validate(input);
+                    if (errors.Count > 0) throw new CombatValidationException(errors);
+                } else result = CombatPlanner.Calculate(input);
                 Render(result);
-                status.Text = save && persist ? "已计算，并保存当前配队。" : "已按当前面板计算。";
+                status.Text = missingReference ? (save && persist ? "配队资料已失效，当前输入已保存；未进行伤害估算。" : "配队资料已失效，当前输入已保留；未进行伤害估算。") :
+                    save && persist ? "已计算，并保存当前配队。" : "已按当前面板计算。";
                 if (save && persist) {
                     try { CombatPlannerStorage.Save(input); }
-                    catch (Exception saveError) { PetStorage.Log("combat-plan-save", saveError); status.Text = "计算完成，但保存失败：" + saveError.Message + " 当前输入仍保留在界面。"; }
+                    catch (Exception saveError) { PetStorage.Log("combat-plan-save", saveError); status.Text = (missingReference ? "资料已失效且保存失败：" : "计算完成，但保存失败：") + saveError.Message + " 当前输入仍保留在界面。"; }
                 }
             } catch (CombatValidationException error) {
                 resultBody.Children.Clear();
@@ -360,7 +372,15 @@ namespace ClaudePet
         internal void Render(CombatPlanResult value)
         {
             resultBody.Children.Clear();
-            CombatTeamPreset applied = catalog.Find(presetId);
+            CombatTeamPreset applied = CurrentAppliedReference();
+            if (!String.IsNullOrEmpty(presetId) && applied == null) {
+                resultBody.Children.Add(SectionLabel("已保存的配队资料已失效"));
+                StackPanel unavailable = new StackPanel();
+                unavailable.Children.Add(Text("当前资料库找不到这份已保存配队，无法确认其特殊机制是否适合通用估算，暂不计算或显示伤害。四名角色和面板仍保留，可以继续编辑与保存。\n可导入包含此队的资料，或调整成员后明确转为自定义；自定义只提供通用粗算，不能覆盖角色专属机制。", 13, false, false));
+                unavailable.Children.Add(ActionButton("转为自定义（保留输入）", UseCustomReference));
+                resultBody.Children.Add(Card(unavailable));
+                return;
+            }
             if (applied != null && !applied.SupportsEstimate) {
                 resultBody.Children.Add(SectionLabel("此队仅提供手法参考"));
                 resultBody.Children.Add(Card(Text("当前通用计算尚未覆盖此队的特殊机制，暂不显示伤害与达标后每秒。面板仍可手填、截图导入和保存。\n" + applied.ModelNote, 13, false, false)));
@@ -411,6 +431,10 @@ namespace ClaudePet
         {
             CombatTeamPreset selected = SelectedPreset();
             if (selected == null) { status.Text = "先选择一个推荐队伍；自定义配队可以直接在角色页修改。"; return; }
+            if (rosterProfile.Configured && CombatRosterMatcher.Missing(selected, rosterProfile).Count > 0) {
+                status.Text = "该队还缺少：" + String.Join("、", CombatRosterMatcher.Missing(selected, rosterProfile).ToArray()) + "。可先查看手法，或在「我的角色」中补充已拥有角色。";
+                return;
+            }
             Load(CombatTeamPresets.Apply(ReadInput(), selected));
             resultBody.Children.Clear();
             resultBody.Children.Add(Card(Text("已载入「" + selected.Name + "」的成员。\n当前数字为通用示例，并非角色实测面板。先导入或填写自己的面板、技能倍率和时间，再生成估算。", 13, false, false)));
@@ -419,16 +443,24 @@ namespace ClaudePet
 
         private void ShowRecommendation()
         {
+            if (refreshingRecommendations || recommendationBody == null) return;
             recommendationBody.Children.Clear();
             recommendationBody.Children.Add(SectionLabel(CombatTeamPresets.Header(catalog)));
             recommendationBody.Children.Add(Text(catalog.Notice, 11, false, true));
+            recommendationBody.Children.Add(Text(RosterSummaryText(), 12, true, false));
             CombatTeamPreset selected = SelectedPreset();
             if (selected == null) return;
             StackPanel card = new StackPanel();
             card.Children.Add(Text(selected.Name, 18, true, false));
             List<string> members = new List<string>();
-            foreach (CombatTeamMember member in selected.Members) members.Add(member.Name + " · " + CombatPlanner.RoleLabel(member.Role));
+            foreach (CombatTeamMember member in selected.Members) members.Add(member.Name + " · " + CombatPlanner.RoleLabel(member.Role)
+                + (rosterProfile.Configured ? (CombatRosterMatcher.IsOwned(rosterProfile, member.Name) ? " · 已拥有" : " · 缺少") : " · 未确认拥有"));
             card.Children.Add(Text(String.Join(" / ", members.ToArray()), 12, false, true));
+            if (rosterProfile.Configured) {
+                List<string> missing = CombatRosterMatcher.Missing(selected, rosterProfile);
+                card.Children.Add(Text(missing.Count == 0 ? "四名角色均已拥有，可以直接组队。命座与武器条件仍需核对下方说明。" :
+                    "还缺少：" + String.Join("、", missing.ToArray()) + "。此队仅供参考，当前不能直接组成。", 12, true, false));
+            }
             card.Children.Add(Text(selected.VersionScope + "  ·  核对 " + selected.VerifiedAt, 11, false, true));
             card.Children.Add(SectionLabel("推荐输出手法"));
             card.Children.Add(Text(String.Join("\n", selected.Rotation.ToArray()), 13, false, false));

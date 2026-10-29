@@ -7,10 +7,14 @@
 - [AI接手文档](HANDOFF.md)
 - [工程目录、依赖和命令](project-layout.md)
 - [战斗循环助手设计与限制](combat-planner-v2.6.md)
+- [角色拥有表与资料库更新](roster-updates-v2.7.md)
+- [配队来源及核验方式](combat-data-sources.md)
 - [GPT预测数据来源](gpt-reset-data-source.md)
 - [V2.6工程整理记录](cleanup-v2.6.md)
+- [V2.7使用说明](usage-v2.7.txt)
+- [V2.7验证结果](validation-v2.7.md)
 
-V2.6的发布说明、验证记录以 `usage-v2.6.txt`、`validation-v2.6.md` 为准；发布时应与EXE一同更新，未验证的行为不能标记通过。
+V2.7的发布说明、验证记录以 `usage-v2.7.txt`、`validation-v2.7.md` 为准；发布时应与EXE一同更新，未验证的行为不能标记通过。
 
 ## 历史发布
 
@@ -18,6 +22,7 @@ V2.6的发布说明、验证记录以 `usage-v2.6.txt`、`validation-v2.6.md` �
 
 | 版本 | 使用说明 | 验证 |
 | --- | --- | --- |
+| V2.6 | [使用说明](usage-v2.6.txt) | [验证](validation-v2.6.md) |
 | V2.5 | [使用说明](usage-v2.5.txt) | [验证](validation-v2.5.md) |
 | V2.4 | [使用说明](usage-v2.4.txt) | [验证](validation-v2.4.md) |
 | V2.3 | [使用说明](usage-v2.3.txt) | [验证](validation-v2.3.md) |

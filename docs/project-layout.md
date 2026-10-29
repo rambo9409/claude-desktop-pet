@@ -1,4 +1,4 @@
-# V2.6 工程与构建
+# V2.7 工程与构建
 
 ## 目录
 
@@ -9,7 +9,7 @@
 | `build.cmd`、`test.cmd`、`package.cmd` | 无需更改系统执行策略的 Windows 入口 |
 | `scripts/` | 编译、测试、打包与预览编码 |
 | `tests/` | 测试源码与历史薄包装入口 |
-| `assets/characters.zip`、`assets/combat-teams.json` | 内嵌角色资源与有来源的静态配队目录 |
+| `assets/characters.zip`、`assets/combat-teams.json`、`assets/combat-roster.json` | 内嵌动画、带来源的配队目录与角色名称/别名快照 |
 | `assets/generated/`、`assets/source/` | 当前和历史源素材、提示词、裁切参数 |
 | `artifacts/build/` | 根据当前环境展开的生产编译响应文件 |
 | `artifacts/tests/` | 测试 EXE、日志、渲染截图、`latest-run.json` |
@@ -42,10 +42,12 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 ## 测试
 
 ```powershell
-# 16组默认回归；加看点交互检查后共17组，无需Python
+# 17组默认回归；加看点交互检查后共18组，无需Python
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
 # 单独战斗助手
 .\test.cmd -Suite CombatPlanner -SkipPreviews
+# 角色拥有表、资料导入、筛选与实际WPF窗口
+.\test.cmd -Suite CombatRoster -SkipPreviews
 # 使用明确的Python编码预览
 .\test.cmd -Python C:\Python312\python.exe -IncludeVisualSmoke
 ```
@@ -56,14 +58,14 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps1' -Suite CombatPlanner,GanyuDualScreen -SkipPreviews"
 ```
 
-默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、PointerInteraction、GanyuTraversal、GanyuDualScreen。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
+默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、CombatRoster、PointerInteraction、GanyuTraversal、GanyuDualScreen。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
 
 按顺序运行，避免共享配置互相干扰。测试中需要暂时写配置的路径必须备份并在 finally 还原；窗口能力原生测试仅操作自己创建的窗口。`latest-run.json` 从 RUNNING 开始逐组写入 PASS/FAIL，未执行的组保持 PENDING，不使用旧日志冒充本次通过。
 
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.6 -InstructionsPath .\docs\usage-v2.6.txt
+.\package.cmd -Version 2.7 -InstructionsPath .\docs\usage-v2.7.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。
@@ -71,3 +73,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps
 `.gitattributes` 规定 C#/PowerShell/CMD/RSP 为 CRLF、Markdown/JSON/Python为LF；二进制不作换行转换。没有对历史仓库做全量换行重写。旧根目录构建和 Python 缓存归档说明见 [V2.6 整理记录](cleanup-v2.6.md)。历史使用说明和验证文档保留原路径，通过[索引](INDEX.md)导航，避免旧发布链接失效。
 
 含中文路径或界面文案的PowerShell源码使用UTF-8 BOM，以兼容Windows PowerShell 5.1；RSP模板由脚本显式按UTF-8读取，C#编译指定65001代码页。
+
+## 战斗助手模块边界
+
+`GenshinCombatPlanner.cs` 负责编辑面板和攻略展示；同一窗口的角色拥有表和资料更新入口放在 `CombatRosterUi.cs`。`CombatRoster.cs` 负责拥有表持久化、名称别名、缺员计算和稳定排序。`CombatPlannerPresets.cs` 读取/校验/导入攻略目录；`CombatPlannerModel.cs` 负责通用估算；`CombatPanelOcr.cs` 负责本机截图识别和字段解析。
+
+角色名单是名称快照，配队是经过人工核验的四人攻略。添加新攻略及角色通常只需导入 JSON；新的伤害机制需要修改估算模型。外部资料不包含脚本，不能改变计算代码。详细格式、数据边界和更新步骤见 [V2.7 资料更新指南](roster-updates-v2.7.md)。

@@ -2,7 +2,7 @@
   "version": 2,
   "gameVersion": "7.1",
   "updated": "2026-10-29",
-  "notice": "官方7.1下半祈愿公告覆盖2026-10-13至11-03，本表于10-29核验。配队是攻略参考，不是全角色强度榜，也不自动联网更新。E=战技，长E=长按；Q=爆发；N4=四次普攻，C/CA=重击，D=冲刺；菲林斯短Q不同于常规Q。应用后数值为通用示例，须手动或截图覆盖；标记“仅手法”的队伍不计算伤害。",
+  "notice": "本表于2026-10-29核验，收录7.1期间攻略与经典队参考共14套；具体适用范围见各队卡片。配队不是全角色强度榜，也不自动联网更新。先勾选拥有角色，可筛出资料库中能组成的队伍；没有匹配不代表这些角色不能组队。E=战技，长E=长按；Q=爆发；N4=四次普攻，C/CA=重击，D=冲刺；菲林斯短Q不同于常规Q。应用后数值为通用示例，须手动或截图覆盖；标记“仅手法”的队伍不计算伤害。",
   "teams": [
     {
       "id": "vesna-comfort",
@@ -575,6 +575,114 @@
       "verifiedAt": "2026-10-29",
       "versionScope": "历史常用队，2026-10-29复核；不是当期排行榜。",
       "rotationBasis": "队伍与雷电连段来自KQM；辅助开场为按增益/接球原则整理的练习顺序，不是唯一最优循环。"
+    },
+    {
+      "id": "hutao-double-hydro",
+      "name": "胡桃双水 · 钟离保护",
+      "archetype": "双水蒸发",
+      "tier": "经典队参考",
+      "budget": "mixed",
+      "members": [
+        { "name": "胡桃", "role": "main", "element": "火", "scaling": "health", "note": "战技转攻击后普攻接重击；生命不是直接伤害倍率基值" },
+        { "name": "行秋", "role": "offfield", "element": "水", "scaling": "attack", "note": "后台挂水与减伤" },
+        { "name": "夜兰", "role": "offfield", "element": "水", "scaling": "health", "note": "后台挂水、协同输出" },
+        { "name": "钟离", "role": "sustain", "element": "岩", "scaling": "health", "note": "护盾保护输出窗口" }
+      ],
+      "rotation": [
+        "行秋：Q → E，接到自己的元素微粒再换人。",
+        "夜兰：E → Q；钟离：长E开盾。",
+        "胡桃：E后普攻接重击循环；零命可用跳跃取消重击后摇，熟练后再调整连段。",
+        "战技结束换回辅助补能并续技能；胡桃Q按血量与能量决定，不强制每轮释放。"
+      ],
+      "energy": "先保证行秋和夜兰下轮能开Q；祭礼、西风及夜兰是否多放一次E会改变充能需要。",
+      "tips": "该成员组合无需胡桃一命；取消后摇需要练习。盾量不足或敌人穿盾伤害会影响生存。",
+      "modelNote": "当前模型未完整实现生命转攻击、重击蒸发和取消动作，本队仅显示手法。",
+      "sources": [ { "title": "KQM：胡桃双水钟离队与轮转（指南4.0）", "url": "https://keqingmains.com/hu-tao/" } ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "经典双水队；来源指南标注4.0，本次复核成员与轮转，不作7.1强度排名。",
+      "rotationBasis": "按KQM钟离双水、夜兰单E示例转述；胡桃连段简化为可练习步骤，不宣称唯一最优。"
+    },
+    {
+      "id": "ganyu-xiangling-melt",
+      "name": "甘雨融化 · 香菱班尼特钟离",
+      "archetype": "蓄力箭融化",
+      "tier": "经典队参考",
+      "budget": "mixed",
+      "members": [
+        { "name": "甘雨", "role": "main", "element": "冰", "scaling": "attack", "note": "二段蓄力箭和霜华矢输出" },
+        { "name": "香菱", "role": "offfield", "element": "火", "scaling": "attack", "note": "后台持续挂火" },
+        { "name": "班尼特", "role": "support", "element": "火", "scaling": "attack", "note": "领域增攻、治疗及给香菱供能" },
+        { "name": "钟离", "role": "sustain", "element": "岩", "scaling": "health", "note": "护盾帮助甘雨完成蓄力" }
+      ],
+      "rotation": [
+        "香菱先E；钟离长E开盾。",
+        "班尼特Q → E，香菱接球后Q。",
+        "甘雨在火附着和领域覆盖内打二段蓄力箭，参考顺序为5次蓄力 → E → 1次蓄力。",
+        "班尼特E后让香菱接球；能量不足先补能，不把未就绪的Q算作已释放。"
+      ],
+      "energy": "来源参考：香菱约200–250%充能，班尼特约230%；西风产球、接球与敌人掉球会改变需求。",
+      "tips": "此顺序按KQM较长输出窗口方案。甘雨通常不强求每轮Q；需要靠近敌人让旋火轮持续命中，追击与蓄力速度会影响融化覆盖。",
+      "modelNote": "未逐击模拟蓄力箭/霜华绽发、火附着与快照，不以通用公式估算本队伤害。",
+      "sources": [ { "title": "KQM：甘雨香菱融化队与长窗口轮转（指南4.0）", "url": "https://keqingmains.com/ganyu/" } ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "经典融化队；来源指南标注4.0，本次核对手法，不代表当期最强。",
+      "rotationBasis": "KQM Ganyu–Xiangling Melt 的 Rotation Option 1 转述；蓄力次数是来源练习目标，实战按敌人移动与增益时间调整。"
+    },
+    {
+      "id": "sucrose-taser",
+      "name": "砂糖武装 · 行秋菲谢尔北斗",
+      "archetype": "感电与扩散驱动",
+      "tier": "经典队参考",
+      "budget": "f2p",
+      "members": [
+        { "name": "砂糖", "role": "main", "element": "风", "scaling": "attack", "note": "驻场普攻驱动；扩散以等级和精通为主，基值仅为表单占位" },
+        { "name": "行秋", "role": "offfield", "element": "水", "scaling": "attack", "note": "后台挂水、减伤与少量恢复" },
+        { "name": "菲谢尔", "role": "offfield", "element": "雷", "scaling": "attack", "note": "奥兹后台雷伤，E/Q轮流续场" },
+        { "name": "北斗", "role": "offfield", "element": "雷", "scaling": "attack", "note": "爆发协同输出、减伤" }
+      ],
+      "rotation": [
+        "行秋E → Q；北斗E → Q；菲谢尔E召唤奥兹。",
+        "砂糖E、能量足够时Q，再持续普攻触发行秋和北斗的协同攻击。",
+        "奥兹结束附近切北斗补E，再用菲谢尔Q续奥兹，回砂糖E和普攻驱动。",
+        "按技能就绪情况开始下轮；熟悉后可练习两次普攻接短走位取消后摇。"
+      ],
+      "energy": "优先让行秋、北斗每轮有Q；砂糖Q按能量决定，不能为开Q长时间停下普攻驱动。",
+      "tips": "四名角色均为四星，不代表免费获取。队内没有专职治疗，靠减伤和闪避维持生存；需要治疗时请另选已有完整手法的队伍，不直接照搬这套顺序。",
+      "modelNote": "精通扩散、感电及协同触发次数尚未建模，本队只显示手法。",
+      "sources": [ { "title": "KQM：砂糖速查·行秋菲谢尔北斗感电队", "url": "https://keqingmains.com/q/sucrose-quickguide/" } ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "经典四星队参考；本次核对KQM示例，不作当期强度排名。",
+      "rotationBasis": "按KQM四人感电队示例省略部分穿插普攻与取消动作，保留奥兹E/Q接续及砂糖驱动顺序。"
+    },
+    {
+      "id": "nahida-double-hydro-hyperbloom",
+      "name": "纳行久双水 · 夜兰",
+      "archetype": "超绽放",
+      "tier": "经典队参考",
+      "budget": "mixed",
+      "members": [
+        { "name": "纳西妲", "role": "main", "element": "草", "scaling": "attack", "note": "挂草并驻场驱动；精通机制未纳入此表单基值" },
+        { "name": "行秋", "role": "offfield", "element": "水", "scaling": "attack", "note": "后台挂水、减伤" },
+        { "name": "久岐忍", "role": "sustain", "element": "雷", "scaling": "health", "note": "E治疗并以雷环触发草原核；超绽放需要等级和精通" },
+        { "name": "夜兰", "role": "offfield", "element": "水", "scaling": "health", "note": "第二水位协同输出" }
+      ],
+      "rotation": [
+        "纳西妲E标记，Q有能量时释放；行秋Q后穿插一次普攻。",
+        "久岐忍E后穿插普攻；夜兰E → 普攻 → Q。",
+        "纳西妲驻场普攻并按需刷新E，维持草与水的反应；中途切行秋补E并接球。",
+        "技能空档可补夜兰E；久岐忍E转好续雷环，再刷新辅助技能进入下轮。"
+      ],
+      "energy": "行秋、夜兰先保证Q接续；久岐忍以等级与精通为超绽放重点，无需为每轮Q牺牲精通。",
+      "tips": "按纳西妲、行秋、久岐忍、夜兰四人来源队伍提供。久岐忍二命可改善E覆盖，但零命可运行；低血量切人和贴近草原核时注意生存。",
+      "modelNote": "通用估算没有精通缩放、草原核生成与超绽放触发上限，本队只显示手法。",
+      "sources": [ { "title": "KQM：纳西妲速查·夜兰久岐忍行秋超绽放队", "url": "https://keqingmains.com/q/nahida-quickguide/" } ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "经典超绽放队参考；本次复核成员和轮转，非当期排名或替换角色指南。",
+      "rotationBasis": "按KQM四人示例简化为练习步骤，省略精确N3/冲刺次数及可选Q；循环时长和次数需按命座、能量及战况调整。"
     }
   ]
 }

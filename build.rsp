@@ -20,6 +20,7 @@
 /reference:System.Net.Http.dll
 /resource:assets\characters.zip,characters.zip
 /resource:assets\combat-teams.json,combat-teams.json
+/resource:assets\combat-roster.json,combat-roster.json
 src\ClaudePetMotion.cs
 src\PetAssets.cs
 src\PetMenu.cs
@@ -41,3 +42,5 @@ src\PetStorage.cs
 src\CombatPlannerModel.cs
 src\CombatPlannerPresets.cs
 src\CombatPanelOcr.cs
+src\CombatRoster.cs
+src\CombatRosterUi.cs
