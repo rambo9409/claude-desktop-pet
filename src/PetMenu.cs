@@ -84,6 +84,14 @@ namespace ClaudePet
             menu.Items.Add(StyledItem("◈", "每日看点", OpenHighlights));
             menu.Items.Add(StyledItem("⚔", "战斗循环助手", OpenCombatPlanner));
             menu.Items.Add(StyledItem("◷", "GPT 重置预测", OpenGptResetPrediction));
+            if (currentCharacter == "kolo")
+            {
+                MenuItem magic = StyledItem("✧", "窗口魔法（缩小或拉近窗口）", null);
+                magic.IsCheckable = true;
+                magic.IsChecked = windowMagicEnabled;
+                magic.Click += delegate { SetWindowMagicEnabled(magic.IsChecked); magic.IsChecked = windowMagicEnabled; };
+                menu.Items.Add(magic);
+            }
 
             menu.Items.Add(SectionLabel("动作与大小"));
             menu.Items.Add(StyledItem("♧", "慢慢走一会儿", delegate { if (state == "idle") StartStrolling(); }));

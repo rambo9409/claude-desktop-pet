@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -173,7 +173,7 @@ namespace ClaudePet
         {
             string json = await Client.GetStringAsync(ApiUrl).ConfigureAwait(false);
             GptResetData data = GptResetData.Parse(json);
-            try { Directory.CreateDirectory(Path.GetDirectoryName(cachePath)); File.WriteAllText(cachePath, json); } catch { }
+            PetStorage.TryWriteAllText(cachePath, json, "gpt-reset-cache");
             return data;
         }
     }

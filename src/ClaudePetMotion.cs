@@ -172,13 +172,7 @@ namespace ClaudePet
 
         internal static void SavePreference(string preference)
         {
-            try
-            {
-                string path = PreferencePath;
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-                File.WriteAllText(path, Normalize(preference), Encoding.UTF8);
-            }
-            catch { }
+            PetStorage.TryWriteAllText(PreferencePath, Normalize(preference), "movement-mode");
         }
     }
 
@@ -747,15 +741,9 @@ namespace ClaudePet
 
         private static void WriteCrashLog(Exception exception)
         {
-            try
-            {
-                string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KoloPet");
-                Directory.CreateDirectory(directory);
-                File.WriteAllText(Path.Combine(directory, "error.log"), DateTime.Now.ToString("s") + Environment.NewLine + exception, Encoding.UTF8);
-            }
-            catch
-            {
-            }
+            // error.log keeps the full stack of the latest crash; diagnostics.log keeps a one-line history.
+            PetStorage.TryWriteAllText(Path.Combine(PetStorage.RootDirectory, "error.log"), DateTime.Now.ToString("s") + Environment.NewLine + exception, "crash-log");
+            PetStorage.Log("crash", exception);
         }
     }
 }

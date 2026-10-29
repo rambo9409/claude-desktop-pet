@@ -1,0 +1,580 @@
+{
+  "version": 2,
+  "gameVersion": "7.1",
+  "updated": "2026-10-29",
+  "notice": "官方7.1下半祈愿公告覆盖2026-10-13至11-03，本表于10-29核验。配队是攻略参考，不是全角色强度榜，也不自动联网更新。E=战技，长E=长按；Q=爆发；N4=四次普攻，C/CA=重击，D=冲刺；菲林斯短Q不同于常规Q。应用后数值为通用示例，须手动或截图覆盖；标记“仅手法”的队伍不计算伤害。",
+  "teams": [
+    {
+      "id": "vesna-comfort",
+      "name": "Vesna 星辉扩散 · 舒适版",
+      "archetype": "星辉扩散（Stellar Swirl）",
+      "tier": "当期攻略",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "Vesna",
+          "role": "main",
+          "element": "风",
+          "scaling": "attack",
+          "note": "驻场主C，消耗剑意放强化战技"
+        },
+        {
+          "name": "Odette",
+          "role": "offfield",
+          "element": "冰",
+          "scaling": "attack",
+          "note": "后台挂冰，提供星辉增伤"
+        },
+        {
+          "name": "旅行者（冰）",
+          "role": "offfield",
+          "element": "冰",
+          "scaling": "attack",
+          "note": "第二挂冰位，冰共鸣"
+        },
+        {
+          "name": "Vodyanitsa",
+          "role": "sustain",
+          "element": "水",
+          "scaling": "health",
+          "note": "治疗、减风冰抗、星辉增伤"
+        }
+      ],
+      "rotation": [
+        "首轮可先让 Vesna 普攻一次预触发反应。",
+        "Odette：E → E。",
+        "旅行者（冰）：E → 重击 → Q。",
+        "Vodyanitsa：E，带讨龙时随后直接切 Vesna。",
+        "Vesna：E 开启状态 → 两次强化 E → Q → E → N4 → E → N4 → E。"
+      ],
+      "energy": "来源参考：单风 Vesna 150–170%；若充能代价过大可改隔轮 Q，并按能量调整连段。",
+      "tips": "先铺挂冰再切主C；没有能量的Q不能计入每轮输出。新角色名称采用来源英文。",
+      "modelNote": "本队涉及当前未建模的特殊资源或反应，只显示配队手法，不提供伤害估算。",
+      "sources": [
+        {
+          "title": "Icy Veins：Vesna 轮转与充能",
+          "url": "https://www.icy-veins.com/genshin-impact/vesna-guide-best-builds"
+        },
+        {
+          "title": "Icy Veins：Vesna 配队",
+          "url": "https://www.icy-veins.com/genshin-impact/vesna-team-guide"
+        }
+      ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "7.1期间核验的攻略参考；不代表强度排名",
+      "rotationBasis": "按来源舒适队循环转述。"
+    },
+    {
+      "id": "vesna-faruzan",
+      "name": "Vesna 星辉扩散 · 六命法露珊",
+      "archetype": "星辉扩散（Stellar Swirl）",
+      "tier": "当期攻略",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "Vesna",
+          "role": "main",
+          "element": "风",
+          "scaling": "attack",
+          "note": "驻场主C"
+        },
+        {
+          "name": "Odette",
+          "role": "offfield",
+          "element": "冰",
+          "scaling": "attack",
+          "note": "后台挂冰与星辉增伤"
+        },
+        {
+          "name": "旅行者（冰）",
+          "role": "offfield",
+          "element": "冰",
+          "scaling": "attack",
+          "note": "挂冰、充能"
+        },
+        {
+          "name": "法露珊",
+          "role": "support",
+          "element": "风",
+          "scaling": "attack",
+          "note": "六命最佳，减风抗与风伤增益"
+        }
+      ],
+      "rotation": [
+        "Odette：连续两次 E。",
+        "法露珊：Q → E。",
+        "旅行者（冰）：E → 重击 → Q。",
+        "Vesna：E 开启状态，两次强化 E 后接 Q、E，再穿插两组 N4 → E。"
+      ],
+      "energy": "六命法露珊同队时，Vesna 可先参考100–120%；法露珊自己仍需保证 Q 循环。",
+      "tips": "没有治疗，只适合能躲伤害的短关卡。",
+      "modelNote": "本队涉及当前未建模的特殊资源或反应，只显示配队手法，不提供伤害估算。",
+      "sources": [
+        {
+          "title": "Icy Veins：Vesna 轮转与充能",
+          "url": "https://www.icy-veins.com/genshin-impact/vesna-guide-best-builds"
+        },
+        {
+          "title": "Icy Veins：Vesna 配队",
+          "url": "https://www.icy-veins.com/genshin-impact/vesna-team-guide"
+        }
+      ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "7.1期间核验的攻略参考；不代表强度排名",
+      "rotationBasis": "按来源六命法露珊队循环转述。"
+    },
+    {
+      "id": "vesna-f2p",
+      "name": "Vesna 星辉扩散 · 四星队友",
+      "archetype": "星辉扩散（Stellar Swirl）",
+      "tier": "低配替换",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "Vesna",
+          "role": "main",
+          "element": "风",
+          "scaling": "attack",
+          "note": "驻场主C"
+        },
+        {
+          "name": "旅行者（冰）",
+          "role": "offfield",
+          "element": "冰",
+          "scaling": "attack",
+          "note": "主要挂冰位"
+        },
+        {
+          "name": "砂糖",
+          "role": "support",
+          "element": "风",
+          "scaling": "attack",
+          "note": "翠绿之影 / 讨龙"
+        },
+        {
+          "name": "迪奥娜",
+          "role": "sustain",
+          "element": "冰",
+          "scaling": "health",
+          "note": "护盾、治疗、充能"
+        }
+      ],
+      "rotation": [
+        "旅行者（冰）：E → 重击 → Q。",
+        "迪奥娜：长E 开盾，能量足够时 Q。",
+        "砂糖：E 扩散；带讨龙时随后直接切 Vesna。",
+        "Vesna：E 进入状态，消耗强化E；资源不足时普攻接重击，再补 E，Q 可用时穿插。"
+      ],
+      "energy": "双风 Vesna 可先参考120–140%；旅行者与迪奥娜按武器和吃球情况实测。",
+      "tips": "包含五星主C，并非四人全免费；四星命座会改变增益。",
+      "modelNote": "本队涉及当前未建模的特殊资源或反应，只显示配队手法，不提供伤害估算。",
+      "sources": [
+        {
+          "title": "Icy Veins：Vesna 轮转与充能",
+          "url": "https://www.icy-veins.com/genshin-impact/vesna-guide-best-builds"
+        },
+        {
+          "title": "Enjoygm：四星队友与基础顺序",
+          "url": "https://www.enjoygm.com/blog/genshin-impact/vesna-team-guide"
+        }
+      ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "7.1期间核验的攻略参考；不代表强度排名",
+      "rotationBasis": "队友及开场顺序有来源；主C段为资源驱动的简化练习法，不声称最优。"
+    },
+    {
+      "id": "flins-aino",
+      "name": "菲林斯 月感电 · 爱诺砂糖",
+      "archetype": "月感电（Lunar-Charged）",
+      "tier": "常用队",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "菲林斯",
+          "role": "main",
+          "element": "雷",
+          "scaling": "attack",
+          "note": "战技附雷普攻，把感电转成月感电"
+        },
+        {
+          "name": "伊涅芙",
+          "role": "support",
+          "element": "雷",
+          "scaling": "attack",
+          "note": "护盾、Q 加精通，也会转月感电"
+        },
+        {
+          "name": "爱诺",
+          "role": "offfield",
+          "element": "水",
+          "scaling": "attack",
+          "note": "Q 召唤持续挂水；精通沙杯"
+        },
+        {
+          "name": "砂糖",
+          "role": "support",
+          "element": "风",
+          "scaling": "attack",
+          "note": "减抗与精通辅助"
+        }
+      ],
+      "rotation": [
+        "伊涅芙：E；Q 可用时释放。",
+        "爱诺：E → Q。",
+        "砂糖：E 后冲刺取消，Q 可用时释放。",
+        "菲林斯：E → N1 → E → 短Q → 两组 N4后冲刺 → N2 → E → 短Q → N4后冲刺；有余裕再补 N5。"
+      ],
+      "energy": "零命、其他雷队友条件下，KQM参考120–135%；其表假设水队友携西风并触发。专武与命座会改变需求。",
+      "tips": "这里使用特殊短Q，不是每轮强放普通长Q。充能和尾段普攻按实际装备调整。",
+      "modelNote": "本队涉及当前未建模的特殊资源或反应，只显示配队手法，不提供伤害估算。",
+      "sources": [
+        {
+          "title": "KQM：菲林斯连段与配队",
+          "url": "https://keqingmains.com/q/flins-quickguide/"
+        }
+      ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "当前可读KQM攻略；充能表注明Luna V，7.1期间复核。",
+      "rotationBasis": "KQM爱诺队顺序和零命连段转述。"
+    },
+    {
+      "id": "flins-columbina",
+      "name": "菲林斯 月感电 · 哥伦比娅砂糖",
+      "archetype": "月感电（Lunar-Charged）",
+      "tier": "常用队",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "菲林斯",
+          "role": "main",
+          "element": "雷",
+          "scaling": "attack",
+          "note": "驻场主C"
+        },
+        {
+          "name": "伊涅芙",
+          "role": "support",
+          "element": "雷",
+          "scaling": "attack",
+          "note": "护盾、加精通"
+        },
+        {
+          "name": "哥伦比娅",
+          "role": "offfield",
+          "element": "水",
+          "scaling": "health",
+          "note": "后台挂水，Q 领域强化全部月曜反应"
+        },
+        {
+          "name": "砂糖",
+          "role": "support",
+          "element": "风",
+          "scaling": "attack",
+          "note": "减抗与精通辅助"
+        }
+      ],
+      "rotation": [
+        "伊涅芙 E → 哥伦比娅 E，首轮哥伦比娅随后 Q。",
+        "砂糖：Q 可用则Q，否则E后冲刺，补一次普攻。",
+        "菲林斯：E → N1 → E → 短Q → 两组 N4后冲刺 → N2 → E → 短Q → N4后冲刺；有余裕再补 N5。",
+        "后续轮次让伊涅芙和哥伦比娅交替隔轮Q；砂糖适时刷新减抗。"
+      ],
+      "energy": "零命、其他雷队友条件下，KQM参考120–135%；其表假设水队友携西风并触发。专武与命座会改变需求。",
+      "tips": "这里使用特殊短Q，不是每轮强放普通长Q。充能和尾段普攻按实际装备调整。",
+      "modelNote": "本队涉及当前未建模的特殊资源或反应，只显示配队手法，不提供伤害估算。",
+      "sources": [
+        {
+          "title": "KQM：菲林斯连段与配队",
+          "url": "https://keqingmains.com/q/flins-quickguide/"
+        }
+      ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "当前可读KQM攻略；充能表注明Luna V，7.1期间复核。",
+      "rotationBasis": "KQM哥伦比娅队交替Q规则与零命连段转述。"
+    },
+    {
+      "id": "nefer-lunar-bloom",
+      "name": "奈芙尔 月绽放 · 爱诺版",
+      "archetype": "月绽放（Lunar-Bloom）",
+      "tier": "常用队",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "奈芙尔",
+          "role": "main",
+          "element": "草",
+          "scaling": "attack",
+          "note": "战技状态下的特殊重击是主要伤害（按精通缩放）"
+        },
+        {
+          "name": "爱诺",
+          "role": "offfield",
+          "element": "水",
+          "scaling": "attack",
+          "note": "Q持续挂水"
+        },
+        {
+          "name": "菈乌玛",
+          "role": "support",
+          "element": "草",
+          "scaling": "attack",
+          "note": "月绽放辅助；避免长E消耗所需资源"
+        },
+        {
+          "name": "久岐忍",
+          "role": "sustain",
+          "element": "雷",
+          "scaling": "health",
+          "note": "治疗；也可换芙宁娜或白术"
+        }
+      ],
+      "rotation": [
+        "首轮先用奈芙尔 E，预先转换草原核。",
+        "建议起手：爱诺 E → Q，菈乌玛点按 E → Q，久岐忍 E。",
+        "奈芙尔：E → 三次重击各接冲刺 → E → 重击冲刺 → 重击后Q → 重击冲刺。",
+        "能量或翠露不足时，在两段三次重击之间切队友刷新，再回奈芙尔。"
+      ],
+      "energy": "爱诺优先每轮Q；奈芙尔双草、隔轮Q的旧版参考为100%，需结合实际资源复测。",
+      "tips": "菈乌玛不要照搬旧交接的长E，本队要保留翠露。六命奈芙尔不宜照搬取消第二段的重击手法。",
+      "modelNote": "本队涉及当前未建模的特殊资源或反应，只显示配队手法，不提供伤害估算。",
+      "sources": [
+        {
+          "title": "KQM：奈芙尔资源、连段与爱诺配队",
+          "url": "https://keqingmains.com/q/nefer-quickguide/"
+        }
+      ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "KQM Luna II基础攻略，7.1期间可读；不是当期完整排名。",
+      "rotationBasis": "队伍与主C连段有来源；三名队友的开场先后为按职能整理的建议，非逐帧最优证明。"
+    },
+    {
+      "id": "skirk-freeze",
+      "name": "丝柯克 冰水 · Vodyanitsa",
+      "archetype": "冰水冻结",
+      "tier": "当期攻略",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "丝柯克",
+          "role": "main",
+          "element": "冰",
+          "scaling": "attack",
+          "note": "特殊资源，不使用常规元素能量"
+        },
+        {
+          "name": "芙宁娜",
+          "role": "offfield",
+          "element": "水",
+          "scaling": "health",
+          "note": "后台伤害与全队增伤"
+        },
+        {
+          "name": "爱可菲",
+          "role": "offfield",
+          "element": "冰",
+          "scaling": "attack",
+          "note": "冰水增益、减抗、治疗"
+        },
+        {
+          "name": "Vodyanitsa",
+          "role": "sustain",
+          "element": "水",
+          "scaling": "health",
+          "note": "治疗与辅助；名称采用来源英文"
+        }
+      ],
+      "rotation": [
+        "低延迟起手：爱可菲 E → N1，芙宁娜 E 后冲刺 → Q，再爱可菲 Q。",
+        "Vodyanitsa：E，随后直接切丝柯克。",
+        "丝柯克易练版：点 E → N5后Q → N5后冲刺 → N5后重击 → N5。"
+      ],
+      "energy": "丝柯克不堆常规充能；其余角色按Q可持续性调整，讨龙要留出有效冷却。",
+      "tips": "队伍只用冰水；延迟较高时可用芙宁娜先E/Q、爱可菲E/Q的开场。高难连段详见来源。",
+      "modelNote": "本队涉及当前未建模的特殊资源或反应，只显示配队手法，不提供伤害估算。",
+      "sources": [
+        {
+          "title": "KQM：丝柯克7.1配队与基础连段",
+          "url": "https://keqingmains.com/q/skirk-quickguide/"
+        }
+      ],
+      "supportsEstimate": false,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "攻略明确更新至7.1；零命基础练习法。",
+      "rotationBasis": "7.1攻略低延迟起手，加来源提供的基础N5连段；非最高伤害输入。"
+    },
+    {
+      "id": "neuvillette-hydro",
+      "name": "那维莱特 水C",
+      "archetype": "重击驻场",
+      "tier": "常用队",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "那维莱特",
+          "role": "main",
+          "element": "水",
+          "scaling": "health",
+          "note": "蓄力重击是主要伤害"
+        },
+        {
+          "name": "芙宁娜",
+          "role": "offfield",
+          "element": "水",
+          "scaling": "health",
+          "note": "后台伤害与增伤"
+        },
+        {
+          "name": "枫原万叶",
+          "role": "support",
+          "element": "风",
+          "scaling": "attack",
+          "note": "聚怪、元素增伤"
+        },
+        {
+          "name": "希诺宁",
+          "role": "sustain",
+          "element": "岩",
+          "scaling": "defense",
+          "note": "减抗、治疗"
+        }
+      ],
+      "rotation": [
+        "那维莱特 E → 芙宁娜 E 后冲刺。",
+        "希诺宁 E → Q → 两次普攻，枫原万叶点E → 下落攻击 → Q。",
+        "芙宁娜 Q，那维莱特重击 → E → 重击 → Q。",
+        "希诺宁 E 后两次普攻，万叶点 E 后下落攻击，再那维莱特连续两次重击。"
+      ],
+      "energy": "按每Q两E组织；芙宁娜需保证Q循环，缺西风触发或换武器时重新检查充能。",
+      "tips": "零命注意打断；希诺宁需要两次普攻，不能只按E就切走。",
+      "modelNote": "只估算手填直伤；水滴、气氛值变化及专属天赋未模拟。面板与倍率均为待替换示例。",
+      "sources": [
+        {
+          "title": "KQM：那维莱特芙万希循环",
+          "url": "https://keqingmains.com/neuvillette/"
+        }
+      ],
+      "supportsEstimate": true,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "7.1期间核验的攻略参考；不代表强度排名",
+      "rotationBasis": "KQM零命那维莱特循环转述。"
+    },
+    {
+      "id": "arlecchino-vaporize",
+      "name": "阿蕾奇诺 蒸发 · 夜兰蓝砚",
+      "archetype": "普攻蒸发",
+      "tier": "常用队",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "阿蕾奇诺",
+          "role": "main",
+          "element": "火",
+          "scaling": "attack",
+          "note": "普攻驻场"
+        },
+        {
+          "name": "夜兰",
+          "role": "offfield",
+          "element": "水",
+          "scaling": "health",
+          "note": "后台挂水"
+        },
+        {
+          "name": "班尼特",
+          "role": "support",
+          "element": "火",
+          "scaling": "attack",
+          "note": "攻击力增益（零命需血量高于70%）"
+        },
+        {
+          "name": "蓝砚",
+          "role": "sustain",
+          "element": "风",
+          "scaling": "attack",
+          "note": "护盾、翠绿减抗与讨龙"
+        }
+      ],
+      "rotation": [
+        "阿蕾奇诺 E → 夜兰 E → Q → N1。",
+        "班尼特 E → Q，蓝砚等待领域给自身挂火后 E → 再按 E。",
+        "蓝砚零命再接 Q 或 N1后冲刺，随后切阿蕾奇诺。",
+        "阿蕾奇诺：五组 N3后重击，再补 N1；需要自疗时用自己的 Q。"
+      ],
+      "energy": "夜兰与班尼特优先满足每轮Q；阿蕾奇诺Q用于应急，不必为每轮Q额外堆充能。",
+      "tips": "班尼特不能在战斗中给阿蕾奇诺回血。蓝砚扩散火的准备决定减抗是否生效。",
+      "modelNote": "生命之契与逐击蒸发未建模；只按手填总倍率、平均覆盖粗算，不要将1.5倍套给全队。",
+      "sources": [
+        {
+          "title": "KQM：阿蕾奇诺夜兰班尼特蓝砚队",
+          "url": "https://keqingmains.com/q/arlecchino-quickguide/"
+        }
+      ],
+      "supportsEstimate": true,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "7.1期间核验的攻略参考；不代表强度排名",
+      "rotationBasis": "KQM蓝砚护盾队顺序转述，命座条件见提示。"
+    },
+    {
+      "id": "raiden-national",
+      "name": "雷电将军 国家队",
+      "archetype": "爆发轮转（四星友好）",
+      "tier": "常用队",
+      "budget": "mixed",
+      "members": [
+        {
+          "name": "雷电将军",
+          "role": "main",
+          "element": "雷",
+          "scaling": "attack",
+          "note": "Q 状态驻场并为全队回能"
+        },
+        {
+          "name": "香菱",
+          "role": "offfield",
+          "element": "火",
+          "scaling": "attack",
+          "note": "后台火圈"
+        },
+        {
+          "name": "行秋",
+          "role": "offfield",
+          "element": "水",
+          "scaling": "attack",
+          "note": "后台挂水"
+        },
+        {
+          "name": "班尼特",
+          "role": "support",
+          "element": "火",
+          "scaling": "attack",
+          "note": "攻击力增益、治疗"
+        }
+      ],
+      "rotation": [
+        "建议起手：雷电将军 E，行秋 E → Q。",
+        "班尼特 Q → E，香菱进领域后 E → Q并接球。",
+        "雷电将军 Q → 两组 N4后重击 → N2后重击。",
+        "空档班尼特 E 给香菱接球，能量足够再开始下轮。"
+      ],
+      "energy": "先能连续两轮开Q；香菱缺能量时检查接球、雷电回能与充能，不能只堆双暴。",
+      "tips": "含五星雷电将军，三名队友为四星。祭礼触发与命座会改变行秋出手次数。",
+      "modelNote": "剧变反应、愿力与回能未建模，仅显示直伤粗估；蒸发覆盖不要套给雷水角色。",
+      "sources": [
+        {
+          "title": "KQM：雷电将军队伍与易用连段",
+          "url": "https://keqingmains.com/raiden/"
+        }
+      ],
+      "supportsEstimate": true,
+      "verifiedAt": "2026-10-29",
+      "versionScope": "历史常用队，2026-10-29复核；不是当期排行榜。",
+      "rotationBasis": "队伍与雷电连段来自KQM；辅助开场为按增益/接球原则整理的练习顺序，不是唯一最优循环。"
+    }
+  ]
+}

@@ -1,21 +1,30 @@
 /nologo
 /target:winexe
 /optimize+
+/codepage:65001
+/nowarn:1701
 /out:原神启动.exe
 /win32icon:assets\ClaudePet.ico
-/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationFramework.dll"
-/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationCore.dll"
-/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\WindowsBase.dll"
-/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xaml.dll"
-/reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.IO.Compression.dll"
+/reference:"{NET48}\PresentationFramework.dll"
+/reference:"{NET48}\PresentationCore.dll"
+/reference:"{NET48}\WindowsBase.dll"
+/reference:"{NET48}\System.Xaml.dll"
+/reference:"{NET48}\System.IO.Compression.dll"
+/reference:"{NET48}\Facades\System.Runtime.dll"
+/reference:"{NET48}\Facades\System.Runtime.InteropServices.WindowsRuntime.dll"
+/reference:"{NET48}\Facades\System.Threading.Tasks.dll"
+/reference:"{FRAMEWORK}\System.Runtime.WindowsRuntime.dll"
+/reference:"{WINRT_METADATA}"
 /reference:System.Web.Extensions.dll
 /reference:System.Xml.Linq.dll
 /reference:System.Net.Http.dll
 /resource:assets\characters.zip,characters.zip
+/resource:assets\combat-teams.json,combat-teams.json
 src\ClaudePetMotion.cs
 src\PetAssets.cs
 src\PetMenu.cs
 src\PetMovement.cs
+src\DesktopMovement.cs
 src\PetGanyuTraversal.cs
 src\PetPointerGestures.cs
 src\PetEffects.cs
@@ -24,6 +33,11 @@ src\PetWindowAbility.cs
 src\PetAbilityEffects.cs
 src\PetNightsoul.cs
 src\DailyHighlights.cs
+src\DailyHighlightsData.cs
 src\GptResetPrediction.cs
 src\GenshinCombatPlanner.cs
 src\GenshinCombatPlannerIntegration.cs
+src\PetStorage.cs
+src\CombatPlannerModel.cs
+src\CombatPlannerPresets.cs
+src\CombatPanelOcr.cs

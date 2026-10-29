@@ -11,7 +11,6 @@ namespace ClaudePet
             if (combatPlannerWindow == null)
             {
                 combatPlannerWindow = new CombatRotationWindow(currentCharacter);
-                combatPlannerWindow.Owner = this;
                 combatPlannerWindow.Closed += delegate { combatPlannerWindow = null; };
                 combatPlannerWindow.Show();
             }

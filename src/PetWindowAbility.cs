@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -473,6 +473,26 @@ namespace ClaudePet
     public sealed partial class PetWindow : Window
     {
         private WindowAbilityController windowAbility;
+        private bool windowMagicEnabled = LoadWindowMagicEnabled();
+        private static string WindowMagicEnabledPath { get { return Path.Combine(PetStorage.RootDirectory, "window-magic-enabled.txt"); } }
+        private static bool LoadWindowMagicEnabled()
+        {
+            string saved = PetStorage.TryReadAllText(WindowMagicEnabledPath, 32, "window-magic-enabled");
+            bool enabled;
+            if (saved != null) return Boolean.TryParse(saved.Trim(), out enabled) && enabled;
+            // Existing users already enabled this ability in earlier releases.
+            // Fresh installs wait for the menu switch before touching windows.
+            return File.Exists(WindowAbilityPreferencePath);
+        }
+
+        private void SetWindowMagicEnabled(bool enabled)
+        {
+            if (!PetStorage.TryWriteAllText(WindowMagicEnabledPath, enabled.ToString(), "window-magic-enabled"))
+            { ShowSpeech("窗口魔法设置未保存，请稍后重试。"); return; }
+            windowMagicEnabled = enabled;
+            if (!enabled) CancelWindowAbility();
+            ShowSpeech(enabled ? "窗口魔法已开启，会随机缩小或拉近应用窗口。" : "窗口魔法已关闭。");
+        }
         private bool IsWindowAbilityActive { get { return windowAbility != null && windowAbility.Active; } }
         private static string WindowAbilityPreferencePath
         {
@@ -488,11 +508,7 @@ namespace ClaudePet
                     DateTimeStyles.RoundtripKind, out saved); } catch { }
                 windowAbility = new WindowAbilityController(new NativeWindowAbilityDesktop(fromDevice),
                     new WindowAbilityClock(nowUtc, saved), random, delegate(DateTime next) {
-                        try {
-                            string path = WindowAbilityPreferencePath;
-                            Directory.CreateDirectory(Path.GetDirectoryName(path));
-                            File.WriteAllText(path, next.ToString("o", CultureInfo.InvariantCulture), Encoding.UTF8);
-                        } catch { }
+                        PetStorage.TryWriteAllText(WindowAbilityPreferencePath, next.ToString("o", CultureInfo.InvariantCulture), "window-ability-cooldown");
                     });
             }
             return windowAbility;
@@ -528,7 +544,7 @@ namespace ClaudePet
             if (!IsLoaded) return;
             DateTime nowUtc = now.ToUniversalTime();
             EnsureWindowAbilityController(nowUtc);
-            bool eligible = currentCharacter == "kolo" && IsVisible && WindowState != WindowState.Minimized && !quietMode &&
+            bool eligible = windowMagicEnabled && currentCharacter == "kolo" && IsVisible && WindowState != WindowState.Minimized && !quietMode &&
                 !pointerHeld && state == "idle" && (movement == "rest" || movement == "walk") &&
                 (ContextMenu == null || !ContextMenu.IsOpen);
             if (!eligible) { CancelWindowAbility(); return; }

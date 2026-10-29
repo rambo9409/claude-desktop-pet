@@ -309,7 +309,7 @@ def build_preview(idle_images: dict[str, Image.Image]) -> None:
     draw = ImageDraw.Draw(canvas)
     title_font = load_font(22)
     name_font = load_font(19)
-    draw.text((28, 18), "原神启动 V2.5 · 甘雨双屏借力与灵活蹬跳", font=title_font, fill=(76, 48, 45, 255))
+    draw.text((28, 18), "原神启动 V2.6 · 战斗循环助手与截图导入", font=title_font, fill=(76, 48, 45, 255))
     card_width = 250
     for index, key in enumerate(CHARACTERS):
         left = 22 + index * 264

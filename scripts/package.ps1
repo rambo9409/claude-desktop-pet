@@ -4,6 +4,16 @@ param(
     [Parameter(Mandatory = $true)][string]$InstructionsPath
 )
 . (Join-Path $PSScriptRoot 'common.ps1')
+function Get-PackageSha256 {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $algorithm = [Security.Cryptography.SHA256]::Create()
+        try {
+            return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+        } finally { $algorithm.Dispose() }
+    } finally { $stream.Dispose() }
+}
 $InstructionsPath = (Resolve-Path -LiteralPath $InstructionsPath -ErrorAction Stop).Path
 Push-Location -LiteralPath $script:PetProjectRoot
 try {
@@ -24,7 +34,9 @@ try {
     }
     $zip = Join-Path $destination ('原神启动-V' + $Version + '.zip')
     Compress-Archive -LiteralPath @($packagedExe, $packagedReadme) -DestinationPath $zip -Force
-    if ((Get-FileHash -LiteralPath $executable).Hash -ne (Get-FileHash -LiteralPath $packagedExe).Hash) {
+    $executableHash = Get-PackageSha256 -Path $executable
+    $packagedHash = Get-PackageSha256 -Path $packagedExe
+    if ($executableHash -ne $packagedHash) {
         throw 'Packaged executable checksum mismatch.'
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -36,5 +48,6 @@ try {
         }
     } finally { $archive.Dispose() }
     Write-Host "Packaged: $zip"
-    Get-FileHash -LiteralPath $zip -Algorithm SHA256
+    [pscustomobject]@{ Algorithm = 'SHA256'; Hash = (Get-PackageSha256 -Path $zip); Path = $zip }
+    [pscustomobject]@{ Algorithm = 'SHA256'; Hash = $packagedHash; Path = $packagedExe }
 } finally { Pop-Location }

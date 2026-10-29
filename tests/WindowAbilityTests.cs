@@ -560,10 +560,13 @@ internal static class WindowAbilityTests
         byte[] savedCharacter = File.Exists(characterPath) ? File.ReadAllBytes(characterPath) : null;
         string cooldownPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KoloPet", "window-ability-cooldown.txt");
         byte[] savedCooldown = File.Exists(cooldownPath) ? File.ReadAllBytes(cooldownPath) : null;
+        string magicPath = Path.Combine(PetStorage.RootDirectory, "window-magic-enabled.txt");
+        byte[] savedMagic = File.Exists(magicPath) ? File.ReadAllBytes(magicPath) : null;
         PetWindow pet = null;
         try
         {
             pet = new PetWindow { ShowActivated = false, Opacity = 0, Topmost = false };
+            Set(pet, "windowMagicEnabled", true);
             Get<DispatcherTimer>(pet, "timer").Stop();
             Set(pet, "nextHighlightsRefresh", DateTime.MaxValue);
             Set(pet, "bubbleEnds", DateTime.MinValue);
@@ -586,6 +589,15 @@ internal static class WindowAbilityTests
             Get<DispatcherTimer>(pet, "timer").Stop();
             Require(pet.IsLoaded && pet.IsVisible, "WPF hook test host is loaded without activation.");
             CheckDoubleClickCooldown(pet, cooldownPath);
+            controller = StartMockGesture(pet, desktop);
+            int selectionsBefore = desktop.CandidateCalls;
+            Call(pet, "SetWindowMagicEnabled", false);
+            Require(!controller.Active && !Get<bool>(pet, "windowMagicEnabled"), "Disabling magic cancels an active gesture.");
+            Call(pet, "UpdateWindowAbility", DateTime.Now, 0.05);
+            Require(desktop.CandidateCalls == selectionsBefore && desktop.SetCalls == 0, "Disabled magic must not inspect or move a target.");
+            Require(File.ReadAllText(magicPath).Trim() == "False", "Disabled magic preference did not persist.");
+            Call(pet, "SetWindowMagicEnabled", true);
+            Require(Get<bool>(pet, "windowMagicEnabled") && File.ReadAllText(magicPath).Trim() == "True", "Enabled magic preference did not persist.");
             controller = StartMockGesture(pet, desktop);
             Set(pet, "autoWalk", true); Set(pet, "nextWalk", DateTime.MinValue);
             // Force a location without support: unpaused movement would fall.
@@ -636,6 +648,8 @@ internal static class WindowAbilityTests
             else File.WriteAllBytes(characterPath, savedCharacter);
             if (savedCooldown == null) { if (File.Exists(cooldownPath)) File.Delete(cooldownPath); }
             else File.WriteAllBytes(cooldownPath, savedCooldown);
+            if (savedMagic == null) { if (File.Exists(magicPath)) File.Delete(magicPath); }
+            else File.WriteAllBytes(magicPath, savedMagic);
             app.Shutdown();
         }
     }

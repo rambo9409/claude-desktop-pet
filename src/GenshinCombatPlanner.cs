@@ -2,364 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Web.Script.Serialization;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 
 namespace ClaudePet
 {
-    internal sealed class CombatCharacterInput
-    {
-        public string Name { get; set; }
-        public string Role { get; set; }
-        public string Element { get; set; }
-        public string Scaling { get; set; }
-        public double CoreStat { get; set; }
-        public double CritRate { get; set; }
-        public double CritDamage { get; set; }
-        public double DamageBonus { get; set; }
-        public double EnergyRecharge { get; set; }
-        public double SkillMultiplier { get; set; }
-        public double BurstMultiplier { get; set; }
-        public double ComboMultiplier { get; set; }
-        public double BurstCost { get; set; }
-        public double SkillCooldown { get; set; }
-        public double BurstCooldown { get; set; }
-        public double FieldSeconds { get; set; }
-        public double TeamBuffPercent { get; set; }
-        public double EffectDuration { get; set; }
-    }
-
-    internal sealed class CombatPlanInput
-    {
-        public int Version { get; set; }
-        public int CharacterLevel { get; set; }
-        public int EnemyLevel { get; set; }
-        public double EnemyResistance { get; set; }
-        public double DefenseReduction { get; set; }
-        public double ReactionMultiplier { get; set; }
-        public double ReactionCoverage { get; set; }
-        public List<CombatCharacterInput> Characters { get; set; }
-
-        internal static CombatPlanInput CreateExample()
-        {
-            return new CombatPlanInput {
-                Version = 1,
-                CharacterLevel = 90,
-                EnemyLevel = 90,
-                EnemyResistance = 10,
-                DefenseReduction = 0,
-                ReactionMultiplier = 1,
-                ReactionCoverage = 0,
-                Characters = new List<CombatCharacterInput> {
-                    Character("主C", "main", "火", "attack", 2000, 70, 140, 46.6, 120, 300, 700, 1300, 60, 10, 18, 8, 0, 0),
-                    Character("副C", "offfield", "水", "attack", 1800, 60, 120, 46.6, 160, 250, 900, 0, 80, 12, 20, 1, 0, 15),
-                    Character("增伤辅助", "support", "风", "attack", 1500, 40, 80, 0, 210, 100, 300, 0, 80, 15, 20, 1, 25, 12),
-                    Character("生存位", "sustain", "岩", "attack", 1500, 20, 50, 0, 160, 100, 200, 0, 70, 12, 20, 1, 0, 18)
-                }
-            };
-        }
-
-        private static CombatCharacterInput Character(string name, string role, string element, string scaling,
-            double core, double rate, double damage, double bonus, double recharge, double skill, double burst,
-            double combo, double cost, double skillCooldown, double burstCooldown, double fieldSeconds,
-            double teamBuff, double effectDuration)
-        {
-            return new CombatCharacterInput {
-                Name = name, Role = role, Element = element, Scaling = scaling, CoreStat = core,
-                CritRate = rate, CritDamage = damage, DamageBonus = bonus, EnergyRecharge = recharge,
-                SkillMultiplier = skill, BurstMultiplier = burst, ComboMultiplier = combo, BurstCost = cost,
-                SkillCooldown = skillCooldown, BurstCooldown = burstCooldown, FieldSeconds = fieldSeconds,
-                TeamBuffPercent = teamBuff, EffectDuration = effectDuration
-            };
-        }
-    }
-
-    internal sealed class CombatCharacterResult
-    {
-        internal string Name;
-        internal string Role;
-        internal string Scaling;
-        internal double RequiredEnergyRecharge;
-        internal double TargetCoreStat;
-        internal double TargetCritRate;
-        internal double TargetCritDamage;
-        internal double TargetDamageBonus;
-        internal double BurstCoverage;
-        internal double CurrentDamage;
-        internal double TargetDamage;
-        internal readonly List<string> Advice = new List<string>();
-    }
-
-    internal sealed class CombatPlanResult
-    {
-        internal readonly List<string> Steps = new List<string>();
-        internal readonly List<CombatCharacterResult> Characters = new List<CombatCharacterResult>();
-        internal readonly List<string> Warnings = new List<string>();
-        internal double RotationSeconds;
-        internal double CurrentDamage;
-        internal double TargetDamage;
-        internal double CurrentDps;
-        internal double TargetDps;
-    }
-
-    internal static class CombatPlanner
-    {
-        private static readonly string[] Roles = { "main", "offfield", "support", "sustain" };
-        private static readonly string[] Scalings = { "attack", "health", "defense" };
-
-        internal static CombatPlanResult Calculate(CombatPlanInput input)
-        {
-            Validate(input);
-            List<CombatCharacterInput> characters = new List<CombatCharacterInput>();
-            foreach (CombatCharacterInput character in input.Characters)
-                if (!String.IsNullOrWhiteSpace(character.Name)) characters.Add(character);
-            if (characters.Count == 0) throw new ArgumentException("请至少填写一名角色。");
-            if (characters.Count > 4) throw new ArgumentException("一支队伍最多填写四名角色。");
-
-            List<CombatCharacterInput> order = new List<CombatCharacterInput>(characters);
-            order.Sort(CompareRotationOrder);
-            CombatPlanResult result = new CombatPlanResult();
-            int mainCount = 0;
-            double mainField = 0;
-            foreach (CombatCharacterInput character in characters) {
-                if (character.Role == "main") { mainCount++; mainField = Math.Max(mainField, character.FieldSeconds); }
-            }
-            if (mainCount == 0) result.Warnings.Add("没有主C。循环仍可生成，但缺少明确驻场角色。");
-            if (mainCount > 1) result.Warnings.Add("有多名主C。请减少驻场时间，避免互相抢时间。");
-
-            double actionSeconds = 0;
-            double longestCooldown = 0;
-            for (int i = 0; i < order.Count; i++) {
-                CombatCharacterInput character = order[i];
-                List<string> actions = new List<string>();
-                if (character.SkillMultiplier > 0 || character.SkillCooldown > 0) {
-                    actions.Add("E"); actionSeconds += 1.0; longestCooldown = Math.Max(longestCooldown, character.SkillCooldown);
-                }
-                if (character.BurstMultiplier > 0 && character.BurstCost > 0) {
-                    actions.Add("Q"); actionSeconds += 1.6; longestCooldown = Math.Max(longestCooldown, character.BurstCooldown);
-                }
-                if (character.FieldSeconds > 0 && (character.Role == "main" || character.ComboMultiplier > 0)) {
-                    actions.Add("驻场连段 " + character.FieldSeconds.ToString("0.#", CultureInfo.InvariantCulture) + "秒");
-                    actionSeconds += character.FieldSeconds;
-                }
-                if (actions.Count == 0) actions.Add("切入触发效果");
-                result.Steps.Add((i + 1).ToString(CultureInfo.InvariantCulture) + ". " + character.Name + "：" + String.Join(" → ", actions.ToArray()));
-                if (i + 1 < order.Count) actionSeconds += 0.6;
-            }
-            result.RotationSeconds = Math.Max(actionSeconds, longestCooldown);
-            if (result.RotationSeconds - actionSeconds >= 0.5)
-                result.Steps.Add("补位：普攻或走位 " + (result.RotationSeconds - actionSeconds).ToString("0.#", CultureInfo.InvariantCulture) + "秒，等待技能。");
-
-            foreach (CombatCharacterInput character in characters) {
-                if (character.TeamBuffPercent > 0 && character.EffectDuration > 0 && mainField > character.EffectDuration)
-                    result.Warnings.Add(character.Name + "的增益短于主C驻场。请在主C前释放，或缩短连段。");
-                CombatCharacterResult evaluation = Evaluate(input, characters, character);
-                result.Characters.Add(evaluation);
-                result.CurrentDamage += evaluation.CurrentDamage;
-                result.TargetDamage += evaluation.TargetDamage;
-            }
-            result.CurrentDps = result.CurrentDamage / Math.Max(1, result.RotationSeconds);
-            result.TargetDps = result.TargetDamage / Math.Max(1, result.RotationSeconds);
-            result.Warnings.Add("伤害是通用粗算，不含减抗之外的特殊机制。");
-            result.Warnings.Add("元素精通、怪物阶段和命座效果需另行修正。");
-            return result;
-        }
-
-        private static CombatCharacterResult Evaluate(CombatPlanInput input, List<CombatCharacterInput> team, CombatCharacterInput character)
-        {
-            double rawEnergy = EstimatedRawEnergy(character, team);
-            double requiredEnergy = character.BurstCost > 0 && character.BurstMultiplier > 0
-                ? RoundUp(Math.Max(100, Math.Min(300, character.BurstCost / Math.Max(1, rawEnergy) * 100)), 5) : 100;
-            double burstCoverage = character.BurstCost > 0 && character.BurstMultiplier > 0
-                ? Math.Max(0, Math.Min(1, rawEnergy * character.EnergyRecharge / 100 / character.BurstCost)) : 1;
-            double targetCore = MinimumCore(character.Scaling, character.Role);
-            double targetRate = character.Role == "sustain" ? 0 : character.Role == "support" ? 50 : character.Role == "offfield" ? 60 : 65;
-            double targetCritDamage = character.Role == "sustain" ? 0 : character.Role == "support" ? 100 : character.Role == "offfield" ? 120 : 130;
-            double targetBonus = character.Role == "main" || character.Role == "offfield" ? 46.6 : 0;
-            double teamBuff = 0;
-            foreach (CombatCharacterInput ally in team)
-                if (!Object.ReferenceEquals(ally, character)) teamBuff += ally.TeamBuffPercent;
-            teamBuff = Math.Min(200, teamBuff);
-
-            CombatCharacterResult result = new CombatCharacterResult {
-                Name = character.Name,
-                Role = character.Role,
-                Scaling = character.Scaling,
-                RequiredEnergyRecharge = requiredEnergy,
-                TargetCoreStat = targetCore,
-                TargetCritRate = targetRate,
-                TargetCritDamage = targetCritDamage,
-                TargetDamageBonus = targetBonus,
-                BurstCoverage = burstCoverage
-            };
-            result.CurrentDamage = ExpectedDamage(input, character, teamBuff, character.CoreStat, character.CritRate,
-                character.CritDamage, character.DamageBonus, burstCoverage);
-            result.TargetDamage = ExpectedDamage(input, character, teamBuff, Math.Max(character.CoreStat, targetCore),
-                Math.Max(character.CritRate, targetRate), Math.Max(character.CritDamage, targetCritDamage),
-                Math.Max(character.DamageBonus, targetBonus), 1);
-
-            if (character.BurstMultiplier > 0 && character.BurstCost > 0 && character.EnergyRecharge + 0.1 < requiredEnergy)
-                result.Advice.Add("充能先到 " + requiredEnergy.ToString("0", CultureInfo.InvariantCulture) + "%；目前大招约覆盖 " + (burstCoverage * 100).ToString("0", CultureInfo.InvariantCulture) + "% 循环。");
-            if (character.CoreStat + 0.1 < targetCore)
-                result.Advice.Add(ScalingLabel(character.Scaling) + "先到 " + targetCore.ToString("#,##0", CultureInfo.InvariantCulture) + "。");
-            if (character.CritRate + 0.1 < targetRate)
-                result.Advice.Add("暴击率先到 " + targetRate.ToString("0", CultureInfo.InvariantCulture) + "%。");
-            if (character.CritDamage + 0.1 < targetCritDamage)
-                result.Advice.Add("暴击伤害先到 " + targetCritDamage.ToString("0", CultureInfo.InvariantCulture) + "%。");
-            if (character.DamageBonus + 0.1 < targetBonus)
-                result.Advice.Add("对应元素伤害加成先到 " + targetBonus.ToString("0.#", CultureInfo.InvariantCulture) + "% 左右。");
-            if (result.Advice.Count == 0)
-                result.Advice.Add("已达到通用最低线。继续提升双暴或主要伤害属性。");
-            return result;
-        }
-
-        internal static double ExpectedDamage(CombatPlanInput input, CombatCharacterInput character, double teamBuff,
-            double coreStat, double critRate, double critDamage, double damageBonus, double burstCoverage)
-        {
-            double talent = character.SkillMultiplier + character.ComboMultiplier + character.BurstMultiplier * burstCoverage;
-            double critical = 1 + Math.Max(0, Math.Min(100, critRate)) / 100 * Math.Max(0, critDamage) / 100;
-            double bonus = 1 + Math.Max(-90, damageBonus + teamBuff) / 100;
-            double defense = DefenseMultiplier(input.CharacterLevel, input.EnemyLevel, input.DefenseReduction);
-            double resistance = ResistanceMultiplier(input.EnemyResistance);
-            double reaction = 1 + Math.Max(0, Math.Min(1, input.ReactionCoverage / 100)) * (input.ReactionMultiplier - 1);
-            return Math.Max(0, coreStat) * Math.Max(0, talent) / 100 * bonus * critical * defense * resistance * reaction;
-        }
-
-        internal static double DefenseMultiplier(int characterLevel, int enemyLevel, double reductionPercent)
-        {
-            double attacker = characterLevel + 100.0;
-            double defender = (enemyLevel + 100.0) * (1 - Math.Max(0, Math.Min(90, reductionPercent)) / 100);
-            return attacker / Math.Max(1, attacker + defender);
-        }
-
-        internal static double ResistanceMultiplier(double resistancePercent)
-        {
-            double resistance = resistancePercent / 100;
-            if (resistance < 0) return 1 - resistance / 2;
-            if (resistance < 0.75) return 1 - resistance;
-            return 1 / (4 * resistance + 1);
-        }
-
-        private static double EstimatedRawEnergy(CombatCharacterInput character, List<CombatCharacterInput> team)
-        {
-            double energy = character.Role == "main" ? 44 : character.Role == "offfield" ? 36 : character.Role == "support" ? 32 : 30;
-            if (character.SkillCooldown <= 6) energy += 10;
-            else if (character.SkillCooldown <= 10) energy += 6;
-            else if (character.SkillCooldown <= 15) energy += 3;
-            else if (character.SkillCooldown >= 20) energy -= 4;
-            int sameElement = 0;
-            if (!String.IsNullOrWhiteSpace(character.Element) && character.Element != "无")
-                foreach (CombatCharacterInput ally in team) if (ally.Element == character.Element) sameElement++;
-            if (sameElement > 1) energy *= 1 + 0.12 * (sameElement - 1);
-            return Math.Max(10, energy);
-        }
-
-        private static double MinimumCore(string scaling, string role)
-        {
-            if (scaling == "health") return role == "main" ? 32000 : role == "offfield" ? 30000 : role == "support" ? 28000 : 32000;
-            if (scaling == "defense") return role == "main" ? 2000 : role == "offfield" ? 1800 : role == "support" ? 1600 : 2200;
-            return role == "main" ? 1800 : role == "offfield" ? 1600 : role == "support" ? 1400 : 1200;
-        }
-
-        private static int CompareRotationOrder(CombatCharacterInput left, CombatCharacterInput right)
-        {
-            int difference = RoleOrder(left.Role).CompareTo(RoleOrder(right.Role));
-            if (difference != 0) return difference;
-            difference = right.EffectDuration.CompareTo(left.EffectDuration);
-            return difference != 0 ? difference : String.Compare(left.Name, right.Name, StringComparison.CurrentCulture);
-        }
-
-        private static int RoleOrder(string role)
-        {
-            return role == "sustain" ? 0 : role == "offfield" ? 1 : role == "support" ? 2 : 3;
-        }
-
-        internal static string RoleLabel(string role)
-        {
-            return role == "main" ? "主C" : role == "offfield" ? "后台副C" : role == "support" ? "增伤辅助" : "生存位";
-        }
-
-        internal static string ScalingLabel(string scaling)
-        {
-            return scaling == "health" ? "生命值" : scaling == "defense" ? "防御力" : "攻击力";
-        }
-
-        private static double RoundUp(double value, double step) { return Math.Ceiling(value / step) * step; }
-        private static bool OneOf(string value, string[] choices)
-        {
-            foreach (string choice in choices) if (value == choice) return true;
-            return false;
-        }
-        private static void Range(double value, double minimum, double maximum, string label)
-        {
-            if (Double.IsNaN(value) || Double.IsInfinity(value) || value < minimum || value > maximum)
-                throw new ArgumentException(label + "超出可用范围。");
-        }
-
-        private static void Validate(CombatPlanInput input)
-        {
-            if (input == null || input.Characters == null) throw new ArgumentException("配队数据为空。");
-            if (input.CharacterLevel < 1 || input.CharacterLevel > 100 || input.EnemyLevel < 1 || input.EnemyLevel > 200)
-                throw new ArgumentException("角色或敌人等级超出范围。");
-            Range(input.EnemyResistance, -100, 1000, "敌人抗性");
-            Range(input.DefenseReduction, 0, 90, "防御降低");
-            Range(input.ReactionMultiplier, 1, 2, "反应倍率");
-            Range(input.ReactionCoverage, 0, 100, "反应覆盖");
-            foreach (CombatCharacterInput character in input.Characters) {
-                if (character == null || String.IsNullOrWhiteSpace(character.Name)) continue;
-                character.Name = character.Name.Trim();
-                if (character.Name.Length > 20) throw new ArgumentException("角色名不能超过20个字。");
-                if (!OneOf(character.Role, Roles) || !OneOf(character.Scaling, Scalings)) throw new ArgumentException(character.Name + "的角色类型无效。");
-                Range(character.CoreStat, 1, 100000, character.Name + "的主要属性");
-                Range(character.CritRate, 0, 100, character.Name + "的暴击率");
-                Range(character.CritDamage, 0, 500, character.Name + "的暴击伤害");
-                Range(character.DamageBonus, -90, 500, character.Name + "的伤害加成");
-                Range(character.EnergyRecharge, 100, 400, character.Name + "的充能");
-                Range(character.SkillMultiplier, 0, 10000, character.Name + "的E倍率");
-                Range(character.BurstMultiplier, 0, 20000, character.Name + "的Q倍率");
-                Range(character.ComboMultiplier, 0, 30000, character.Name + "的连段倍率");
-                Range(character.BurstCost, 0, 100, character.Name + "的大招能量");
-                Range(character.SkillCooldown, 0, 60, character.Name + "的E冷却");
-                Range(character.BurstCooldown, 0, 60, character.Name + "的Q冷却");
-                Range(character.FieldSeconds, 0, 30, character.Name + "的驻场时间");
-                Range(character.TeamBuffPercent, 0, 200, character.Name + "的全队增伤");
-                Range(character.EffectDuration, 0, 60, character.Name + "的效果时间");
-            }
-        }
-    }
-
-    internal static class CombatPlannerStorage
-    {
-        internal static string SettingsPath { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KoloPet", "combat-plan.json"); } }
-
-        internal static CombatPlanInput Load() { return Load(SettingsPath); }
-        internal static CombatPlanInput Load(string path)
-        {
-            try {
-                if (!File.Exists(path) || new FileInfo(path).Length > 256 * 1024) return CombatPlanInput.CreateExample();
-                JavaScriptSerializer serializer = new JavaScriptSerializer { MaxJsonLength = 256 * 1024, RecursionLimit = 20 };
-                CombatPlanInput value = serializer.Deserialize<CombatPlanInput>(File.ReadAllText(path));
-                CombatPlanner.Calculate(value);
-                while (value.Characters.Count < 4) value.Characters.Add(CombatPlanInput.CreateExample().Characters[value.Characters.Count]);
-                return value;
-            } catch { return CombatPlanInput.CreateExample(); }
-        }
-
-        internal static void Save(CombatPlanInput value) { Save(SettingsPath, value); }
-        internal static void Save(string path, CombatPlanInput value)
-        {
-            CombatPlanner.Calculate(value);
-            string directory = Path.GetDirectoryName(path);
-            if (!String.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
-            JavaScriptSerializer serializer = new JavaScriptSerializer { MaxJsonLength = 256 * 1024, RecursionLimit = 20 };
-            File.WriteAllText(path, serializer.Serialize(value));
-        }
-    }
 
     internal sealed class CombatCharacterEditor
     {
@@ -368,6 +23,7 @@ namespace ClaudePet
         private readonly TextBox skillCooldown, burstCooldown, fieldSeconds, teamBuff, effectDuration;
         private readonly ComboBox role, scaling;
         internal readonly TabItem Tab;
+        private readonly Dictionary<string, Control> fields = new Dictionary<string, Control>();
 
         internal CombatCharacterEditor(int slot, CombatRotationWindow owner)
         {
@@ -405,10 +61,15 @@ namespace ClaudePet
             body.Children.Add(talents);
             TextBlock hint = owner.Text("倍率请填一次完整动作的总倍率。多段技能要先相加。", 11, false, true);
             hint.Margin = new Thickness(6, 8, 6, 0); body.Children.Add(hint);
+            string[] keys = { "Name", "Element", "Role", "Scaling", "CoreStat", "CritRate", "CritDamage", "DamageBonus", "EnergyRecharge", "TeamBuffPercent", "SkillMultiplier", "BurstMultiplier", "ComboMultiplier", "BurstCost", "SkillCooldown", "BurstCooldown", "FieldSeconds", "EffectDuration" };
+            Control[] controls = { name, element, role, scaling, core, critRate, critDamage, damageBonus, energyRecharge, teamBuff, skillMultiplier, burstMultiplier, comboMultiplier, burstCost, skillCooldown, burstCooldown, fieldSeconds, effectDuration };
+            for (int i = 0; i < keys.Length; i++) fields[keys[i]] = controls[i];
         }
 
         internal void Load(CombatCharacterInput value)
         {
+            if (value == null) value = CombatPlanInput.EmptySlot(0);
+            ClearErrors();
             name.Text = value.Name ?? ""; element.Text = value.Element ?? "";
             Select(role, value.Role); Select(scaling, value.Scaling);
             core.Text = Number(value.CoreStat); critRate.Text = Number(value.CritRate); critDamage.Text = Number(value.CritDamage);
@@ -441,9 +102,31 @@ namespace ClaudePet
         {
             double value;
             string text = (box.Text ?? "").Trim().Replace(',', '.');
-            if (!Double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                throw new FormatException(label + "不是有效数字。");
+            if (!Double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value)) return Double.NaN;
             return value;
+        }
+        internal string CharacterName { get { return (name.Text ?? "").Trim(); } }
+        internal string Scaling { get { return Tag(scaling); } }
+        internal string Element { get { return (element.Text ?? "").Trim(); } }
+        internal void ClearErrors()
+        {
+            foreach (Control control in fields.Values) CombatRotationWindow.ClearError(control);
+            Tab.ToolTip = null;
+        }
+        internal void MarkError(CombatFieldError error)
+        {
+            Control control;
+            if (fields.TryGetValue(error.Field, out control)) CombatRotationWindow.MarkError(control, error.Message);
+            Tab.ToolTip = "此角色有输入错误，请查看红框字段。";
+        }
+        internal void ApplyPanelValues(Dictionary<string, double> values)
+        {
+            foreach (KeyValuePair<string, double> pair in values) {
+                Control control;
+                if (fields.TryGetValue(pair.Key, out control) && control is TextBox) {
+                    ((TextBox)control).Text = Number(pair.Value); CombatRotationWindow.ClearError(control);
+                }
+            }
         }
         private static string Tag(ComboBox box)
         {
@@ -468,6 +151,14 @@ namespace ClaudePet
         private readonly StackPanel resultBody;
         private readonly TextBlock status;
         private readonly bool persist;
+        private readonly TabControl tabs;
+        private readonly Expander enemySection;
+        private readonly StackPanel form, recommendationBody;
+        private readonly ComboBox presets;
+        private readonly Dictionary<string, Control> enemyFields = new Dictionary<string, Control>();
+        private readonly CombatTeamCatalog catalog;
+        private string presetId = "";
+        private bool importing, closed;
 
         internal CombatRotationWindow(string character) : this(character, true) { }
         internal CombatRotationWindow(string character, bool usePersistence)
@@ -492,7 +183,7 @@ namespace ClaudePet
             header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             StackPanel title = new StackPanel(); header.Children.Add(title);
             title.Children.Add(Text("战斗循环助手", 25, true, false));
-            TextBlock subtitle = Text("手填配队和面板  /  本地粗算  /  不读游戏数据", 12, false, true); subtitle.Margin = new Thickness(0, 5, 0, 0); title.Children.Add(subtitle);
+            TextBlock subtitle = Text("截图识别 / 手动填值 / 配队与手法参考", 12, false, true); subtitle.Margin = new Thickness(0, 5, 0, 0); title.Children.Add(subtitle);
             title.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e) { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
             StackPanel headerButtons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Top };
             Grid.SetColumn(headerButtons, 1); header.Children.Add(headerButtons);
@@ -505,10 +196,19 @@ namespace ClaudePet
             content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             ScrollViewer formScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(0, 0, 7, 0) };
-            StackPanel form = new StackPanel(); formScroll.Content = form; content.Children.Add(formScroll);
-            TextBlock safe = Text("安全边界：不读取内存，不改文件，不自动按键。", 12, true, false);
+            form = new StackPanel(); formScroll.Content = form; content.Children.Add(formScroll);
+            TextBlock safe = Text("截图在本机识别；不读取内存，不自动按键。", 12, false, true);
             form.Children.Add(Card(safe));
-            form.Children.Add(SectionLabel("敌人与反应"));
+            catalog = CombatTeamPresets.Current;
+            form.Children.Add(SectionLabel("推荐配队"));
+            presets = new ComboBox { Margin = new Thickness(4, 0, 4, 8) };
+            presets.Items.Add(new ComboBoxItem { Content = "自定义配队", Tag = "" });
+            foreach (CombatTeamPreset team in catalog.Teams) presets.Items.Add(new ComboBoxItem { Content = CombatTeamPresets.Label(team), Tag = team.Id });
+            presets.SelectedIndex = 0; form.Children.Add(presets);
+            Button applyPreset = ActionButton("载入成员（替换当前输入）", ApplyPreset);
+            applyPreset.HorizontalAlignment = HorizontalAlignment.Stretch; applyPreset.Margin = new Thickness(4, 0, 4, 5); form.Children.Add(applyPreset);
+            TextBlock presetHint = Text("载入成员会使用通用示例数字；请导入自己的面板并手填技能倍率。推荐手法与右侧粗算相互独立。", 11, false, true);
+            presetHint.Margin = new Thickness(4, 0, 4, 4); form.Children.Add(presetHint);
             UniformGrid enemy = new UniformGrid { Columns = 2 };
             characterLevel = Input(); enemy.Children.Add(Field("角色等级", characterLevel));
             enemyLevel = Input(); enemy.Children.Add(Field("敌人等级", enemyLevel));
@@ -516,20 +216,41 @@ namespace ClaudePet
             defenseReduction = Input(); enemy.Children.Add(Field("防御降低 %", defenseReduction));
             reaction = Choice(new[] { "不算增幅反应", "1.5倍反应", "2.0倍反应" }, new[] { "1", "1.5", "2" }); enemy.Children.Add(Field("增幅反应", reaction));
             reactionCoverage = Input(); enemy.Children.Add(Field("反应覆盖 %", reactionCoverage));
-            form.Children.Add(enemy);
+            enemySection = new Expander { Header = "敌人与反应（展开编辑）", Content = enemy, Margin = new Thickness(4, 10, 4, 8) };
+            enemySection.Header = Text("敌人与反应（展开编辑）", 12, true, false);
+            enemySection.SetResourceReference(Control.ForegroundProperty, "PlannerText");
+            form.Children.Add(enemySection);
+            enemyFields["CharacterLevel"] = characterLevel; enemyFields["EnemyLevel"] = enemyLevel;
+            enemyFields["EnemyResistance"] = enemyResistance; enemyFields["DefenseReduction"] = defenseReduction;
+            enemyFields["ReactionMultiplier"] = reaction; enemyFields["ReactionCoverage"] = reactionCoverage;
 
             form.Children.Add(SectionLabel("当前配队"));
-            TabControl tabs = new TabControl { Height = 445, Margin = new Thickness(4, 0, 4, 10) };
+            StackPanel importButtons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+            importButtons.Children.Add(ActionButton("从截图识别", delegate { ImportPanel(false); }));
+            importButtons.Children.Add(ActionButton("粘贴截图识别", delegate { ImportPanel(true); }));
+            form.Children.Add(importButtons);
+            TextBlock importHint = Text("导入到当前角色页。仅填识别到的面板数值，预览核对后应用；角色、元素与技能需手动设置。", 11, false, true);
+            importHint.Margin = new Thickness(4, 0, 4, 8); form.Children.Add(importHint);
+            tabs = new TabControl { Height = 445, Margin = new Thickness(4, 0, 4, 10) };
             for (int i = 1; i <= 4; i++) { CombatCharacterEditor editor = new CombatCharacterEditor(i, this); editors.Add(editor); tabs.Items.Add(editor.Tab); }
             form.Children.Add(tabs);
             Button calculate = ActionButton("生成循环与目标", Generate); calculate.HorizontalAlignment = HorizontalAlignment.Stretch; calculate.Margin = new Thickness(4, 2, 4, 8); calculate.Padding = new Thickness(15, 11, 15, 11); form.Children.Add(calculate);
 
             ScrollViewer resultScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(2, 0, 8, 0) };
-            Grid.SetColumn(resultScroll, 2); content.Children.Add(resultScroll); resultBody = new StackPanel(); resultScroll.Content = resultBody;
+            Grid.SetColumn(resultScroll, 2); content.Children.Add(resultScroll);
+            StackPanel rightBody = new StackPanel(); resultScroll.Content = rightBody;
+            recommendationBody = new StackPanel(); rightBody.Children.Add(recommendationBody);
+            resultBody = new StackPanel(); rightBody.Children.Add(resultBody);
             status = Text("计算只保存在本机 %LocalAppData%\\KoloPet。", 11, false, true); status.Margin = new Thickness(0, 12, 0, 0); Grid.SetRow(status, 2); root.Children.Add(status);
 
-            CombatPlanInput initial = persist ? CombatPlannerStorage.Load() : CombatPlanInput.CreateExample();
-            Load(initial); Generate(false);
+            presets.SelectionChanged += delegate { ShowRecommendation(); };
+            CombatPlanLoad initial = persist ? CombatPlannerStorage.Load() : new CombatPlanLoad { Input = CombatPlanInput.CreateExample() };
+            Load(initial.Input); Generate(false);
+            if (!String.IsNullOrWhiteSpace(initial.Notice)) {
+                status.Text = initial.Notice;
+                TextBlock notice = Text(initial.Notice, 12, false, false); recommendationBody.Children.Insert(0, Card(notice));
+            }
+            Closed += delegate { closed = true; };
             KeyDown += delegate(object sender, KeyEventArgs e) { if (e.Key == Key.Escape) Close(); };
         }
 
@@ -547,9 +268,16 @@ namespace ClaudePet
             const string xaml = @"<ResourceDictionary xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
 <Style TargetType='{x:Type Button}'><Setter Property='Foreground' Value='{DynamicResource PlannerText}'/><Setter Property='Background' Value='{DynamicResource PlannerCard}'/><Setter Property='BorderBrush' Value='{DynamicResource PlannerBorder}'/><Setter Property='BorderThickness' Value='1'/><Setter Property='Cursor' Value='Hand'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type Button}'><Border x:Name='Chrome' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='{TemplateBinding BorderThickness}' CornerRadius='7' Padding='{TemplateBinding Padding}'><ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Chrome' Property='Background' Value='{DynamicResource PlannerHover}'/></Trigger><Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Chrome' Property='BorderBrush' Value='{DynamicResource PlannerAccent}'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
 <Style TargetType='{x:Type TextBox}'><Setter Property='Foreground' Value='{DynamicResource PlannerText}'/><Setter Property='Background' Value='{DynamicResource PlannerCard}'/><Setter Property='BorderBrush' Value='{DynamicResource PlannerBorder}'/><Setter Property='Padding' Value='8,6'/><Setter Property='Margin' Value='0,4,0,0'/></Style>
-<Style TargetType='{x:Type ComboBox}'><Setter Property='Foreground' Value='{x:Static SystemColors.WindowTextBrush}'/><Setter Property='Background' Value='{x:Static SystemColors.WindowBrush}'/><Setter Property='BorderBrush' Value='{DynamicResource PlannerBorder}'/><Setter Property='Padding' Value='6,5'/><Setter Property='Margin' Value='0,4,0,0'/></Style>
+<Style TargetType='{x:Type ComboBox}'>
+<Setter Property='Foreground' Value='{DynamicResource PlannerText}'/><Setter Property='Background' Value='{DynamicResource PlannerCard}'/><Setter Property='BorderBrush' Value='{DynamicResource PlannerBorder}'/><Setter Property='FontWeight' Value='Normal'/><Setter Property='BorderThickness' Value='1'/><Setter Property='Padding' Value='8,6'/><Setter Property='Margin' Value='0,4,0,0'/><Setter Property='MaxDropDownHeight' Value='300'/>
+<Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type ComboBox}'><Grid>
+<ToggleButton Focusable='False' IsChecked='{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}'><ToggleButton.Template><ControlTemplate TargetType='{x:Type ToggleButton}'><Border x:Name='Chrome' Background='{DynamicResource PlannerCard}' BorderBrush='{DynamicResource PlannerBorder}' BorderThickness='1' CornerRadius='5'><TextBlock Text='⌄' Foreground='{DynamicResource PlannerMuted}' HorizontalAlignment='Right' VerticalAlignment='Center' Margin='0,0,9,0'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Chrome' Property='Background' Value='{DynamicResource PlannerHover}'/></Trigger><Trigger Property='IsChecked' Value='True'><Setter TargetName='Chrome' Property='BorderBrush' Value='{DynamicResource PlannerAccent}'/></Trigger></ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template></ToggleButton>
+<Border BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='{TemplateBinding BorderThickness}' CornerRadius='5' IsHitTestVisible='False'><ContentPresenter Content='{TemplateBinding SelectionBoxItem}' ContentTemplate='{TemplateBinding SelectionBoxItemTemplate}' Margin='8,6,27,6' VerticalAlignment='Center'/></Border>
+<Popup x:Name='PART_Popup' IsOpen='{TemplateBinding IsDropDownOpen}' Placement='Bottom' AllowsTransparency='True' Focusable='False' PopupAnimation='Slide'><Border MinWidth='{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}' MaxHeight='{TemplateBinding MaxDropDownHeight}' Background='{DynamicResource PlannerSurface}' BorderBrush='{DynamicResource PlannerBorder}' BorderThickness='1' Padding='3'><ScrollViewer CanContentScroll='True' VerticalScrollBarVisibility='Auto'><ItemsPresenter KeyboardNavigation.DirectionalNavigation='Contained'/></ScrollViewer></Border></Popup>
+</Grid></ControlTemplate></Setter.Value></Setter></Style>
+<Style TargetType='{x:Type ComboBoxItem}'><Setter Property='Foreground' Value='{DynamicResource PlannerText}'/><Setter Property='Background' Value='{DynamicResource PlannerSurface}'/><Setter Property='Padding' Value='8,7'/><Setter Property='FontWeight' Value='Normal'/><Setter Property='HorizontalContentAlignment' Value='Stretch'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type ComboBoxItem}'><Border x:Name='Item' Background='{TemplateBinding Background}' Padding='{TemplateBinding Padding}' CornerRadius='4'><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property='IsHighlighted' Value='True'><Setter TargetName='Item' Property='Background' Value='{DynamicResource PlannerHover}'/></Trigger><Trigger Property='IsSelected' Value='True'><Setter TargetName='Item' Property='Background' Value='{DynamicResource PlannerCard}'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
 <Style TargetType='{x:Type TabControl}'><Setter Property='Foreground' Value='{DynamicResource PlannerText}'/><Setter Property='Background' Value='{DynamicResource PlannerCard}'/><Setter Property='BorderBrush' Value='{DynamicResource PlannerBorder}'/></Style>
-<Style TargetType='{x:Type TabItem}'><Setter Property='Foreground' Value='{DynamicResource PlannerText}'/><Setter Property='Background' Value='{DynamicResource PlannerCard}'/><Setter Property='BorderBrush' Value='{DynamicResource PlannerBorder}'/><Setter Property='Padding' Value='12,7'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type TabItem}'><Border x:Name='Tab' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='1,1,1,0' CornerRadius='6,6,0,0' Padding='{TemplateBinding Padding}'><ContentPresenter ContentSource='Header' HorizontalAlignment='Center' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsSelected' Value='True'><Setter TargetName='Tab' Property='Background' Value='{DynamicResource PlannerHover}'/><Setter Property='FontWeight' Value='SemiBold'/></Trigger><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Tab' Property='Background' Value='{DynamicResource PlannerHover}'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+<Style TargetType='{x:Type TabItem}'><Setter Property='Foreground' Value='{DynamicResource PlannerText}'/><Setter Property='Background' Value='{DynamicResource PlannerCard}'/><Setter Property='BorderBrush' Value='{DynamicResource PlannerBorder}'/><Setter Property='Padding' Value='12,7'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type TabItem}'><Border x:Name='Tab' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='1,1,1,0' CornerRadius='6,6,0,0' Padding='{TemplateBinding Padding}'><ContentPresenter x:Name='HeaderHost' ContentSource='Header' HorizontalAlignment='Center' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsSelected' Value='True'><Setter TargetName='Tab' Property='Background' Value='{DynamicResource PlannerHover}'/><Setter TargetName='HeaderHost' Property='TextElement.FontWeight' Value='SemiBold'/></Trigger><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Tab' Property='Background' Value='{DynamicResource PlannerHover}'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
 <Style TargetType='{x:Type ScrollBar}'><Setter Property='Width' Value='11'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type ScrollBar}'><Grid Background='Transparent'><Track x:Name='PART_Track' IsDirectionReversed='True' Orientation='Vertical'><Track.DecreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar.PageUpCommand}' Focusable='False'><RepeatButton.Template><ControlTemplate TargetType='{x:Type RepeatButton}'><Border Background='Transparent'/></ControlTemplate></RepeatButton.Template></RepeatButton></Track.DecreaseRepeatButton><Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType='{x:Type Thumb}'><Border Background='{DynamicResource PlannerBorder}' CornerRadius='4' Margin='3,0'/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb><Track.IncreaseRepeatButton><RepeatButton Command='{x:Static ScrollBar.PageDownCommand}' Focusable='False'><RepeatButton.Template><ControlTemplate TargetType='{x:Type RepeatButton}'><Border Background='Transparent'/></ControlTemplate></RepeatButton.Template></RepeatButton></Track.IncreaseRepeatButton></Track></Grid></ControlTemplate></Setter.Value></Setter></Style>
 </ResourceDictionary>";
             Resources.MergedDictionaries.Add((ResourceDictionary)XamlReader.Parse(xaml));
@@ -557,22 +285,24 @@ namespace ClaudePet
 
         private void Load(CombatPlanInput value)
         {
+            foreach (Control control in enemyFields.Values) ClearError(control);
+            presetId = value.PresetId ?? "";
+            Select(presets, presetId); ShowRecommendation();
             characterLevel.Text = value.CharacterLevel.ToString(CultureInfo.InvariantCulture);
             enemyLevel.Text = value.EnemyLevel.ToString(CultureInfo.InvariantCulture);
             enemyResistance.Text = value.EnemyResistance.ToString("0.##", CultureInfo.InvariantCulture);
             defenseReduction.Text = value.DefenseReduction.ToString("0.##", CultureInfo.InvariantCulture);
             reactionCoverage.Text = value.ReactionCoverage.ToString("0.##", CultureInfo.InvariantCulture);
             Select(reaction, value.ReactionMultiplier.ToString("0.##", CultureInfo.InvariantCulture));
-            CombatPlanInput fallback = CombatPlanInput.CreateExample();
-            for (int i = 0; i < editors.Count; i++) editors[i].Load(i < value.Characters.Count ? value.Characters[i] : fallback.Characters[i]);
+            for (int i = 0; i < editors.Count; i++) editors[i].Load(i < value.Characters.Count ? value.Characters[i] : CombatPlanInput.EmptySlot(i));
         }
 
         private CombatPlanInput ReadInput()
         {
             CombatPlanInput value = new CombatPlanInput {
-                Version = 1,
-                CharacterLevel = (int)Numeric(characterLevel, "角色等级"),
-                EnemyLevel = (int)Numeric(enemyLevel, "敌人等级"),
+                Version = CombatPlanInput.CurrentVersion, PresetId = presetId,
+                CharacterLevel = Level(characterLevel),
+                EnemyLevel = Level(enemyLevel),
                 EnemyResistance = Numeric(enemyResistance, "敌人抗性"),
                 DefenseReduction = Numeric(defenseReduction, "防御降低"),
                 ReactionMultiplier = NumericTag(reaction),
@@ -586,23 +316,58 @@ namespace ClaudePet
         private void Generate() { Generate(true); }
         private void Generate(bool save)
         {
+            foreach (Control control in enemyFields.Values) ClearError(control);
+            foreach (CombatCharacterEditor editor in editors) editor.ClearErrors();
             try {
                 CombatPlanInput input = ReadInput();
+                CombatTeamPreset applied = catalog.Find(presetId);
+                if (applied != null) {
+                    bool sameMembers = true;
+                    for (int i = 0; i < editors.Count; i++) {
+                        string expected = i < applied.Members.Count ? applied.Members[i].Name.Trim() : "";
+                        if (editors[i].CharacterName != expected) { sameMembers = false; break; }
+                    }
+                    if (!sameMembers) { presetId = ""; input.PresetId = ""; }
+                }
                 CombatPlanResult result = CombatPlanner.Calculate(input);
                 Render(result);
-                if (save && persist) CombatPlannerStorage.Save(input);
                 status.Text = save && persist ? "已计算，并保存当前配队。" : "已按当前面板计算。";
+                if (save && persist) {
+                    try { CombatPlannerStorage.Save(input); }
+                    catch (Exception saveError) { PetStorage.Log("combat-plan-save", saveError); status.Text = "计算完成，但保存失败：" + saveError.Message + " 当前输入仍保留在界面。"; }
+                }
+            } catch (CombatValidationException error) {
+                resultBody.Children.Clear();
+                resultBody.Children.Add(Card(Text("请修正以下 " + error.Errors.Count + " 项输入\n" + error.Message, 13, false, false)));
+                int firstSlot = 0;
+                foreach (CombatFieldError fieldError in error.Errors) {
+                    Control control;
+                    if (fieldError.Slot == 0 && enemyFields.TryGetValue(fieldError.Field, out control)) { enemySection.IsExpanded = true; MarkError(control, fieldError.Message); }
+                    if (fieldError.Slot > 0 && fieldError.Slot <= editors.Count) {
+                        editors[fieldError.Slot - 1].MarkError(fieldError); if (firstSlot == 0) firstSlot = fieldError.Slot;
+                    }
+                }
+                if (firstSlot > 0) tabs.SelectedIndex = firstSlot - 1;
+                status.Text = "错误字段已标红；鼠标停在红框上可查看该字段说明。其他角色页的错误也已列出。";
             } catch (Exception error) {
+                PetStorage.Log("combat-planner-ui", error);
                 resultBody.Children.Clear();
                 TextBlock message = Text("无法计算\n" + error.Message, 15, true, false); resultBody.Children.Add(Card(message));
-                status.Text = "请修正红线外的数字。";
+                status.Text = "当前输入已保留。请检查输入或重试。";
             }
         }
 
         internal void Render(CombatPlanResult value)
         {
             resultBody.Children.Clear();
+            CombatTeamPreset applied = catalog.Find(presetId);
+            if (applied != null && !applied.SupportsEstimate) {
+                resultBody.Children.Add(SectionLabel("此队仅提供手法参考"));
+                resultBody.Children.Add(Card(Text("当前通用计算尚未覆盖此队的特殊机制，暂不显示伤害与达标后每秒。面板仍可手填、截图导入和保存。\n" + applied.ModelNote, 13, false, false)));
+                return;
+            }
             resultBody.Children.Add(SectionLabel("建议循环"));
+            resultBody.Children.Add(Text("以下为按职责生成的通用估算顺序；角色专属输出手法请看上方攻略卡片。", 11, false, true));
             TextBlock steps = Text(String.Join("\n", value.Steps.ToArray()), 14, true, false); steps.LineHeight = 25; resultBody.Children.Add(Card(steps));
             resultBody.Children.Add(SectionLabel("伤害粗算"));
             UniformGrid summary = new UniformGrid { Columns = 2 };
@@ -610,8 +375,9 @@ namespace ClaudePet
             summary.Children.Add(Metric("当前期望", Number(value.CurrentDamage)));
             summary.Children.Add(Metric("当前每秒", Number(value.CurrentDps)));
             summary.Children.Add(Metric("达标后期望", Number(value.TargetDamage)));
+            summary.Children.Add(Metric("达标后每秒", Number(value.TargetDps)));
             resultBody.Children.Add(summary);
-            resultBody.Children.Add(SectionLabel("最低循环目标"));
+            resultBody.Children.Add(SectionLabel("通用参考线"));
             foreach (CombatCharacterResult character in value.Characters) {
                 StackPanel content = new StackPanel();
                 content.Children.Add(Text(character.Name + "  ·  " + CombatPlanner.RoleLabel(character.Role), 16, true, false));
@@ -624,15 +390,162 @@ namespace ClaudePet
                 resultBody.Children.Add(Card(content));
             }
             resultBody.Children.Add(SectionLabel("说明"));
-            TextBlock warnings = Text(String.Join("\n", value.Warnings.ToArray()) + "\n最低线是可用目标，不是硬要求。实际伤害以游戏内为准。", 11.5, false, true);
+            TextBlock warnings = Text(String.Join("\n", value.Warnings.ToArray()) + "\n参考线按职责设置，并非具体角色的毕业标准。特殊反应与角色机制不用于此处精确排名。", 11.5, false, true);
             resultBody.Children.Add(Card(warnings));
         }
 
         private void ResetExample()
         {
+            if (importing) return;
             if (MessageBox.Show("恢复示例会盖掉当前输入。", "战斗循环助手", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
             Load(CombatPlanInput.CreateExample()); Generate();
         }
+
+        private CombatTeamPreset SelectedPreset()
+        {
+            ComboBoxItem item = presets.SelectedItem as ComboBoxItem;
+            return item == null ? null : catalog.Find(Convert.ToString(item.Tag, CultureInfo.InvariantCulture));
+        }
+
+        private void ApplyPreset()
+        {
+            CombatTeamPreset selected = SelectedPreset();
+            if (selected == null) { status.Text = "先选择一个推荐队伍；自定义配队可以直接在角色页修改。"; return; }
+            Load(CombatTeamPresets.Apply(ReadInput(), selected));
+            resultBody.Children.Clear();
+            resultBody.Children.Add(Card(Text("已载入「" + selected.Name + "」的成员。\n当前数字为通用示例，并非角色实测面板。先导入或填写自己的面板、技能倍率和时间，再生成估算。", 13, false, false)));
+            status.Text = "已载入成员，尚未保存。示例数字需核对替换；点击生成后保存。";
+        }
+
+        private void ShowRecommendation()
+        {
+            recommendationBody.Children.Clear();
+            recommendationBody.Children.Add(SectionLabel(CombatTeamPresets.Header(catalog)));
+            recommendationBody.Children.Add(Text(catalog.Notice, 11, false, true));
+            CombatTeamPreset selected = SelectedPreset();
+            if (selected == null) return;
+            StackPanel card = new StackPanel();
+            card.Children.Add(Text(selected.Name, 18, true, false));
+            List<string> members = new List<string>();
+            foreach (CombatTeamMember member in selected.Members) members.Add(member.Name + " · " + CombatPlanner.RoleLabel(member.Role));
+            card.Children.Add(Text(String.Join(" / ", members.ToArray()), 12, false, true));
+            card.Children.Add(Text(selected.VersionScope + "  ·  核对 " + selected.VerifiedAt, 11, false, true));
+            card.Children.Add(SectionLabel("推荐输出手法"));
+            card.Children.Add(Text(String.Join("\n", selected.Rotation.ToArray()), 13, false, false));
+            card.Children.Add(Text("手法依据：" + selected.RotationBasis, 11, false, true));
+            card.Children.Add(SectionLabel("充能与操作提示"));
+            card.Children.Add(Text(selected.Energy + "\n" + selected.Tips, 12, false, false));
+            foreach (CombatTeamMember member in selected.Members)
+                if (!String.IsNullOrWhiteSpace(member.Note)) card.Children.Add(Text(member.Name + "：" + member.Note, 11, false, true));
+            card.Children.Add(SectionLabel("适用范围"));
+            card.Children.Add(Text(selected.ModelNote, 11, false, true));
+            foreach (CombatTeamSource source in selected.Sources) {
+                string url = source.Url;
+                Button link = ActionButton("来源 · " + source.Title, delegate { OpenSource(url); });
+                link.Content = Text("来源 · " + source.Title, 12, false, false);
+                link.HorizontalAlignment = HorizontalAlignment.Stretch; link.Margin = new Thickness(0, 6, 0, 0);
+                link.ToolTip = url; card.Children.Add(link);
+            }
+            recommendationBody.Children.Add(Card(card));
+        }
+
+        private void OpenSource(string url)
+        {
+            if (!CombatTeamPresets.IsSafeLink(url)) return;
+            try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch (Exception error) { PetStorage.Log("combat-source-link", error); status.Text = "无法打开来源：" + error.Message; }
+        }
+
+        private async void ImportPanel(bool clipboard)
+        {
+            if (importing || closed) return;
+            CombatCharacterEditor editor = editors[Math.Max(0, tabs.SelectedIndex)];
+            try {
+                string unavailable = CombatPanelImport.Extractor.Unavailable();
+                if (unavailable != null) { status.Text = unavailable + " 也可直接手动填写。"; return; }
+                BitmapSource image;
+                if (clipboard) image = CombatPanelImport.FromClipboard();
+                else {
+                    OpenFileDialog picker = new OpenFileDialog { Title = "选择角色属性面板截图", Filter = "角色截图|*.png;*.jpg;*.jpeg;*.bmp", CheckFileExists = true, Multiselect = false };
+                    if (picker.ShowDialog(this) != true) return;
+                    image = CombatPanelImport.LoadFile(picker.FileName);
+                }
+                if (image == null) { status.Text = "剪贴板中没有图片。可先复制面板截图，或选择图片文件。"; return; }
+                importing = true; form.IsEnabled = false;
+                status.Text = "正在本机识别截图…";
+                PanelStatReading reading = await CombatPanelImport.Extractor.ExtractAsync(image);
+                if (closed) return;
+                Dictionary<string, double> values = PreviewReading(editor, reading, image);
+                if (values == null) { status.Text = "已取消导入，原输入未改动。"; return; }
+                editor.ApplyPanelValues(values);
+                resultBody.Children.Clear();
+                resultBody.Children.Add(Card(Text("已导入 " + values.Count + " 项面板数值。\n确认角色、元素和伤害基值正确后，填写技能倍率并重新生成。", 13, false, false)));
+                status.Text = "已填入当前角色页，尚未保存；可以继续手动修正。";
+            } catch (Exception error) {
+                PetStorage.Log("combat-panel-import", error);
+                if (!closed) status.Text = "截图识别失败：" + error.Message + " 可直接手动填值。";
+            } finally { importing = false; if (!closed) form.IsEnabled = true; }
+        }
+
+        private Dictionary<string, double> PreviewReading(CombatCharacterEditor editor, PanelStatReading reading, BitmapSource image)
+        {
+            Dictionary<string, double> candidates = new Dictionary<string, double>();
+            AddReading(candidates, "CoreStat", reading.CoreFor(editor.Scaling));
+            AddReading(candidates, "CritRate", reading.CritRate); AddReading(candidates, "CritDamage", reading.CritDamage);
+            AddReading(candidates, "EnergyRecharge", reading.EnergyRecharge); AddReading(candidates, "DamageBonus", reading.BonusFor(editor.Element));
+            Window preview = new Window { Title = "核对截图识别结果", Owner = this, Width = 570, Height = 700,
+                MaxHeight = Math.Max(420, SystemParameters.WorkArea.Height - 48), WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                FontFamily = FontFamily, FontSize = 13, ResizeMode = ResizeMode.CanResize };
+            preview.Resources.MergedDictionaries.Add(Resources);
+            preview.SetResourceReference(Window.BackgroundProperty, "PlannerSurface");
+            preview.SetResourceReference(Window.ForegroundProperty, "PlannerText");
+            DockPanel shell = new DockPanel { Margin = new Thickness(18) }; preview.Content = shell;
+            StackPanel footer = new StackPanel(); DockPanel.SetDock(footer, Dock.Bottom); shell.Children.Add(footer);
+            TextBlock notice = Text("只应用勾选的项目；未识别字段保留原值。可在此纠正数字。", 12, false, true); footer.Children.Add(notice);
+            StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; footer.Children.Add(buttons);
+            ScrollViewer scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto }; shell.Children.Add(scroll);
+            StackPanel body = new StackPanel(); scroll.Content = body;
+            body.Children.Add(Text("导入到：" + (editor.CharacterName.Length == 0 ? "当前空角色页" : editor.CharacterName), 19, true, false));
+            body.Children.Add(Text("伤害基值：" + CombatPlanner.ScalingLabel(editor.Scaling) + "  ·  元素：" + editor.Element + "\n" + reading.Engine, 12, false, true));
+            body.Children.Add(new Image { Source = image, Height = 160, Stretch = Stretch.Uniform, Margin = new Thickness(0, 10, 0, 12) });
+            string[] keys = { "CoreStat", "CritRate", "CritDamage", "EnergyRecharge", "DamageBonus" };
+            string[] labels = { CombatPlanner.ScalingLabel(editor.Scaling), "暴击率 %", "暴击伤害 %", "元素充能效率 %", "对应元素/物理加成 %" };
+            Dictionary<string, TextBox> inputs = new Dictionary<string, TextBox>();
+            Dictionary<string, CheckBox> selected = new Dictionary<string, CheckBox>();
+            for (int i = 0; i < keys.Length; i++) {
+                if (!candidates.ContainsKey(keys[i])) continue;
+                Grid row = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+                row.ColumnDefinitions.Add(new ColumnDefinition()); row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
+                CheckBox check = new CheckBox { Content = labels[i], IsChecked = true, VerticalAlignment = VerticalAlignment.Center };
+                check.SetResourceReference(Control.ForegroundProperty, "PlannerText"); row.Children.Add(check);
+                TextBox input = Input(); input.Text = candidates[keys[i]].ToString("0.##", CultureInfo.InvariantCulture); Grid.SetColumn(input, 1); row.Children.Add(input);
+                inputs[keys[i]] = input; selected[keys[i]] = check; body.Children.Add(row);
+            }
+            if (candidates.Count == 0) body.Children.Add(Text("未识别到适用于此角色的面板字段。请核对元素和伤害基值，或使用清晰的详细属性截图。", 13, false, false));
+            Expander raw = new Expander { Header = "识别原文（供核对）", Margin = new Thickness(0, 12, 0, 12), Content = Text(String.Join("\n", reading.Lines.ToArray()), 11, false, true) }; body.Children.Add(raw);
+            raw.Header = Text("识别原文（供核对）", 12, false, false); raw.SetResourceReference(Control.ForegroundProperty, "PlannerText");
+            Dictionary<string, double> accepted = null;
+            buttons.Children.Add(ActionButton("取消", delegate { preview.Close(); }));
+            Button apply = ActionButton("应用勾选数值", delegate {
+                Dictionary<string, double> pending = new Dictionary<string, double>(); bool valid = true;
+                foreach (KeyValuePair<string, TextBox> item in inputs) {
+                    ClearError(item.Value); if (selected[item.Key].IsChecked != true) continue;
+                    double value = Numeric(item.Value, item.Key);
+                    double min = item.Key == "CoreStat" ? 1 : item.Key == "EnergyRecharge" ? 100 : item.Key == "DamageBonus" ? -90 : 0;
+                    double max = item.Key == "CoreStat" ? 100000 : item.Key == "CritRate" ? 100 : item.Key == "EnergyRecharge" ? 400 : 500;
+                    if (Double.IsNaN(value) || Double.IsInfinity(value) || value < min || value > max) {
+                        MarkError(item.Value, "范围应为 " + min + "–" + max); valid = false;
+                    } else pending[item.Key] = value;
+                }
+                if (!valid || pending.Count == 0) { notice.Text = "请勾选至少一项，并修正红框内的数值。"; return; }
+                accepted = pending; preview.Close();
+            });
+            apply.IsEnabled = candidates.Count > 0; buttons.Children.Add(apply);
+            preview.ShowDialog(); return accepted;
+        }
+
+        private static void AddReading(Dictionary<string, double> values, string field, double? value)
+        { if (value.HasValue) values[field] = value.Value; }
 
         internal TextBox Input() { return new TextBox { MinWidth = 70 }; }
         internal ComboBox Choice(string[] labels, string[] values)
@@ -674,7 +587,7 @@ namespace ClaudePet
         {
             double value;
             if (!Double.TryParse((box.Text ?? "").Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                throw new FormatException(label + "不是有效数字。");
+                return Double.NaN;
             return value;
         }
         private static double NumericTag(ComboBox box)
@@ -682,7 +595,7 @@ namespace ClaudePet
             ComboBoxItem item = box.SelectedItem as ComboBoxItem;
             double value;
             if (item == null || !Double.TryParse(Convert.ToString(item.Tag, CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                throw new FormatException("反应倍率无效。");
+                return Double.NaN;
             return value;
         }
         private static void Select(ComboBox box, string tag)
@@ -694,5 +607,14 @@ namespace ClaudePet
             box.SelectedIndex = 0;
         }
         private static string Number(double value) { return value.ToString("#,##0", CultureInfo.InvariantCulture); }
+        private static int Level(TextBox box)
+        {
+            double value = Numeric(box, "等级");
+            return Double.IsNaN(value) || Double.IsInfinity(value) || value < 1 || value > 200 || value != Math.Truncate(value) ? -1 : (int)value;
+        }
+        internal static void MarkError(Control control, string message)
+        { control.BorderBrush = new SolidColorBrush(Color.FromRgb(230, 78, 91)); control.BorderThickness = new Thickness(2); control.ToolTip = message; }
+        internal static void ClearError(Control control)
+        { control.SetResourceReference(Control.BorderBrushProperty, "PlannerBorder"); control.ClearValue(Control.BorderThicknessProperty); control.ToolTip = null; }
     }
 }
