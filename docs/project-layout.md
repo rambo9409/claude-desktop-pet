@@ -1,71 +1,73 @@
-﻿# V2.5 工程目录与构建
+# V2.6 工程与构建
 
-## 目录职责
+## 目录
 
-| 目录或文件 | 内容 |
+| 路径 | 用途 |
 | --- | --- |
-| `src/` | 当前生产 C# 源码：角色窗口、动作、甘雨跨屏蹬跳与靠近起跳、输入手势、蝶化、滑翔、夜魂、窗口能力与特效、菜单、看点、GPT 重置预测和素材读取 |
-| `build.rsp` | 唯一生产编译清单、程序集引用和内嵌资源声明；测试在此基础上替换入口 |
-| `build_assets.py` | 从本项目源素材构建 `assets/characters.zip` 和静态/动作预览 |
-| `assets/source/kolo/` | 旧版默认角色的基础源帧，保留作历史参考 |
-| `assets/generated/` | 当前四位角色、动作和风之翼源图，以及 imagegen 提示词；历史源图保留 |
-| `assets/previews/` | 方便查看的角色、动作预览，不参与程序启动 |
-| `assets/characters.zip`、`assets/ClaudePet.ico` | 编译时内嵌资源；发布后的 EXE 不需要旁置图片或 ZIP |
-| `tests/` | 测试 C# 和兼容原命令的薄包装 PS1，只保留源文件 |
-| `scripts/` | 统一构建、测试、GIF 编码和发布打包入口 |
-| `artifacts/tests/` | 可重新生成的测试 EXE、编译响应文件、日志、帧图和 GIF |
-| `release/V*/` | 按版本保留的发布文件；早期版本可用于回退 |
-| `archive/` | 已退出当前构建的早期入口、散落旧帧、检查产物及历史测试输出 |
-| `docs/` | 工程说明与整理记录 |
+| `src/` | C# 5 / WPF / .NET Framework 4.8 生产代码 |
+| `build.rsp` | 唯一生产源文件、资源与引用模板，生产和测试共用 |
+| `build.cmd`、`test.cmd`、`package.cmd` | 无需更改系统执行策略的 Windows 入口 |
+| `scripts/` | 编译、测试、打包与预览编码 |
+| `tests/` | 测试源码与历史薄包装入口 |
+| `assets/characters.zip`、`assets/combat-teams.json` | 内嵌角色资源与有来源的静态配队目录 |
+| `assets/generated/`、`assets/source/` | 当前和历史源素材、提示词、裁切参数 |
+| `artifacts/build/` | 根据当前环境展开的生产编译响应文件 |
+| `artifacts/tests/` | 测试 EXE、日志、渲染截图、`latest-run.json` |
+| `release/V*/` | 精简用户发布包及独立预览 |
+| `archive/` | 已停用构建、历史资源和缓存的保留副本 |
+| `docs/` | 当前指南、AI交接、数据源和历史验证索引 |
 
-## 构建
+## 构建依赖
 
-需要 Windows、.NET Framework 4.8 引用程序集，以及系统自带 .NET Framework C# 编译器。
-首次从源素材重建需要 Python、Pillow 和 NumPy；已有 `assets/characters.zip` 时编译程序不需要 Python。
+Windows 10/11、.NET Framework 4.8 Developer Pack、Windows 10/11 SDK。编译器为系统 Framework64 或 Framework 的 `csc.exe`，语法上限保持 C# 5。SDK 的 `UnionMetadata/Windows.winmd` 用于 Windows OCR 的 WinRT 类型；不要混用 System32 分片 WinMD，它们与 Framework 的 `IBuffer` 类型投影不匹配。
 
-```powershell
-# 使用已打包素材编译
-& ./scripts/build.ps1
+`scripts/common.ps1` 动态寻找安装目录，支持覆盖：
 
-# 从项目内源图重新生成素材后编译
-& ./scripts/build.ps1 -RebuildAssets
-```
+| 变量 | 用途 |
+| --- | --- |
+| `PET_NET48_REFERENCES` | 含 PresentationFramework.dll 的 net48 引用程序集目录 |
+| `PET_WINMD_FILE` | Windows SDK 的完整 UnionMetadata/Windows.winmd 路径 |
+| `KOLO_PYTHON` | Python 可执行文件；也可向脚本传 `-Python` |
 
-Python 可通过 `-Python 'C:/path/to/python.exe'` 或 `KOLO_PYTHON` 环境变量指定。未指定时，优先使用当前用户的 Codex 依赖环境，其次查找 PATH 中的 Python。脚本不包含固定用户名。
-
-## 验证
+`build.rsp` 中 `{NET48}`、`{FRAMEWORK}`、`{WINRT_METADATA}` 由脚本展开到 `artifacts/build/production.rsp`。因此请使用统一入口，不直接把模板交给 csc。测试也从同一模板生成自己的 RSP。`/nowarn:1701` 仅抑制 Framework/WinRT 桥接常见的版本绑定警告，其他编译错误仍直接失败。
 
 ```powershell
-# 默认十五组回归检查，顺序执行，避免共享配置相互干扰
-& ./scripts/test.ps1
-
-# 指定测试组
-& ./scripts/test.ps1 -Suite Wings,Effects
-
-# 只检查动作/渲染断言，跳过最后的 GIF 编码
-& ./scripts/test.ps1 -Suite Wings -SkipPreviews
-
-# 今日看点的 WPF 折叠、排序与重新打开验证
-& ./scripts/test.ps1 -Suite VisualSmoke
+.\build.cmd
+# 重新裁切素材需要 Python + Pillow + NumPy
+.\build.cmd -RebuildAssets -Python C:\Python312\python.exe
 ```
 
-默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、PointerInteraction、GanyuTraversal、GanyuDualScreen。另行运行 VisualSmoke，完整验证共16组。
-`tests/*Tests.ps1` 继续可用，但都转到统一入口；VisualSmoke 默认使用 `--verify`，避免无意启动常驻交互窗口。
+Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py -3`。不再依赖某个AI运行时的私有目录，不会自动安装或下载依赖。
 
-所有编译均读取当前 `build.rsp`，不会使用历史 RSP 中的旧源码列表。日志和预览在 `artifacts/tests/`。一组失败立即退出；`latest-run.json` 在本次运行开始时写入 RUNNING 和所选测试组，随后逐组更新为 PASS 或 FAIL。编译失败也会写入本次日志，未执行的组保留 PENDING。
+## 测试
+
+```powershell
+# 16组默认回归；加看点交互检查后共17组，无需Python
+.\test.cmd -SkipPreviews -IncludeVisualSmoke
+# 单独战斗助手
+.\test.cmd -Suite CombatPlanner -SkipPreviews
+# 使用明确的Python编码预览
+.\test.cmd -Python C:\Python312\python.exe -IncludeVisualSmoke
+```
+
+多组选择可在 PowerShell 内调用：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps1' -Suite CombatPlanner,GanyuDualScreen -SkipPreviews"
+```
+
+默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、PointerInteraction、GanyuTraversal、GanyuDualScreen。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
+
+按顺序运行，避免共享配置互相干扰。测试中需要暂时写配置的路径必须备份并在 finally 还原；窗口能力原生测试仅操作自己创建的窗口。`latest-run.json` 从 RUNNING 开始逐组写入 PASS/FAIL，未执行的组保持 PENDING，不使用旧日志冒充本次通过。
 
 ## 打包
 
 ```powershell
-& ./scripts/package.ps1 -Version 2.5 -InstructionsPath './docs/usage-v2.5.txt'
+.\package.cmd -Version 2.6 -InstructionsPath .\docs\usage-v2.6.txt
 ```
 
-使用实际存在的使用说明路径。脚本会检查 EXE 的程序集文件版本必须与目标版本匹配，再生成 `release/V2.5/原神启动-V2.5.zip`。用户运行包只包含 `原神启动.exe` 和 `使用说明.txt`，同时验证 EXE 校验和及 ZIP 条目数量。
+脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。
 
-预览文件和完整工程可单独提供，避免把数百张测试帧、旧编译器输出或历史版本混入运行包。源码工程应包含当前 `src/`、`tests/`、`scripts/`、`docs/`、`build.rsp`、`build_assets.py` 和当前 `assets/`；无需包含 `archive/`、`artifacts/`、`release/` 或根 EXE。
+`.gitattributes` 规定 C#/PowerShell/CMD/RSP 为 CRLF、Markdown/JSON/Python为LF；二进制不作换行转换。没有对历史仓库做全量换行重写。旧根目录构建和 Python 缓存归档说明见 [V2.6 整理记录](cleanup-v2.6.md)。历史使用说明和验证文档保留原路径，通过[索引](INDEX.md)导航，避免旧发布链接失效。
 
-本次发布的验证结果与文件校验和见 [V2.5 发布验证](validation-v2.5.md)。双屏蹬跳预览保存在 `release/V2.5/previews/`。
-
-## 历史资料
-
-`archive/v2.0-cleanup-manifest.json` 记录每个归档文件的原路径、归档路径、大小及 SHA-256。整理过程保留原始内容；旧入口仅作历史参考，已不在生产构建中。
+含中文路径或界面文案的PowerShell源码使用UTF-8 BOM，以兼容Windows PowerShell 5.1；RSP模板由脚本显式按UTF-8读取，C#编译指定65001代码页。
