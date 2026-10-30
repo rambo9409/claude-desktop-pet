@@ -32,6 +32,7 @@ src\PetEffects.cs
 src\PetWings.cs
 src\PetWindowAbility.cs
 src\PetAbilityEffects.cs
+src\PetAiAbilities.cs
 src\PetNightsoul.cs
 src\DailyHighlights.cs
 src\DailyHighlightsData.cs

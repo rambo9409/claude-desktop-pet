@@ -27,6 +27,8 @@ namespace ClaudePet
             {
                 switch (character)
                 {
+                    case "gpt6a": return new MenuPalette("#102F2B", "#F0FFF7", "#B4D6C8", "#EDCA82", "#588A78", "#28594A", "#1D483D", "#91B4A5", "#FFBAA0");
+                    case "deepseek": return new MenuPalette("#EFF7FF", "#183957", "#4A6785", "#245DA7", "#99BCE1", "#D0E5FF", "#DCEBFF", "#617C99", "#9C3856");
                     case "hutao": return new MenuPalette("#221A20", "#FFF0ED", "#CDB3B9", "#FF9B9F", "#984D5D", "#713341", "#492831", "#A58D94", "#FFADB0");
                     case "ganyu": return new MenuPalette("#F4FAFF", "#193F5D", "#496983", "#286694", "#A7CBE3", "#D1E9F9", "#E0EFFB", "#718BA0", "#9E3C56");
                     case "varesa": return new MenuPalette("#30203F", "#FFF1FC", "#D0B4DD", "#FFB3DE", "#9C6EB4", "#674075", "#4D2E60", "#A78AB8", "#FFB4D1");
@@ -70,7 +72,7 @@ namespace ClaudePet
             for (int i = 0; i < CharacterOrder.Length; i++)
             {
                 string key = CharacterOrder[i];
-                string icon = key == "hutao" ? "✿" : key == "ganyu" ? "❄" : key == "varesa" ? "⚡" : "●";
+                string icon = CharacterMark(key);
                 MenuItem characterItem = StyledItem(icon, CharacterNames[key], delegate { SwitchCharacter(key); });
                 characterItem.IsCheckable = true;
                 characterItem.IsChecked = key == currentCharacter;
@@ -92,16 +94,17 @@ namespace ClaudePet
                 magic.Click += delegate { SetWindowMagicEnabled(magic.IsChecked); magic.IsChecked = windowMagicEnabled; };
                 menu.Items.Add(magic);
             }
+            AddAiAbilityMenu(menu);
 
             menu.Items.Add(SectionLabel("动作与大小"));
-            menu.Items.Add(StyledItem("♧", "慢慢走一会儿", delegate { if (state == "idle") StartStrolling(); }));
-            menu.Items.Add(StyledItem("➜", currentCharacter == "hutao" ? "化蝶飞行一会儿" : "立即跑步", delegate { if (state == "idle") StartWalking(); }));
+            menu.Items.Add(StyledItem("♧", currentCharacter == "deepseek" ? "慢慢游一会儿" : "慢慢走一会儿", delegate { if (state == "idle") StartStrolling(); }));
+            menu.Items.Add(StyledItem("➜", currentCharacter == "hutao" ? "化蝶飞行一会儿" : currentCharacter == "deepseek" ? "冲刺游一会儿" : "立即跑步", delegate { if (state == "idle") StartWalking(); }));
             if (currentCharacter == "ganyu")
                 menu.Items.Add(StyledItem("↗", "蹬墙跳上附近窗口", delegate { if (state == "idle") StartGanyuJump(); }));
             MenuItem gait = StyledItem("⇄", "移动模式", null);
             string[] modes = { "stroll", "run", "mixed" };
-            string[] labels = { "慢速行走", currentCharacter == "hutao" ? "金蝶飞行" : "活力奔跑",
-                currentCharacter == "hutao" ? "走飞交替" : "走跑交替" };
+            string[] labels = { currentCharacter == "deepseek" ? "悠闲慢游" : "慢速行走", currentCharacter == "hutao" ? "金蝶飞行" : currentCharacter == "deepseek" ? "活力游动" : "活力奔跑",
+                currentCharacter == "hutao" ? "走飞交替" : currentCharacter == "deepseek" ? "快慢交替游" : "走跑交替" };
             for (int i = 0; i < modes.Length; i++)
             {
                 string mode = modes[i];
@@ -236,7 +239,7 @@ namespace ClaudePet
             Grid grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(42) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            string markText = currentCharacter == "hutao" ? "✿" : currentCharacter == "ganyu" ? "❄" : currentCharacter == "varesa" ? "⚡" : "✦";
+            string markText = CharacterMark(currentCharacter);
             Border mark = new Border {
                 Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = MenuBrush(menuPalette.Checked),
                 BorderBrush = MenuBrush(menuPalette.Border), BorderThickness = new Thickness(1),

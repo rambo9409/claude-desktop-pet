@@ -12,7 +12,7 @@ namespace ClaudePet
 
         internal void Begin(string character, int clickCount)
         {
-            secondTap = character == "kolo" && previousWasTap && previousCharacter == character &&
+            secondTap = (character == "kolo" || character == "gpt6a" || character == "deepseek") && previousWasTap && previousCharacter == character &&
                 clickCount >= 2 && clickCount % 2 == 0;
             pressedCharacter = character;
             previousWasTap = false;

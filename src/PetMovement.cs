@@ -445,7 +445,8 @@ namespace ClaudePet
             if (state == "idle" && movement == "walk" && !pointerHeld)
                 SetActiveGait(MovementGait.Choose(preferredGait, random.NextDouble()), DateTime.Now);
             else ScheduleNextWalk(DateTime.Now);
-            ShowSpeech(preferredGait == "stroll" ? "慢慢散步，也很舒服。" :
+            ShowSpeech(currentCharacter == "deepseek" ? (preferredGait == "stroll" ? "慢慢游，想法会自己冒出来。" :
+                preferredGait == "run" ? "摆摆尾巴，加速游！" : "快慢交替，自在游动。") : preferredGait == "stroll" ? "慢慢散步，也很舒服。" :
                 preferredGait == "run" ? (currentCharacter == "hutao" ? "化作金蝶，飞过去啦。" : "接下来就奔跑吧！") :
                 currentCharacter == "hutao" ? "散步、化蝶，自由活动。" : "走走跑跑，自由活动。" );
         }
@@ -480,7 +481,7 @@ namespace ClaudePet
             walkEnds = movementStarted.AddSeconds(quietMode ? 2 + random.NextDouble() * 2.5 : 5 + random.Next(7));
             direction = random.Next(2) == 0 ? -1 : 1;
             if (!quietMode)
-                ShowSpeech(activeGait == "stroll" ? "我去慢慢散个步。" :
+                ShowSpeech(currentCharacter == "deepseek" ? (activeGait == "stroll" ? "我去慢慢游一圈。" : "摆摆尾巴，加速游！") : activeGait == "stroll" ? "我去慢慢散个步。" :
                     currentCharacter == "hutao" ? "化作金蝶，飞过去啦。" :
                     currentCharacter == "varesa" && nightsoul.CanSprint ? "戴好面具，全速前进！" : "我去小跑一会儿。");
         }
@@ -633,9 +634,9 @@ namespace ClaudePet
         {
             double oldFoot = FootY;
             double descent;
-            if (HasGlider)
+            if (HasGlider || currentCharacter == "gpt6a" || currentCharacter == "deepseek")
                 descent = GlidePhysics.Step(ref fallVelocityX, ref fallVelocityY,
-                    glideAnimation.Openness, Width, deltaSeconds);
+                    HasGlider ? glideAnimation.Openness : 1, Width, deltaSeconds);
             else
             {
                 descent = fallVelocityY * deltaSeconds;
@@ -872,7 +873,7 @@ namespace ClaudePet
             if (e.ChangedButton != MouseButton.Left || !pointerHeld) return;
             Vector releaseDelta = CursorPosition(e) - pointerStart;
             tapSequence.Move(Math.Abs(releaseDelta.X) + Math.Abs(releaseDelta.Y));
-            bool shortenCooldown = tapSequence.Complete(currentCharacter);
+            bool abilityDoubleClick = tapSequence.Complete(currentCharacter);
             pointerHeld = false;
             ReleaseMouseCapture();
             if (!dragged)
@@ -884,7 +885,7 @@ namespace ClaudePet
                     supportHandle = platform.Handle;
                     Top = platform.Y - Height + FootInset;
                 }
-                if (!shortenCooldown) Play("happy", phrases[random.Next(phrases.Length)], 1500, 170);
+                if (!abilityDoubleClick) Play("happy", phrases[random.Next(phrases.Length)], 1500, 170);
             }
             else
             {
@@ -899,9 +900,9 @@ namespace ClaudePet
                 BeginFall(dragVelocityX);
                 fallVelocityY = Math.Max(-220, Math.Min(300, dragVelocityY));
                 heldTilt = 0;
-                if (!shortenCooldown) ShowSpeech("放手啦！");
+                if (!abilityDoubleClick) ShowSpeech("放手啦！");
             }
-            if (shortenCooldown) ReduceWindowAbilityCooldownFromDoubleClick();
+            if (abilityDoubleClick && !HandleAiDoubleClick()) ReduceWindowAbilityCooldownFromDoubleClick();
         }
 
         private PlatformEdge FindClosestPlatform(double range)

@@ -14,6 +14,9 @@ namespace ClaudePet
             { "walk", 4 }, { "stroll", 4 }, { "climb-up", 4 }
         };
 
+        internal static bool HasWindGlider(string character)
+        { return character == "hutao" || character == "ganyu" || character == "varesa"; }
+
         internal static Dictionary<string, BitmapSource[]> Load(string character)
         {
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("characters.zip");
@@ -28,10 +31,15 @@ namespace ClaudePet
                 // Share frozen bitmaps instead of storing and decoding duplicates.
                 frames["climb-down"] = (BitmapSource[])frames["climb-up"].Clone();
                 Array.Reverse(frames["climb-down"]);
-                if (character == "kolo") frames["ability"] = LoadSeries(archive, character, "ability", 4);
+                if (character == "kolo" || character == "gpt6a" || character == "deepseek") frames["ability"] = LoadSeries(archive, character, "ability", 4);
                 if (character == "ganyu") frames["jump"] = LoadSeries(archive, character, "jump", 4);
                 if (character == "hutao") frames["run-human"] = LoadSeries(archive, character, "run-human", 4);
-                if (character != "kolo")
+                if (character == "gpt6a" || character == "deepseek")
+                {
+                    if (archive.GetEntry(character + "-fall.png") != null) frames["fall"] = LoadSeries(archive, character, "fall", 1);
+                    if (archive.GetEntry(character + "-held.png") != null) frames["held"] = LoadSeries(archive, character, "held", 1);
+                }
+                if (HasWindGlider(character))
                 {
                     frames["glider"] = LoadSeries(archive, character, "glider", 1);
                     frames["glide"] = LoadSeries(archive, character, "glide", 8);

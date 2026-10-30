@@ -1,6 +1,8 @@
 # AI与开发者接手说明
 
-更新日期：2026-10-29。项目是本地 Windows WPF 桌宠，生产名“原神启动”，目标版本 V2.7。当前任务是角色拥有表、按拥有角色匹配攻略，以及未来角色/资料更新方式；保留V2.6的OCR、工程整理及原桌宠行为。
+更新日期：2026-10-30。项目是本地 Windows WPF 桌宠，生产名“原神启动”，当前版本 V2.8。新增GPT6A·龙女、DeepSeek·小肥鱼及本地专属能力，保留V2.7拥有表、攻略导入及原四角色行为。设计与交互见 [AI伙伴说明](ai-companions-v2.8.md)，本次验证和发布结果见 [V2.8验证](validation-v2.8.md)。
+
+V2.8已完成构建、20组回归、正式启动及发布ZIP校验。新能力76项、新角色219项通过，资源177项可完整重建，原123项字节不变。发布包 `release/V2.8/原神启动-V2.8.zip`。未来接手以本次提交为基础，避免把较早的中断状态当作当前状态。
 
 V2.7已完成：正式构建、18组回归（拥有表207项、战斗助手119项）、界面检查、正式EXE启动和发布包校验均通过。发布为 `release/V2.7/原神启动-V2.7.zip`；实际时间、证据位置、哈希及限制见 [V2.7验证](validation-v2.7.md)。后续改动仍需重新运行相关验证。
 
@@ -11,15 +13,16 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 1. 读取 `git status --short` 与 `git log -5 --oneline`，保留未提交改动。`90b5a12` 是前任 V2.6 战斗助手原样保存的提交，`97baf61` 是V2.5基线；当前实现包含后续修复，不要以旧交接“构建损坏”为由覆盖它。
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
-4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。17组默认回归加VisualSmoke共18组，新增CombatRosterTests。
-5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.7.md`。
+4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。19组默认回归加VisualSmoke共20组，V2.8新增AiCharactersTests与AiAbilitiesTests。
+5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.8.md`。
 
 ## 模块地图
 
 | 文件 | 职责与入口 |
 | --- | --- |
 | `src/ClaudePetMotion.cs` | 程序入口、PetWindow生命周期、主计时循环、基础设置与程序集版本 |
-| `src/PetMenu.cs` | 四角色菜单、工具入口、活动模式、窗口魔法开关 |
+| `src/PetMenu.cs` | 六角色菜单与配色、工具入口、活动模式、能力入口 |
+| `src/PetAiAbilities.cs` | 龙息专注、星环和泡泡显示、灵感本UI与安全保存 |
 | `src/PetMovement.cs` | 移动状态、平台枚举、拖拽、跌落、跨屏运行时 |
 | `src/DesktopMovement.cs` | DesktopMovement纯几何、VaresaRunTrack路线类 |
 | `src/PetGanyuTraversal.cs` | 甘雨完整多段路径规划、单墙/屏幕接缝借力、小跑靠近、运行时取消 |
@@ -77,6 +80,8 @@ V2.7拥有表为 `combat-roster-owned.json`，独立于战斗面板。配队覆�
 
 窗口魔法开关存于 `window-magic-enabled.txt`：新安装默认关闭；有旧冷却存档的升级用户保留启用状态。关闭要立即中断施法；双击减少冷却不会打开魔法。不要因为修改UI而改变这些行为。
 
+V2.8灵感本为 `deepseek-bubbles.json`，最多100条、每条2000字，沿用原子写入和损坏备份。隐藏/切换仅收起窗口并保留草稿，退出主窗通过 `CanCloseAiAbilities` 检查未保存内容，确认后 `CloseAiAbilities` 清理。龙息专注是内存内UTC截止时间，切换/隐藏/退出即取消；不恢复成系统定时任务，不更改quiet设置。
+
 ## 验证与发布约定
 
 测试顺序执行；涉及用户设置的测试必须备份并finally还原。原生能力测试只操作测试创建的专用窗口，不应用用户真实窗口作为目标。界面测试应覆盖四主题、最小尺寸、长文字、错误态和OCR预览。
@@ -86,10 +91,10 @@ V2.7拥有表为 `combat-roster-owned.json`，独立于战斗面板。配队覆�
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.7 -InstructionsPath .\docs\usage-v2.7.txt
+.\package.cmd -Version 2.8 -InstructionsPath .\docs\usage-v2.8.txt
 ```
 
-`release/V2.7/原神启动-V2.7.zip`只能含EXE和使用说明。预览独立放 `release/V2.7/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。
+`release/V2.8/原神启动-V2.8.zip`只能含EXE和使用说明。预览独立放 `release/V2.8/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。
 
 ## 整理与后续方向
 

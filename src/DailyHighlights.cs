@@ -149,9 +149,9 @@ namespace ClaudePet
             Resources["HoverSurface"] = ColorBrush(palette.Hover); Resources["DisabledText"] = ColorBrush(palette.Disabled);
             Resources["Attention"] = ColorBrush(palette.Exit);
             Resources["HeaderSurface"] = new LinearGradientBrush((Color)ColorConverter.ConvertFromString(palette.Checked), (Color)ColorConverter.ConvertFromString(palette.Surface), 14);
-            string name = character == "hutao" ? "胡桃" : character == "ganyu" ? "甘雨" : character == "varesa" ? "瓦雷莎" : "珂洛";
+            string name = PetWindow.CharacterDisplayName(character);
             companionText.Text = name + "的资讯小站  ·  陪你看看新鲜事";
-            characterMark.Text = character == "hutao" ? "✿" : character == "ganyu" ? "❄" : character == "varesa" ? "ϟ" : "✦";
+            characterMark.Text = PetWindow.CharacterMark(character);
             portraitImage.Source = portrait; portraitImage.Visibility = portrait == null ? Visibility.Collapsed : Visibility.Visible;
             characterMark.Visibility = portrait == null ? Visibility.Visible : Visibility.Collapsed;
             // Dynamic resources retain the reader's scroll position, collapse state and in-progress drag.

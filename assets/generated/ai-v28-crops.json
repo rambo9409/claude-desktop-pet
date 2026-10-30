@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "description": "Measured gutters in original transparent image_gen atlases. Packing crops, uniformly scales and places only; original alpha is preserved.",
+  "characters": {
+    "gpt6a": {
+      "source": "gpt6a-atlas-v28.png",
+      "scale": 1.43,
+      "xEdges": [0, 290, 575, 850, 1122],
+      "yEdges": [0, 290, 547, 800, 1080, 1402],
+      "cellYOverrides": {"2,2": [547, 795], "3,2": [795, 1080]},
+      "stroll": {"source": "gpt6a-stroll-v28.png", "xEdges": [0, 701, 1402], "yEdges": [0, 563, 1122], "scale": 0.73},
+      "airborne": [
+        {"name": "fall", "crop": [0, 0, 740, 670], "scale": 0.63},
+        {"name": "held", "crop": [740, 0, 1382, 670], "scale": 0.65}
+      ]
+    },
+    "deepseek": {
+      "source": "deepseek-atlas-v28.png",
+      "scale": 1.39,
+      "xEdges": [0, 293, 579, 856, 1122],
+      "lastRowXEdges": [0, 289, 580, 875, 1122],
+      "yEdges": [0, 302, 563, 798, 1085, 1402],
+      "airborne": [
+        {"name": "fall", "crop": [0, 670, 740, 1138], "scale": 0.73},
+        {"name": "held", "crop": [740, 670, 1382, 1138], "scale": 0.87}
+      ]
+    }
+  }
+}

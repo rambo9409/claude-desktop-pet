@@ -4,6 +4,9 @@
 
 - [用户说明](../README.md)
 - [更新记录](../CHANGELOG.md)
+- [V2.8 AI伙伴与专属能力](ai-companions-v2.8.md)
+- [V2.8使用说明](usage-v2.8.txt)
+- [V2.8验证结果](validation-v2.8.md)
 - [AI接手文档](HANDOFF.md)
 - [工程目录、依赖和命令](project-layout.md)
 - [战斗循环助手设计与限制](combat-planner-v2.6.md)
@@ -14,7 +17,7 @@
 - [V2.7使用说明](usage-v2.7.txt)
 - [V2.7验证结果](validation-v2.7.md)
 
-V2.7的发布说明、验证记录以 `usage-v2.7.txt`、`validation-v2.7.md` 为准；发布时应与EXE一同更新，未验证的行为不能标记通过。
+V2.8的发布说明、验证记录以 `usage-v2.8.txt`、`validation-v2.8.md` 为准；发布时应与EXE一同更新，未验证的行为不能标记通过。
 
 ## 历史发布
 
@@ -22,6 +25,7 @@ V2.7的发布说明、验证记录以 `usage-v2.7.txt`、`validation-v2.7.md` �
 
 | 版本 | 使用说明 | 验证 |
 | --- | --- | --- |
+| V2.7 | [使用说明](usage-v2.7.txt) | [验证](validation-v2.7.md) |
 | V2.6 | [使用说明](usage-v2.6.txt) | [验证](validation-v2.6.md) |
 | V2.5 | [使用说明](usage-v2.5.txt) | [验证](validation-v2.5.md) |
 | V2.4 | [使用说明](usage-v2.4.txt) | [验证](validation-v2.4.md) |

@@ -135,7 +135,7 @@ namespace ClaudePet
 
         private bool HasGlider
         {
-            get { return currentCharacter != "kolo" && frames.ContainsKey("glide") && frames.ContainsKey("glider"); }
+            get { return PetAssets.HasWindGlider(currentCharacter) && frames.ContainsKey("glide") && frames.ContainsKey("glider"); }
         }
 
         private double GlidingTopInset()
@@ -204,7 +204,7 @@ namespace ClaudePet
         {
             if (wingsCharacter != currentCharacter) CancelWings();
             BitmapSource[] poses, glider;
-            if (currentCharacter == "kolo" || state != "idle" || (IsLoaded && !IsVisible) ||
+            if (!PetAssets.HasWindGlider(currentCharacter) || state != "idle" || (IsLoaded && !IsVisible) ||
                 !frames.TryGetValue("glide", out poses) || poses.Length != 8 ||
                 !frames.TryGetValue("glider", out glider) || glider.Length == 0)
             {

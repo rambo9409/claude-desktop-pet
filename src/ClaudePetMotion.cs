@@ -16,8 +16,8 @@ using System.Windows.Threading;
 [assembly: AssemblyTitle("原神启动")]
 [assembly: AssemblyDescription("多形象桌宠、资讯、窗口魔法与原神战斗循环助手")]
 [assembly: AssemblyProduct("原神启动")]
-[assembly: AssemblyVersion("2.7.0.0")]
-[assembly: AssemblyFileVersion("2.7.0.0")]
+[assembly: AssemblyVersion("2.8.0.0")]
+[assembly: AssemblyFileVersion("2.8.0.0")]
 
 namespace ClaudePet
 {
@@ -275,13 +275,33 @@ namespace ClaudePet
 
     public sealed partial class PetWindow : Window
     {
-        private static readonly string[] CharacterOrder = { "kolo", "hutao", "ganyu", "varesa" };
+        private static readonly string[] CharacterOrder = { "kolo", "gpt6a", "deepseek", "hutao", "ganyu", "varesa" };
         private static readonly Dictionary<string, string> CharacterNames = new Dictionary<string, string> {
             { "kolo", "珂洛" },
+            { "gpt6a", "GPT6A·龙女" },
+            { "deepseek", "DeepSeek·小肥鱼" },
             { "hutao", "胡桃" },
             { "ganyu", "甘雨" },
             { "varesa", "瓦雷莎" }
         };
+
+        internal static string CharacterDisplayName(string key)
+        {
+            string name;
+            return key != null && CharacterNames.TryGetValue(key, out name) ? name : CharacterNames["kolo"];
+        }
+
+        internal static string CharacterMark(string key)
+        {
+            switch (key) {
+                case "gpt6a": return "✧";
+                case "deepseek": return "≈";
+                case "hutao": return "✿";
+                case "ganyu": return "❄";
+                case "varesa": return "⚡";
+                default: return "✦";
+            }
+        }
 
         private readonly Image sprite;
         private readonly SpeechWindow speechWindow;
@@ -393,6 +413,7 @@ namespace ClaudePet
             root.Children.Add(sprite);
             InitializeEffects(root);
             InitializeNightsoul(root);
+            InitializeAiAbilities(root);
 
             speechWindow = new SpeechWindow();
             speechWindow.Text.Text = "你好，我是" + CharacterNames[currentCharacter] + "。";
@@ -421,6 +442,7 @@ namespace ClaudePet
             };
             IsVisibleChanged += delegate {
                 if (!IsVisible) CancelWindowAbility();
+                if (!IsVisible) CancelAiAbilities();
                 if (!IsVisible) tapSequence.Reset();
                 if (!IsVisible) ClearGanyuTraversal();
                 if (!IsVisible && movement == "wallrun") EndVaresaRun();
@@ -454,6 +476,7 @@ namespace ClaudePet
             if (!CharacterNames.ContainsKey(key)) return;
             tapSequence.Reset();
             CancelWindowAbility();
+            CancelAiAbilities();
             ClearGanyuTraversal();
             bool leftWall = movement == "wallrun";
             if (leftWall) EndVaresaRun();
@@ -617,6 +640,7 @@ namespace ClaudePet
             }
 
             UpdateWindowAbility(now, deltaSeconds);
+            UpdateAiAbilities(now, deltaSeconds);
             if (state == "idle" && !pointerHeld && !IsWindowAbilityActive) UpdateMovement(now, deltaSeconds);
 
             string visibleState = state;
@@ -638,7 +662,12 @@ namespace ClaudePet
             }
             else if (state == "idle" && movement == "held")
             {
-                visibleState = "idle";
+                visibleState = frames.ContainsKey("held") ? "held" : "idle";
+                animationStart = movementStarted;
+            }
+            else if (state == "idle" && movement == "fall" && frames.ContainsKey("fall"))
+            {
+                visibleState = "fall";
                 animationStart = movementStarted;
             }
 
@@ -696,6 +725,7 @@ namespace ClaudePet
             }
             BitmapSource requested = PrepareGlidingFrame(current[index], deltaSeconds);
             requested = PrepareAbilityFrame(requested);
+            requested = PrepareAiAbilityFrame(requested);
             RenderButterflyEffects(requested, transforms, deltaSeconds);
             RenderWings(transforms);
 
@@ -704,10 +734,17 @@ namespace ClaudePet
             UpdateSpeechPosition();
         }
 
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            if (!e.Cancel && !CanCloseAiAbilities()) e.Cancel = true;
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             timer.Stop();
             CancelWindowAbility();
+            CloseAiAbilities();
             ClearGanyuTraversal();
             CancelWings();
             speechWindow.Close();
