@@ -16,8 +16,8 @@ using System.Windows.Threading;
 [assembly: AssemblyTitle("原神启动")]
 [assembly: AssemblyDescription("多形象桌宠、资讯、窗口魔法与原神战斗循环助手")]
 [assembly: AssemblyProduct("原神启动")]
-[assembly: AssemblyVersion("2.8.0.0")]
-[assembly: AssemblyFileVersion("2.8.0.0")]
+[assembly: AssemblyVersion("2.9.0.0")]
+[assembly: AssemblyFileVersion("2.9.0.0")]
 
 namespace ClaudePet
 {
@@ -403,7 +403,7 @@ namespace ClaudePet
             Content = viewbox;
 
             sprite = new Image();
-            sprite.Source = frames["idle"][0];
+            sprite.Source = PrepareNotebookFrame(frames["idle"][0]);
             sprite.Stretch = Stretch.Uniform;
             sprite.HorizontalAlignment = HorizontalAlignment.Stretch;
             sprite.VerticalAlignment = VerticalAlignment.Bottom;
@@ -417,6 +417,7 @@ namespace ClaudePet
 
             speechWindow = new SpeechWindow();
             speechWindow.Text.Text = "你好，我是" + CharacterNames[currentCharacter] + "。";
+            InitializeNotebook();
 
             ContextMenu = BuildMenu();
             MouseLeftButtonDown += OnPointerDown;
@@ -442,6 +443,7 @@ namespace ClaudePet
             };
             IsVisibleChanged += delegate {
                 if (!IsVisible) CancelWindowAbility();
+                if (!IsVisible) ReturnNotebook(false);
                 if (!IsVisible) CancelAiAbilities();
                 if (!IsVisible) tapSequence.Reset();
                 if (!IsVisible) ClearGanyuTraversal();
@@ -474,6 +476,7 @@ namespace ClaudePet
         private void SwitchCharacter(string key)
         {
             if (!CharacterNames.ContainsKey(key)) return;
+            ReturnNotebook(false);
             tapSequence.Reset();
             CancelWindowAbility();
             CancelAiAbilities();
@@ -490,29 +493,40 @@ namespace ClaudePet
             if (leftWall && FindSupport() == null) BeginFall(0);
             stateStarted = DateTime.Now;
             stateEnds = DateTime.MaxValue;
-            sprite.Source = frames["idle"][0];
+            sprite.Source = PrepareNotebookFrame(frames["idle"][0]);
             Title = "原神启动 · " + CharacterNames[key];
             PetSettings.SaveCharacter(key);
             if (ContextMenu != null) ContextMenu.IsOpen = false;
             ContextMenu = BuildMenu();
-            if (highlightsWindow != null) highlightsWindow.ApplyCharacterTheme(key, frames["idle"][0]);
+            if (highlightsWindow != null) highlightsWindow.ApplyCharacterTheme(key, CompanionPortrait());
             if (combatPlannerWindow != null) combatPlannerWindow.ApplyCharacterTheme(key);
             if (gptResetWindow != null) gptResetWindow.ApplyCharacterTheme(key);
             ScheduleNextWalk(DateTime.Now);
             ShowSpeech("已换成" + CharacterNames[key] + "啦。");
         }
 
+        private BitmapSource CompanionPortrait()
+        {
+            return currentCharacter == "kolo" && notebook.Held ? frames["book-idle"][0] : frames["idle"][0];
+        }
+
+        private void RefreshNotebookPortrait()
+        {
+            if (highlightsWindow != null && currentCharacter == "kolo")
+                highlightsWindow.SetPortrait(CompanionPortrait());
+        }
+
         private void OpenHighlights()
         {
             if (highlightsWindow == null)
             {
-                highlightsWindow = new HighlightsWindow(currentCharacter, frames["idle"][0]);
+                highlightsWindow = new HighlightsWindow(currentCharacter, CompanionPortrait());
                 highlightsWindow.Closed += delegate { highlightsWindow = null; };
                 highlightsWindow.Show();
             }
             else
             {
-                highlightsWindow.ApplyCharacterTheme(currentCharacter, frames["idle"][0]);
+                highlightsWindow.ApplyCharacterTheme(currentCharacter, CompanionPortrait());
                 highlightsWindow.Activate();
             }
         }
@@ -641,7 +655,7 @@ namespace ClaudePet
 
             UpdateWindowAbility(now, deltaSeconds);
             UpdateAiAbilities(now, deltaSeconds);
-            if (state == "idle" && !pointerHeld && !IsWindowAbilityActive) UpdateMovement(now, deltaSeconds);
+            if (state == "idle" && !pointerHeld && !notebook.Pressed && !IsWindowAbilityActive) UpdateMovement(now, deltaSeconds);
 
             string visibleState = state;
             DateTime animationStart = stateStarted;
@@ -726,6 +740,7 @@ namespace ClaudePet
             BitmapSource requested = PrepareGlidingFrame(current[index], deltaSeconds);
             requested = PrepareAbilityFrame(requested);
             requested = PrepareAiAbilityFrame(requested);
+            requested = PrepareNotebookFrame(requested);
             RenderButterflyEffects(requested, transforms, deltaSeconds);
             RenderWings(transforms);
 
@@ -743,6 +758,7 @@ namespace ClaudePet
         protected override void OnClosed(EventArgs e)
         {
             timer.Stop();
+            ReturnNotebook(false);
             CancelWindowAbility();
             CloseAiAbilities();
             ClearGanyuTraversal();

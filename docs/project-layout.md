@@ -1,4 +1,4 @@
-# V2.8 工程与构建
+# V2.9 工程与构建
 
 ## 目录
 
@@ -42,7 +42,7 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 ## 测试
 
 ```powershell
-# 19组默认回归；加看点交互检查后共20组，无需Python
+# 20组默认回归；加看点交互检查后共21组，无需Python
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
 # 单独战斗助手
 .\test.cmd -Suite CombatPlanner -SkipPreviews
@@ -58,14 +58,14 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps1' -Suite CombatPlanner,GanyuDualScreen -SkipPreviews"
 ```
 
-默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、CombatRoster、PointerInteraction、GanyuTraversal、GanyuDualScreen、AiAbilities、AiCharacters。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
+默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、CombatRoster、PointerInteraction、GanyuTraversal、GanyuDualScreen、AiAbilities、AiCharacters、Notebook。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
 
 按顺序运行，避免共享配置互相干扰。测试中需要暂时写配置的路径必须备份并在 finally 还原；窗口能力原生测试仅操作自己创建的窗口。`latest-run.json` 从 RUNNING 开始逐组写入 PASS/FAIL，未执行的组保持 PENDING，不使用旧日志冒充本次通过。
 
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.8 -InstructionsPath .\docs\usage-v2.8.txt
+.\package.cmd -Version 2.9 -InstructionsPath .\docs\usage-v2.9.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。

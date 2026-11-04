@@ -6,6 +6,9 @@ from pathlib import Path
 from zipfile import ZIP_STORED, ZipFile
 
 from PIL import Image, ImageDraw, ImageFont
+from build_deepseek_v29 import load_frames as load_deepseek_reference_frames
+from build_kolo_v29 import load_frames as load_kolo_reference_frames
+from build_kolo_v29 import load_hitboxes as load_notebook_hitboxes
 
 OUTPUT = Path(__file__).resolve().parent / "assets"
 GENERATED_ROOT = OUTPUT / "generated"
@@ -62,7 +65,14 @@ def transform_frame(image: Image.Image, pose: tuple[int, int, float, float, floa
     dx, dy, angle, scale_x, scale_y = pose
     width = max(1, int(round(512 * scale_x)))
     height = max(1, int(round(512 * scale_y)))
-    scaled = image.resize((width, height), Image.Resampling.LANCZOS)
+    if width > image.width and height < image.height:
+        # Preserve the legacy horizontal-then-vertical sampling order. Pillow 13
+        # optimizes this mixed-scale case to vertical first, changing old poses.
+        # Premultiply once so the two passes retain the original alpha behavior.
+        scaled = image.convert("RGBa").resize((width, image.height), Image.Resampling.LANCZOS)
+        scaled = scaled.resize((width, height), Image.Resampling.LANCZOS).convert("RGBA")
+    else:
+        scaled = image.resize((width, height), Image.Resampling.LANCZOS)
     canvas = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
     canvas.alpha_composite(scaled, ((512 - width) // 2, (512 - height) // 2))
     if angle:
@@ -313,7 +323,7 @@ def build_preview(idle_images: dict[str, Image.Image]) -> None:
     draw = ImageDraw.Draw(canvas)
     title_font = load_font(22)
     name_font = load_font(19)
-    draw.text((28, 18), "原神启动 V2.8 · 龙女的星环与小肥鱼的灵感泡泡", font=title_font, fill=(76, 48, 45, 255))
+    draw.text((28, 18), "原神启动 V2.9 · 鲸尾少女与珂洛的小本本", font=title_font, fill=(76, 48, 45, 255))
     card_width = 250
     for index, key in enumerate(CHARACTERS):
         left = 22 + index * 264
@@ -394,7 +404,7 @@ def build_kolo_preview(idle: Image.Image, frames: dict[str, Image.Image]) -> Non
         for index in range(4):
             pose = frames[f"{action}-{index+1}"].resize((256,256), Image.Resampling.LANCZOS)
             sheet.paste(pose, (index*256, row*290+30), pose)
-    sheet.save(preview_root / "kolo-v22-contact.png")
+    sheet.save(preview_root / "kolo-v29-contact.png")
     animation = []
     for tick in range(80):
         elapsed = tick*.04
@@ -412,7 +422,7 @@ def build_kolo_preview(idle: Image.Image, frames: dict[str, Image.Image]) -> Non
             pose = pose.resize((250,250), Image.Resampling.LANCZOS)
             canvas.paste(pose, (column*250,40), pose)
         animation.append(canvas)
-    animation[0].save(preview_root/"kolo-v22-actions.gif", save_all=True, append_images=animation[1:], duration=40, loop=0, disposal=2)
+    animation[0].save(preview_root/"kolo-v29-actions.gif", save_all=True, append_images=animation[1:], duration=40, loop=0, disposal=2)
 
 
 def build_flight_contact_sheet(frames: dict[str, Image.Image], preview_root: Path) -> None:
@@ -500,6 +510,8 @@ def load_ai_frames(character: str) -> dict[str, Image.Image]:
     Shared scale per atlas and a shared horizontal pivot per row avoid changing
     body size each frame. Climbing shares x=400 contact, ground poses y=486.
     """
+    if character == "deepseek":
+        return load_deepseek_reference_frames(GENERATED_ROOT)
     recipe = json.loads((GENERATED_ROOT / "ai-v28-crops.json").read_text(encoding="utf-8"))["characters"][character]
     source = Image.open(GENERATED_ROOT / recipe["source"]).convert("RGBA")
     if source.getchannel("A").getextrema()[0] != 0:
@@ -580,7 +592,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
             frame = frames_by_character[character][action].resize((220, 220), Image.Resampling.LANCZOS)
             sheet.paste(frame, (col * 220, row * 260 + 30), frame)
             draw.text((col * 220 + 8, row * 260 + 6), character + " · " + action, font=font, fill=fg)
-    sheet.save(preview_root / "ai-v28-contact-sheet.png")
+    sheet.save(preview_root / "ai-v29-contact-sheet.png")
     gait_sheet = Image.new("RGB", (960, 6 * 260), "#eef7f6")
     gait_draw = ImageDraw.Draw(gait_sheet)
     for character_row, character in enumerate(AI_CHARACTERS):
@@ -590,7 +602,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 pose = frames_by_character[character][f"{action}-{index + 1}"].resize((240, 240), Image.Resampling.LANCZOS)
                 gait_sheet.paste(pose, (index * 240, row * 260 + 20), pose)
                 gait_draw.text((index * 240 + 8, row * 260 + 2), f"{character} · {action} {index + 1}", font=font, fill="#254D59")
-    gait_sheet.save(preview_root / "ai-v28-gait-contact-sheet.png")
+    gait_sheet.save(preview_root / "ai-v29-gait-contact-sheet.png")
     animation = []
     for tick in range(48):
         canvas = Image.new("RGB", (1000, 540), "#eef7f6")
@@ -602,7 +614,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 canvas.paste(pose, (col * 250 + 5, row * 270 + 22), pose)
                 draw.text((col * 250 + 8, row * 270 + 2), character + " · " + action, font=font, fill="#254D59")
         animation.append(canvas)
-    animation[0].save(preview_root / "ai-v28-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
+    animation[0].save(preview_root / "ai-v29-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
 
 
 def append_ai_assets() -> None:
@@ -628,9 +640,36 @@ def append_ai_assets() -> None:
     print("Added 54 AI character frames; preserved all existing character PNG entries.")
 
 
+def refresh_reference_assets() -> None:
+    """Replace only the two revised characters, preserving the other PNGs."""
+    replacements = {"kolo": load_kolo_reference_frames(GENERATED_ROOT),
+                    "deepseek": load_deepseek_reference_frames(GENERATED_ROOT)}
+    source_path, temporary = OUTPUT / "characters.zip", OUTPUT / "characters-building.zip"
+    idle_images = {}
+    with ZipFile(source_path, "r") as source, ZipFile(temporary, "w", compression=ZIP_STORED) as destination:
+        for entry in source.infolist():
+            if any(entry.filename.startswith(character + "-") for character in replacements):
+                continue
+            data = source.read(entry.filename)
+            destination.writestr(entry, data)
+            if entry.filename.endswith("-idle.png"):
+                idle_images[entry.filename[:-9]] = Image.open(BytesIO(data)).convert("RGBA")
+        for character, frames in replacements.items():
+            for name, frame in frames.items():
+                destination.writestr(f"{character}-{name}.png", to_png(frame))
+            idle_images[character] = frames.get("book-idle", frames["idle"])
+        destination.writestr("kolo-notebook-hitboxes.json", json.dumps(load_notebook_hitboxes(GENERATED_ROOT), ensure_ascii=False))
+    temporary.replace(source_path)
+    idle_images["kolo"].save(OUTPUT / "ClaudePet.ico", format="ICO", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+    build_preview(idle_images)
+    build_kolo_preview(idle_images["kolo"], replacements["kolo"])
+    build_ai_preview({"gpt6a": load_ai_frames("gpt6a"), "deepseek": replacements["deepseek"]})
+    print("Updated Kolo and DeepSeek; all other character entries preserved.")
+
+
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    character_bases = {key: build_special_base(key) for key in CHARACTERS if key not in AI_CHARACTERS}
+    character_bases = {key: build_special_base(key) for key in SPECIAL_CHARACTERS}
     gliders = load_windglider_frames()
     glide_poses = load_glide_frames()
     idle_images: dict[str, Image.Image] = {}
@@ -639,9 +678,9 @@ def main() -> None:
     package = OUTPUT / "characters-building.zip"
     with ZipFile(package, "w", compression=ZIP_STORED) as archive:
         for character in CHARACTERS:
-            if character in AI_CHARACTERS:
-                frames = load_ai_frames(character)
-                idle_images[character] = frames["idle"]
+            if character in AI_CHARACTERS or character == "kolo":
+                frames = load_kolo_reference_frames(GENERATED_ROOT) if character == "kolo" else load_ai_frames(character)
+                idle_images[character] = frames.get("book-idle", frames["idle"])
                 motion_images[character] = frames
                 for frame_name, output in frames.items():
                     archive.writestr(f"{character}-{frame_name}.png", to_png(output))
@@ -653,11 +692,8 @@ def main() -> None:
                 if frame_name == "idle":
                     idle_images[character] = output.copy()
                 count += 1
-            if character == "kolo":
-                motions = load_kolo_frames()
-            else:
-                motions = load_motion_frames(character, idle_images[character])
-                motions.update(load_gait_frames(character, "stroll", idle_images[character]))
+            motions = load_motion_frames(character, idle_images[character])
+            motions.update(load_gait_frames(character, "stroll", idle_images[character]))
             if character == "varesa":
                 motions.update(load_gait_frames(character, "sprint", idle_images[character]))
             elif character == "hutao":
@@ -680,6 +716,8 @@ def main() -> None:
                 for frame_name, output in glide_poses[character].items():
                     archive.writestr(f"{character}-{frame_name}.png", to_png(output))
                     count += 1
+        archive.writestr("kolo-notebook-hitboxes.json", json.dumps(load_notebook_hitboxes(GENERATED_ROOT), ensure_ascii=False))
+        count += 1
 
     package.replace(OUTPUT / "characters.zip")
     icon = idle_images["kolo"]
@@ -688,7 +726,8 @@ def main() -> None:
     build_motion_preview(motion_images)
     build_kolo_preview(idle_images["kolo"], motion_images["kolo"])
     build_ai_preview({character: motion_images[character] for character in AI_CHARACTERS})
-    if count != 177:
+    expected = 153 + len(motion_images["kolo"])
+    if count != expected:
         raise ValueError(f"Unexpected asset count: {count}")
     print(f"generated {count} assets for {len(CHARACTERS)} characters")
     print(OUTPUT / "characters.zip")
@@ -697,7 +736,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     import sys
-    if "--append-ai" in sys.argv:
+    if "--refresh-v29" in sys.argv:
+        refresh_reference_assets()
+    elif "--append-ai" in sys.argv:
         append_ai_assets()
     else:
         main()

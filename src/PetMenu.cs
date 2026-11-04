@@ -95,16 +95,17 @@ namespace ClaudePet
                 menu.Items.Add(magic);
             }
             AddAiAbilityMenu(menu);
+            AddNotebookMenu(menu);
 
             menu.Items.Add(SectionLabel("动作与大小"));
-            menu.Items.Add(StyledItem("♧", currentCharacter == "deepseek" ? "慢慢游一会儿" : "慢慢走一会儿", delegate { if (state == "idle") StartStrolling(); }));
-            menu.Items.Add(StyledItem("➜", currentCharacter == "hutao" ? "化蝶飞行一会儿" : currentCharacter == "deepseek" ? "冲刺游一会儿" : "立即跑步", delegate { if (state == "idle") StartWalking(); }));
+            menu.Items.Add(StyledItem("♧", "慢慢走一会儿", delegate { if (state == "idle") StartStrolling(); }));
+            menu.Items.Add(StyledItem("➜", currentCharacter == "hutao" ? "化蝶飞行一会儿" : "立即跑步", delegate { if (state == "idle") StartWalking(); }));
             if (currentCharacter == "ganyu")
                 menu.Items.Add(StyledItem("↗", "蹬墙跳上附近窗口", delegate { if (state == "idle") StartGanyuJump(); }));
             MenuItem gait = StyledItem("⇄", "移动模式", null);
             string[] modes = { "stroll", "run", "mixed" };
-            string[] labels = { currentCharacter == "deepseek" ? "悠闲慢游" : "慢速行走", currentCharacter == "hutao" ? "金蝶飞行" : currentCharacter == "deepseek" ? "活力游动" : "活力奔跑",
-                currentCharacter == "hutao" ? "走飞交替" : currentCharacter == "deepseek" ? "快慢交替游" : "走跑交替" };
+            string[] labels = { "慢速行走", currentCharacter == "hutao" ? "金蝶飞行" : "活力奔跑",
+                currentCharacter == "hutao" ? "走飞交替" : "走跑交替" };
             for (int i = 0; i < modes.Length; i++)
             {
                 string mode = modes[i];

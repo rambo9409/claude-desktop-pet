@@ -90,7 +90,7 @@ namespace ClaudePet
         // OnTick has captured the human silhouette and started its dissolution.
         private void SetMovementSprite(BitmapSource source)
         {
-            if (currentCharacter != "hutao") sprite.Source = source;
+            if (currentCharacter != "hutao") sprite.Source = PrepareNotebookFrame(source);
         }
 
         private void CancelButterflyEffects()
@@ -101,7 +101,7 @@ namespace ClaudePet
             effectsCharacter = currentCharacter;
             sprite.Opacity = 1;
             sprite.OpacityMask = null;
-            if (frames != null) sprite.Source = frames["idle"][0];
+            if (frames != null) sprite.Source = PrepareNotebookFrame(frames["idle"][0]);
             HideButterflyLayers();
         }
 

@@ -182,7 +182,7 @@ internal static class AiCharactersTests
                 Check(Contrast(palette.Text, palette.Surface) >= 4.5 && Contrast(palette.Text, palette.Checked) >= 4.5 && Contrast(palette.Text, palette.Hover) >= 4.5, "Menu theme text contrast.");
                 Check(Contrast(palette.Disabled, palette.Surface) >= 3, "Disabled menu contrast.");
                 Check(Item(menu, "选择形象").Items.Count == 6 && Get<List<MenuItem>>(pet, "characterItems").Count == 6, "Menu does not contain exactly six characters.");
-                if (character == "deepseek") { Item(menu, "慢慢游一会儿"); Item(menu, "冲刺游一会儿"); }
+                if (character == "deepseek") { Item(menu, "慢慢走一会儿"); Item(menu, "立即跑步"); }
                 menu.ApplyTemplate(); Capture(menu, 280, 760, Path.Combine(directory, character + "-menu.png"));
                 Tools(character, frames["idle"][0]); Movement(pet, frames);
                 if (character == "gpt6a") FocusGesture(pet, frames);

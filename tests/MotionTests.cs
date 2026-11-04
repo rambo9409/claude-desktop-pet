@@ -94,6 +94,7 @@ internal static class MotionTests
         Set(pet, "state", "idle");
         Set(pet, "stateEnds", DateTime.MaxValue);
         Image sprite = (Image)Get(pet, "sprite");
+        ((NotebookState)Get(pet, "notebook")).Detach(); // Empty-handed gait; held-book mapping has its own suite.
         foreach (string character in new[] { "kolo", "hutao", "ganyu", "varesa" })
         {
             Dictionary<string, BitmapSource[]> frames = (Dictionary<string, BitmapSource[]>)

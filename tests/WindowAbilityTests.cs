@@ -437,6 +437,7 @@ internal static class WindowAbilityTests
 
     private static WindowAbilityController StartMockGesture(PetWindow pet, Desktop desktop)
     {
+        Get<NotebookState>(pet, "notebook").Detach(); // Spell behavior requires that the book has been taken away.
         WindowAbilityController controller = Controller(desktop, 0);
         controller.TryStart(Now, Pet, Work);
         Set(pet, "windowAbility", controller);

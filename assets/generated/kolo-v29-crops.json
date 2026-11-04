@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "description": "Measured source gutters and clipboard rectangles. Crop, uniform scaling and placement preserve subject alpha. Two explicitly measured pieces of adjacent frames are excluded from extraction.",
+  "xEdges": [0, 280, 561, 842, 1122],
+  "free": {
+    "source": "kolo-free-v29.png", "scale": 1.39,
+    "rowXEdges": [[0,280,560,840,1122],[0,280,560,840,1122],[0,280,568,847,1122],[0,280,560,840,1122],[0,280,560,840,1122]],
+    "columnYEdges": [[0,293,575,825,1090,1402],[0,294,574,817,1091,1402],[0,294,576,826,1088,1402],[0,294,574,825,1089,1402]],
+    "excludeAtlasRects": [
+      {"row": 2, "column": 1, "rect": [448,574,466,578], "reason": "Last two visible rows of the previous stroll frame's shoe sole, above and left of this frame's hair curl."}
+    ]
+  },
+  "book": {
+    "source": "kolo-book-v29.png", "scale": 1.17,
+    "rowXEdges": [[0,294,585,861,1122],[0,288,573,847,1122],[0,299,583,856,1122],[0,284,582,857,1122]],
+    "columnYEdges": [[0,357,691,990,1402],[0,356,690,989,1402],[0,355,694,989,1402],[0,357,692,988,1402]],
+    "excludeAtlasRects": [
+      {"row": 3, "column": 2, "rect": [849,1205,857,1236], "reason": "Leftmost hair curl of the next climbing frame, across the right cell boundary and separated from this frame's body."}
+    ],
+    "bookRects": [
+      [[125,193,62,73],[411,193,63,75],[693,197,73,77],[990,199,62,78]],
+      [[185,518,57,79],[478,521,57,76],[751,520,64,78],[1037,518,55,77]],
+      [[196,846,51,72],[482,844,52,74],[750,847,60,68],[1034,847,50,70]],
+      [[195,1135,49,75],[483,1127,53,75],[771,1140,51,76],[1038,1133,49,75]]
+    ]
+  },
+  "notebook": {"source": "kolo-notebook-v29.png", "maximumSize": [384,512]}
+}

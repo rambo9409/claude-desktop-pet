@@ -1,8 +1,10 @@
 # AI与开发者接手说明
 
-更新日期：2026-10-30。项目是本地 Windows WPF 桌宠，生产名“原神启动”，当前版本 V2.8。新增GPT6A·龙女、DeepSeek·小肥鱼及本地专属能力，保留V2.7拥有表、攻略导入及原四角色行为。设计与交互见 [AI伙伴说明](ai-companions-v2.8.md)，本次验证和发布结果见 [V2.8验证](validation-v2.8.md)。
+更新于2026-11-04。项目是 Windows WPF 桌宠“原神启动”，当前版本 V2.9。DeepSeek 采用蓝发鲸尾女仆形象，珂洛有持本和空手两组动作。持本时窗口魔法暂停，拖走和归还本子时更新施法资格。详见[本子与参考形象](notebook-v2.9.md)和[V2.9 验证](validation-v2.9.md)。
 
-V2.8已完成构建、20组回归、正式启动及发布ZIP校验。新能力76项、新角色219项通过，资源177项可完整重建，原123项字节不变。发布包 `release/V2.8/原神启动-V2.8.zip`。未来接手以本次提交为基础，避免把较早的中断状态当作当前状态。
+V2.9已完成构建、21组回归、末轮素材修正后的Notebook/Motion复测、200项素材完整重建比较、正式EXE启动及发布包内容校验。发布包为 `release/V2.9/原神启动-V2.9.zip`，预览在同目录的 `previews/`。双屏覆盖为模拟坐标与路由事件测试，尚未进行物理鼠标在不同DPI显示器间拖拽的实测。
+
+V2.8历史发布包为 `release/V2.8/原神启动-V2.8.zip`，当版验证见 [V2.8验证](validation-v2.8.md)。
 
 V2.7已完成：正式构建、18组回归（拥有表207项、战斗助手119项）、界面检查、正式EXE启动和发布包校验均通过。发布为 `release/V2.7/原神启动-V2.7.zip`；实际时间、证据位置、哈希及限制见 [V2.7验证](validation-v2.7.md)。后续改动仍需重新运行相关验证。
 
@@ -13,8 +15,8 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 1. 读取 `git status --short` 与 `git log -5 --oneline`，保留未提交改动。`90b5a12` 是前任 V2.6 战斗助手原样保存的提交，`97baf61` 是V2.5基线；当前实现包含后续修复，不要以旧交接“构建损坏”为由覆盖它。
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
-4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。19组默认回归加VisualSmoke共20组，V2.8新增AiCharactersTests与AiAbilitiesTests。
-5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.8.md`。
+4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。20组默认回归加VisualSmoke共21组，V2.9新增NotebookTests。
+5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.9.md`。
 
 ## 模块地图
 
@@ -23,6 +25,8 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 | `src/ClaudePetMotion.cs` | 程序入口、PetWindow生命周期、主计时循环、基础设置与程序集版本 |
 | `src/PetMenu.cs` | 六角色菜单与配色、工具入口、活动模式、能力入口 |
 | `src/PetAiAbilities.cs` | 龙息专注、星环和泡泡显示、灵感本UI与安全保存 |
+| `src/PetNotebook.cs` | 持本/离手状态、每帧命中、跨屏独立本子窗口、归还及生命周期 |
+| `build_deepseek_v29.py`、`build_kolo_v29.py` | 两角色参考重绘的裁切与归一化，主入口由build_assets.py统一调用 |
 | `src/PetMovement.cs` | 移动状态、平台枚举、拖拽、跌落、跨屏运行时 |
 | `src/DesktopMovement.cs` | DesktopMovement纯几何、VaresaRunTrack路线类 |
 | `src/PetGanyuTraversal.cs` | 甘雨完整多段路径规划、单墙/屏幕接缝借力、小跑靠近、运行时取消 |
@@ -80,6 +84,8 @@ V2.7拥有表为 `combat-roster-owned.json`，独立于战斗面板。配队覆�
 
 窗口魔法开关存于 `window-magic-enabled.txt`：新安装默认关闭；有旧冷却存档的升级用户保留启用状态。关闭要立即中断施法；双击减少冷却不会打开魔法。不要因为修改UI而改变这些行为。
 
+V2.9中珂洛默认持本：`NotebookBlocksMagic`必须在目标枚举和Advance之前阻断施法，持本、取本拖拽和独立本子拖拽均不能施法。拖离不自动开魔法或清冷却。归还、隐藏、最小化、切换和关闭必须回收本子并取消施法；不持久化离手状态。`kolo-book-*`和空手帧分离，命中框由ZIP中的 `kolo-notebook-hitboxes.json` 指向实际BitmapSource；必须随WPF镜像、倾斜和缩放正确反变换。
+
 V2.8灵感本为 `deepseek-bubbles.json`，最多100条、每条2000字，沿用原子写入和损坏备份。隐藏/切换仅收起窗口并保留草稿，退出主窗通过 `CanCloseAiAbilities` 检查未保存内容，确认后 `CloseAiAbilities` 清理。龙息专注是内存内UTC截止时间，切换/隐藏/退出即取消；不恢复成系统定时任务，不更改quiet设置。
 
 ## 验证与发布约定
@@ -91,10 +97,12 @@ V2.8灵感本为 `deepseek-bubbles.json`，最多100条、每条2000字，沿用
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.8 -InstructionsPath .\docs\usage-v2.8.txt
+.\package.cmd -Version 2.9 -InstructionsPath .\docs\usage-v2.9.txt
 ```
 
-`release/V2.8/原神启动-V2.8.zip`只能含EXE和使用说明。预览独立放 `release/V2.8/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。
+`release/V2.9/原神启动-V2.9.zip`只能含EXE和使用说明。预览独立放 `release/V2.9/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次两角色素材可用 `build_assets.py --refresh-v29`，完整重建仍用 `build.cmd -RebuildAssets -Python ...`。
+
+素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 
 ## 整理与后续方向
 

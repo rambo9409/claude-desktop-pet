@@ -152,9 +152,15 @@ namespace ClaudePet
             string name = PetWindow.CharacterDisplayName(character);
             companionText.Text = name + "的资讯小站  ·  陪你看看新鲜事";
             characterMark.Text = PetWindow.CharacterMark(character);
-            portraitImage.Source = portrait; portraitImage.Visibility = portrait == null ? Visibility.Collapsed : Visibility.Visible;
-            characterMark.Visibility = portrait == null ? Visibility.Visible : Visibility.Collapsed;
+            SetPortrait(portrait);
             // Dynamic resources retain the reader's scroll position, collapse state and in-progress drag.
+        }
+
+        internal void SetPortrait(BitmapSource portrait)
+        {
+            portraitImage.Source = portrait;
+            portraitImage.Visibility = portrait == null ? Visibility.Collapsed : Visibility.Visible;
+            characterMark.Visibility = portrait == null ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public void RefreshNow() { RefreshAsync(); }

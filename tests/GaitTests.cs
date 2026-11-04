@@ -49,6 +49,9 @@ internal static class GaitTests
 
     private static void Ready(PetWindow pet, string character)
     {
+        // This suite checks the existing empty-handed locomotion renderer.
+        // NotebookTests covers the corresponding held-book pose mapping.
+        ((NotebookState)Get(pet, "notebook")).Detach();
         Set(pet, "currentCharacter", character);
         Set(pet, "frames", Call(pet, "LoadCharacterFrames", character));
         Set(pet, "pointerHeld", false);

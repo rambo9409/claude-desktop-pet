@@ -491,7 +491,7 @@ namespace ClaudePet
             { ShowSpeech("窗口魔法设置未保存，请稍后重试。"); return; }
             windowMagicEnabled = enabled;
             if (!enabled) CancelWindowAbility();
-            ShowSpeech(enabled ? "窗口魔法已开启，会随机缩小或拉近应用窗口。" : "窗口魔法已关闭。");
+            ShowSpeech(enabled ? (notebook.Held ? "窗口魔法已开启，但拿着小本本时会暂停。把本子拖离我才可施法。" : "窗口魔法已开启，会随机缩小或拉近应用窗口。") : "窗口魔法已关闭。");
         }
         private bool IsWindowAbilityActive { get { return windowAbility != null && windowAbility.Active; } }
         private static string WindowAbilityPreferencePath
@@ -524,8 +524,8 @@ namespace ClaudePet
             bool wasReady = controller.Clock.IsReady(nowUtc);
             CancelWindowAbility();
             TimeSpan remaining = controller.ReduceCooldown(nowUtc);
-            if (wasReady) ShowSpeech("窗口魔法已就绪！");
-            else if (remaining == TimeSpan.Zero) ShowSpeech("冷却已缩短，窗口魔法已就绪！");
+            if (wasReady) ShowSpeech(notebook.Held ? "窗口魔法冷却已就绪；拿着小本本时仍暂停施法。" : "窗口魔法已就绪！");
+            else if (remaining == TimeSpan.Zero) ShowSpeech(notebook.Held ? "冷却已缩短并就绪；拿着小本本时仍暂停施法。" : "冷却已缩短，窗口魔法已就绪！");
             else
             {
                 int seconds = (int)Math.Ceiling(remaining.TotalSeconds);
@@ -539,12 +539,15 @@ namespace ClaudePet
 
         private void UpdateWindowAbility(DateTime now, double deltaSeconds)
         {
+            // Ownership is checked before any native target enumeration or
+            // animation advance, including an already pending spell.
+            if (currentCharacter == "kolo" && NotebookBlocksMagic) { CancelWindowAbility(); return; }
             // Offscreen test windows and constructor-time rendering never touch
             // native application windows or write the user's cooldown setting.
             if (!IsLoaded) return;
             DateTime nowUtc = now.ToUniversalTime();
             EnsureWindowAbilityController(nowUtc);
-            bool eligible = windowMagicEnabled && currentCharacter == "kolo" && IsVisible && WindowState != WindowState.Minimized && !quietMode &&
+            bool eligible = windowMagicEnabled && currentCharacter == "kolo" && !NotebookBlocksMagic && IsVisible && WindowState != WindowState.Minimized && !quietMode &&
                 !pointerHeld && state == "idle" && (movement == "rest" || movement == "walk") &&
                 (ContextMenu == null || !ContextMenu.IsOpen);
             if (!eligible) { CancelWindowAbility(); return; }
@@ -569,7 +572,7 @@ namespace ClaudePet
 
         private BitmapSource PrepareAbilityFrame(BitmapSource requested)
         {
-            if (!IsWindowAbilityActive || currentCharacter != "kolo") return requested;
+            if (!IsWindowAbilityActive || currentCharacter != "kolo" || NotebookBlocksMagic) return requested;
             BitmapSource[] poses;
             if (!frames.TryGetValue("ability", out poses)) frames.TryGetValue("happy", out poses);
             int index = windowAbility.BodyFrame;
