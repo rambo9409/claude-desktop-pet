@@ -83,8 +83,9 @@ internal static class MenuThemeTests
                 Require(Field<TextBlock>(pet, "menuCharacterText").Text.Contains(names[index] + "  ·  V" + typeof(PetWindow).Assembly.GetName().Version.ToString(2)), "Wrong header character/version");
                 Require(!Find(menu, "自动移动").IsChecked, "Rebuild reset autoWalk");
                 Find(menu, "每日看点"); Find(menu, "战斗循环助手"); Find(menu, "GPT 重置预测");
-                Require(Field<List<MenuItem>>(pet, "characterItems").Count == 6 && Field<List<MenuItem>>(pet, "movementItems").Count == 3, "Rebuild duplicated check lists");
-                foreach (string label in new[] { "慢慢走一会儿", character == "hutao" ? "化蝶飞行一会儿" : "立即跑步", "移动模式" }) Find(menu, label);
+                Require(Field<List<MenuItem>>(pet, "characterItems").Count == 6 && Field<List<MenuItem>>(pet, "movementItems").Count == (character == "kolo" ? 1 : 3), "Rebuild duplicated check lists");
+                Find(menu, "慢慢走一会儿"); Find(menu, "移动模式");
+                if (character != "kolo") Find(menu, character == "hutao" ? "化蝶飞行一会儿" : "立即跑步");
                 foreach (object entry in menu.Items)
                 {
                     MenuItem item = entry as MenuItem;
@@ -94,7 +95,8 @@ internal static class MenuThemeTests
                         "Removed interaction section is still present for " + character);
                 }
                 MenuItem movementMenu = Find(menu, "移动模式");
-                Require(Convert.ToString(((MenuItem)movementMenu.Items[1]).Header) == (character == "hutao" ? "金蝶飞行" : "活力奔跑"), "Character-specific fast mode label");
+                if (character != "kolo")
+                    Require(Convert.ToString(((MenuItem)movementMenu.Items[1]).Header) == (character == "hutao" ? "金蝶飞行" : "活力奔跑"), "Character-specific fast mode label");
 
                 List<RenderTargetBitmap> submenus = new List<RenderTargetBitmap>();
                 foreach (string label in new[] { "选择形象", "移动模式", "调整大小" })
@@ -138,9 +140,16 @@ internal static class MenuThemeTests
                     foreach (MenuItem option in Field<List<MenuItem>>(pet, "movementItems"))
                     {
                         if (option.IsChecked) checkedCount++;
-                        Require(option.IsChecked == (Convert.ToString(option.Tag) == mode), "Wrong movement check");
+                        Require(option.IsChecked == (Convert.ToString(option.Tag) == (character == "kolo" ? "stroll" : mode)), "Wrong movement check");
                     }
                     Require(checkedCount == 1, "Movement menu must have one checked option");
+                }
+                if (character == "kolo") {
+                    Require(Field<List<MenuItem>>(pet, "movementItems").Count == 1, "Kolo still exposes running/mixed modes.");
+                    foreach (object value in menu.Items) {
+                        MenuItem option = value as MenuItem;
+                        Require(option == null || Convert.ToString(option.Header) != "立即跑步", "Kolo still exposes the run command.");
+                    }
                 }
                 Set(pet, "preferredGait", "stroll"); Call(pet, "RefreshMovementChecks");
                 RenderTargetBitmap root = Render(menu);

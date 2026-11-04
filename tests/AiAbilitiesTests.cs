@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
 using System.Reflection;
@@ -79,9 +80,11 @@ internal static class AiAbilitiesTests
     private static void NoteWindow(string directory)
     {
         int saved = 0; string path = Path.Combine(directory, "window-notes.json"), notice;
-        BubbleNotesWindow window = new BubbleNotesWindow(path, delegate { saved++; });
+        BubbleNotesWindow window = new BubbleNotesWindow(path, delegate { saved++; }, PetAssets.Load("deepseek")["idle"][0]);
         window.DiscardConfirmation = delegate { return false; };
         try {
+            Capture((FrameworkElement)window.Content, 620, 640, Path.Combine(directory, "deepseek-notes-empty.png"));
+            NotesAppearance(window);
             Check(!window.SaveCurrent() && !File.Exists(path), "Empty editor writes a note.");
             window.Editor.Text = "明天的想法：把大任务拆成三个小步骤。";
             Check(window.SaveCurrent() && saved == 1 && window.NoteCount == 1, "Save button path did not write a note.");
@@ -95,8 +98,17 @@ internal static class AiAbilitiesTests
             window.DiscardConfirmation = delegate { return true; };
             Check(window.NewNote(), "Explicit draft discard cannot start a new note.");
             window.Editor.Text = "第三颗泡泡"; Check(window.SaveCurrent() && window.NoteCount == 3, "Save after deliberate discard failed.");
-            Capture((FrameworkElement)window.Content, 620, 600, Path.Combine(directory, "deepseek-notes.png"));
+            Check(!File.ReadAllText(path).Contains("UpdatedLabel") && !File.ReadAllText(path).Contains("Preview"), "Presentation-only note properties leaked into the save format.");
+            Capture((FrameworkElement)window.Content, 620, 640, Path.Combine(directory, "deepseek-notes.png"));
+            ListBox selectedHistory = Field<ListBox>(window, "history");
+            ListBoxItem selectedRow = selectedHistory.ItemContainerGenerator.ContainerFromItem(selectedHistory.SelectedItem) as ListBoxItem;
+            Border selectedFace = selectedRow == null ? null : selectedRow.Template.FindName("Face", selectedRow) as Border;
+            Check(selectedFace != null && BrushColor(selectedFace.Background) == ColorOf(PetWindow.MenuPalette.ForCharacter("deepseek").Checked),
+                "Selected note uses a system highlight instead of the companion theme.");
             Capture((FrameworkElement)window.Content, 430, 450, Path.Combine(directory, "deepseek-notes-small.png"));
+            Check(window.Editor.ActualHeight >= 65 && window.Editor.ActualWidth >= 330, "Compact notes window leaves too little usable writing space.");
+            Check(Inside((FrameworkElement)window.Content, window.Editor) && Inside((FrameworkElement)window.Content, FindButton(window, "保存泡泡")),
+                "Compact layout clips the editor or save button.");
             window.DiscardConfirmation = delegate { return false; };
             window.Editor.Text = "切换历史前尚未保存的修改";
             ListBox history = (ListBox)typeof(BubbleNotesWindow).GetField("history", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(window);
@@ -104,7 +116,7 @@ internal static class AiAbilitiesTests
             Check(window.Editor.Text.Contains("尚未保存"), "History selection silently discards unsaved edits.");
             bool closingCancelled = false;
             window.Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) { closingCancelled = e.Cancel; };
-            window.Close();
+            FindButton(window, "bubble-close").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Check(closingCancelled && window.Editor.Text.Contains("尚未保存"), "Closing silently discards a draft after cancellation.");
             window.DiscardConfirmation = delegate { return true; };
             history.SelectedIndex = -1;
@@ -120,6 +132,50 @@ internal static class AiAbilitiesTests
             Check(window.DeleteSelected() && window.NoteCount == 2, "Confirmed delete does not remove selected note.");
             Check(BubbleNoteStorage.Load(path, out notice).Notes.Count == 2, "Deleted note was not persisted.");
         } finally { window.Close(); }
+    }
+    private static Color ColorOf(string value) { return (Color)ColorConverter.ConvertFromString(value); }
+    private static Color BrushColor(Brush brush) { return ((SolidColorBrush)brush).Color; }
+    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++) {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            T match = child as T; if (match != null) yield return match;
+            foreach (T nested in Descendants<T>(child)) yield return nested;
+        }
+    }
+    private static Button FindButton(BubbleNotesWindow window, string tag)
+    {
+        foreach (Button button in Descendants<Button>((DependencyObject)window.Content))
+            if (Convert.ToString(button.Tag) == tag) return button;
+        throw new Exception("Missing notes button: " + tag);
+    }
+    private static bool Inside(FrameworkElement root, FrameworkElement child)
+    {
+        Rect bounds = child.TransformToAncestor(root).TransformBounds(new Rect(new Point(), child.RenderSize));
+        return bounds.Left >= 0 && bounds.Top >= 0 && bounds.Right <= root.ActualWidth + 1 && bounds.Bottom <= root.ActualHeight + 1;
+    }
+    private static void NotesAppearance(BubbleNotesWindow window)
+    {
+        PetWindow.MenuPalette palette = PetWindow.MenuPalette.ForCharacter("deepseek");
+        Check(window.WindowStyle == WindowStyle.None && window.AllowsTransparency && window.ResizeMode == ResizeMode.CanResizeWithGrip,
+            "Notes window does not use the resizable frameless shell shared by tools.");
+        Check(BrushColor((Brush)window.Resources["NotesSurface"]) == ColorOf(palette.Surface) &&
+            BrushColor(window.Editor.Background) == ColorOf(palette.Surface) && BrushColor(window.Editor.Foreground) == ColorOf(palette.Text),
+            "Notes window/editor do not use DeepSeek's shared tool palette.");
+        Border shell = (Border)window.Content;
+        Check(shell.CornerRadius.TopLeft >= 18 && BrushColor(shell.Background) == ColorOf(palette.Surface), "Notes shell lost rounded theme styling.");
+        Border editorFace = window.Editor.Template.FindName("Face", window.Editor) as Border;
+        Check(editorFace != null && editorFace.CornerRadius.TopLeft > 0, "Editor still has a system textbox template.");
+        Button save = FindButton(window, "保存泡泡"), remove = FindButton(window, "删除所选");
+        Check(!save.IsEnabled && !remove.IsEnabled, "Empty notes enables save/delete actions without a target.");
+        Border saveFace = save.Template.FindName("Face", save) as Border;
+        Check(saveFace != null && BrushColor(saveFace.Background) == ColorOf(palette.Checked), "Disabled save button lost its themed state.");
+        Button minimize = FindButton(window, "bubble-minimize"), close = FindButton(window, "bubble-close");
+        Check(!String.IsNullOrEmpty(System.Windows.Automation.AutomationProperties.GetName(minimize)) &&
+            !String.IsNullOrEmpty(System.Windows.Automation.AutomationProperties.GetName(close)), "Window icon buttons lack accessible names.");
+        minimize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Check(window.WindowState == WindowState.Minimized, "Minimize button did not minimize the notes window.");
+        window.WindowState = WindowState.Normal;
     }
     private static int Pixels(FrameworkElement view)
     {

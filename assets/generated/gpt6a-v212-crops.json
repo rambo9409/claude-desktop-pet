@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "description": "Measured transparent source rectangles. Preserve original RGBA; rectangular crop, uniform scale and placement only. Floor 486; wall/flight phases retain anatomical body size.",
+  "rows": [
+    {"action":"expressions","source":"gpt6a-v212-ground.png","scale":1.2,"cells":[
+      {"crop":[0,0,362,350],"anchor":222},{"crop":[362,0,724,350],"anchor":212},
+      {"crop":[724,0,1086,350],"anchor":202},{"crop":[1086,0,1448,350],"anchor":198}]},
+    {"action":"stroll","source":"gpt6a-v212-ground.png","scale":1.19,"cells":[
+      {"crop":[0,350,362,710],"anchor":224},{"crop":[362,350,724,710],"anchor":214},
+      {"crop":[724,350,1086,710],"anchor":204},{"crop":[1086,350,1448,710],"anchor":199}]},
+    {"action":"walk","source":"gpt6a-v212-ground.png","scale":1.16,"align":"phase","cells":[
+      {"crop":[0,710,362,1086],"anchor":227},{"crop":[362,710,724,1086],"anchor":220},
+      {"crop":[724,710,1086,1086],"anchor":212},{"crop":[1086,710,1448,1086],"anchor":212}]},
+    {"action":"climb-up","source":"gpt6a-v212-motion.png","scale":1.2,"align":"wall","cells":[
+      {"crop":[0,0,362,362]},{"crop":[362,0,724,362]},
+      {"crop":[724,0,1086,362]},{"crop":[1086,0,1448,362]}]},
+    {"action":"ability","source":"gpt6a-v212-motion.png","scale":1.22,"cells":[
+      {"crop":[0,362,362,724],"anchor":218},{"crop":[362,362,724,724],"anchor":206},
+      {"crop":[724,362,1086,724],"anchor":198},{"crop":[1086,362,1448,724],"anchor":203}]},
+    {"action":"airborne","source":"gpt6a-v212-motion.png","scale":1.2,"cells":[
+      {"crop":[0,724,362,1086],"anchor":220},{"crop":[362,724,724,1086],"anchor":211}]}
+  ]
+}

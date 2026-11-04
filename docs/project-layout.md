@@ -1,4 +1,4 @@
-# V2.11 工程与构建
+# V2.12 工程与构建
 
 ## 目录
 
@@ -12,7 +12,7 @@
 | `tests/WpfTestRender.cs` | 离屏WPF渲染的共享入口，在位图渲染前后处理Dispatcher队列；仅测试编译包含 |
 | `assets/characters.zip`、`assets/combat-teams.json`、`assets/combat-roster.json` | 内嵌动画、带来源的配队目录与角色名称/别名快照 |
 | `assets/generated/`、`assets/source/` | 当前和历史源素材、提示词、裁切参数 |
-| `build_gpt6a_v210.py`、`build_deepseek_v29.py`、`build_kolo_v29.py` | 参考形象的透明图集裁切与运行帧布局，由 `build_assets.py` 统一调用 |
+| `build_gpt6a_v212.py`、`build_deepseek_v29.py`、`build_kolo_v29.py` | 当前参考形象的透明图集裁切与运行帧布局，由 `build_assets.py` 统一调用；V2.10龙女脚本保留历史 |
 | `build_kolo_v211.py` | 珂洛新版慢走与换装帧，合并到既有珂洛素材和本子命中框 |
 | `artifacts/build/` | 根据当前环境展开的生产编译响应文件 |
 | `artifacts/tests/` | 测试 EXE、日志、渲染截图、`latest-run.json` |
@@ -53,7 +53,7 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 .\test.cmd -Suite CombatRoster -SkipPreviews
 # 珂洛空中稳住与传送
 .\test.cmd -Suite KoloPortal -SkipPreviews
-# 待机概率、换装、取消与正式切换
+# 三分钟可见使用计时、到期保留、换装与正式切换
 .\test.cmd -Suite KoloEasterEgg -SkipPreviews
 # 使用明确的Python编码预览
 .\test.cmd -Python C:\Python312\python.exe -IncludeVisualSmoke
@@ -74,12 +74,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.11 -InstructionsPath .\docs\usage-v2.11.txt
+.\package.cmd -Version 2.12 -InstructionsPath .\docs\usage-v2.12.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。
 
-仅更新V2.11珂洛素材使用 `build_assets.py --refresh-v211`。它替换8张持本/空手慢走图片，更新命中框JSON中的4个慢走矩形，新增8张换装图片。正式资源总计208项，V2.10的191个其他条目应逐字节保留。完整重建入口仍是 `build.cmd -RebuildAssets -Python ...`。刷新与完整重建均应核对正式资源内容及裁切边界。
+仅更新V2.12龙女素材使用 `build_assets.py --refresh-v212`。它替换27个龙女资源，源图与裁切参数在 `assets/generated/gpt6a-v212-*`。正式资源仍为208项，V2.11的181个其他条目应逐字节保留。`build_gpt6a_v212.py`只裁切、等比缩放和定位，原生成alpha与颜色保持。完整重建入口仍是 `build.cmd -RebuildAssets -Python ...`。刷新与完整重建均应核对正式资源内容及裁切边界；历史定向刷新入口继续保留用于维护。
 
 `.gitattributes` 规定 C#/PowerShell/CMD/RSP 为 CRLF、Markdown/JSON/Python为LF；二进制不作换行转换。没有对历史仓库做全量换行重写。旧根目录构建和 Python 缓存归档说明见 [V2.6 整理记录](cleanup-v2.6.md)。历史使用说明和验证文档保留原路径，通过[索引](INDEX.md)导航，避免旧发布链接失效。
 

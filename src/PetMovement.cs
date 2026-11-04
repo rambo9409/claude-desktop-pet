@@ -248,6 +248,8 @@ namespace ClaudePet
 
         private void UpdateMovement(DateTime now, double deltaSeconds)
         {
+            if (currentCharacter == "kolo" && movement == "walk" && activeGait != "stroll")
+                SetActiveGait("stroll", now);
             if (IsKoloPortalActive)
             {
                 UpdateKoloPortal(deltaSeconds);
@@ -438,7 +440,7 @@ namespace ClaudePet
 
         private void ApplyMovementMode(string preference)
         {
-            preferredGait = MovementGait.Normalize(preference);
+            preferredGait = currentCharacter == "kolo" ? "stroll" : MovementGait.Normalize(preference);
             MovementGait.SavePreference(preferredGait);
             RefreshMovementChecks();
             if (ganyuApproaching) StopWalking();
@@ -457,7 +459,7 @@ namespace ClaudePet
 
         private void SetActiveGait(string gait, DateTime now)
         {
-            activeGait = gait == "run" ? "run" : "stroll";
+            activeGait = currentCharacter != "kolo" && gait == "run" ? "run" : "stroll";
             varesaEdgeLaunchSide = 0;
             runPhase = 0;
             moveSpeed = CurrentMovementSpeed(random.NextDouble());

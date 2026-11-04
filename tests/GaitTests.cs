@@ -165,11 +165,12 @@ internal static class GaitTests
                 Ready(pet, character);
                 Call(pet, "StartWalking");
                 double speed = (double)Get(pet, "moveSpeed");
-                if (character == "kolo") regularSpeed = speed;
-                Require(speed == regularSpeed * (character == "varesa" ? 4 : 1), character + " actual start speed multiplier is wrong.");
+                if (character == "hutao") regularSpeed = speed;
+                Require(character == "kolo" ? speed >= 30 && speed <= 45 && (string)Get(pet, "activeGait") == "stroll" :
+                    speed == regularSpeed * (character == "varesa" ? 4 : 1), character + " actual start speed multiplier is wrong.");
                 Set(pet, "runPhase", 0.62);
                 Render(pet);
-                Require(ReferenceEquals(sprite.Source, frames["walk"][2]), character + " run no longer uses its original/special cycle.");
+                Require(ReferenceEquals(sprite.Source, frames[character == "kolo" ? "stroll" : "walk"][2]), character + " locomotion uses the wrong permitted cycle.");
 
                 // Quiet mode reduces activity, not per-gait velocity or Varesa's multiplier.
                 Ready(pet, character);
@@ -186,8 +187,9 @@ internal static class GaitTests
                     Set(pet, "platformCacheTime", DateTime.Now);
                     Call(pet, "UpdateMovement", DateTime.Now, 0.016);
                     double accelerated = (double)Get(pet, "moveSpeed");
-                    if (character == "kolo") regularAcceleration[step] = accelerated;
-                    Require(Math.Abs(accelerated - regularAcceleration[step] * (character == "varesa" ? 4 : 1)) < 0.000001,
+                    if (character == "hutao") regularAcceleration[step] = accelerated;
+                    Require(character == "kolo" ? accelerated >= 30 && accelerated <= 45 :
+                        Math.Abs(accelerated - regularAcceleration[step] * (character == "varesa" ? 4 : 1)) < 0.000001,
                         character + " lost its speed multiplier during acceleration.");
                 }
 
@@ -208,7 +210,19 @@ internal static class GaitTests
                     Support(pet);
                     Call(pet, "UpdateMovement", DateTime.Now, 0.016);
                     Require((string)Get(pet, "movement") == "walk", "Automatic movement did not start.");
-                    Require(preference == "mixed" || (string)Get(pet, "activeGait") == preference, "Automatic movement ignored preference.");
+                    Require(character == "kolo" ? (string)Get(pet, "activeGait") == "stroll" :
+                        preference == "mixed" || (string)Get(pet, "activeGait") == preference, "Automatic movement ignored the permitted preference.");
+                }
+                if (character == "kolo") {
+                    // Old persisted run preference and a stale active gait must
+                    // never show a running pose, even while physics is paused.
+                    Set(pet, "activeGait", "run"); Set(pet, "movement", "walk"); Set(pet, "runPhase", .62);
+                    Render(pet);
+                    Require(ReferenceEquals(sprite.Source, frames["stroll"][2]), "Legacy run state bypassed Kolo's walk-only renderer.");
+                    Set(pet, "moveSpeed", 150.0); Support(pet);
+                    Call(pet, "UpdateMovement", DateTime.Now, .016);
+                    Require((string)Get(pet, "activeGait") == "stroll" && (double)Get(pet, "moveSpeed") <= 45,
+                        "Legacy fast state bypassed Kolo's walk-only physics.");
                 }
                 Call(pet, "StopWalking");
                 Set(pet, "autoWalk", false);

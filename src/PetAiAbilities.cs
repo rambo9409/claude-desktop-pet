@@ -6,6 +6,8 @@ using System.Text;
 using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -46,6 +48,14 @@ namespace ClaudePet
         public string Id { get; set; }
         public string Text { get; set; }
         public string UpdatedUtc { get; set; }
+        [ScriptIgnore] public string Preview { get { return (Text ?? "").Replace("\r", " ").Replace("\n", " "); } }
+        [ScriptIgnore] public string UpdatedLabel {
+            get {
+                DateTime date;
+                return DateTime.TryParse(UpdatedUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out date) ?
+                    date.ToLocalTime().ToString("MM-dd HH:mm") : "已保存";
+            }
+        }
         internal BubbleNote Copy() { return new BubbleNote { Id = Id, Text = Text, UpdatedUtc = UpdatedUtc }; }
         public override string ToString()
         {
@@ -126,38 +136,113 @@ namespace ClaudePet
         private string selectedId;
         private bool refreshing;
         private string savedEditorText = "";
+        private readonly TextBlock countLabel = new TextBlock(), editorCount = new TextBlock(), emptyHistory = new TextBlock();
+        private readonly Button saveButton, deleteButton;
         internal Func<bool> DiscardConfirmation;
         internal int NoteCount { get { return book.Notes.Count; } }
 
-        internal BubbleNotesWindow(string storagePath, Action onSaved)
+        internal BubbleNotesWindow(string storagePath, Action onSaved, BitmapSource portrait = null)
         {
             path = storagePath; saved = onSaved;
-            Title = "DeepSeek · 灵感泡泡"; Width = 620; Height = 600; MinWidth = 430; MinHeight = 450;
+            Title = "原神启动 · DeepSeek 灵感泡泡"; Width = 620; Height = 640; MinWidth = 430; MinHeight = 450;
             MaxHeight = Math.Max(450, SystemParameters.WorkArea.Height - 40);
             FontFamily = new FontFamily("Microsoft YaHei UI"); FontSize = 14;
-            Background = ColorBrush("#EFF9FF"); Foreground = ColorBrush("#174465");
+            WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent;
+            ResizeMode = ResizeMode.CanResizeWithGrip; ShowInTaskbar = true;
+            UseLayoutRounding = true; SnapsToDevicePixels = true;
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
+            ConfigureTheme(); ConfigureControls();
+            SetResourceReference(ForegroundProperty, "NotesText");
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             DiscardConfirmation = delegate { return MessageBox.Show(this, "当前修改尚未保存。放弃这段修改吗？", "保留灵感", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK; };
             Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) { if (!ConfirmDiscard()) e.Cancel = true; };
             string notice; book = BubbleNoteStorage.Load(path, out notice);
-            Border outer = new Border { Background = Background, Padding = new Thickness(20) }; Content = outer;
-            DockPanel layout = new DockPanel(); outer.Child = layout;
-            StackPanel title = new StackPanel(); DockPanel.SetDock(title, Dock.Top); layout.Children.Add(title);
-            title.Children.Add(new TextBlock { Text = "把灵感装进泡泡里", FontSize = 24, FontWeight = FontWeights.Bold });
-            title.Children.Add(new TextBlock { Text = "只保存在本机。点击保存才会记录；切换形象会暂时收起窗口。", TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(0, 8, 0, 12) });
-            StackPanel footer = new StackPanel(); DockPanel.SetDock(footer, Dock.Bottom); layout.Children.Add(footer);
-            WrapPanel actions = new WrapPanel { Margin = new Thickness(0, 12, 0, 8) }; footer.Children.Add(actions);
-            actions.Children.Add(Button("新建", delegate { NewNote(); }));
-            actions.Children.Add(Button("保存泡泡", delegate { SaveCurrent(); }));
-            actions.Children.Add(Button("删除所选", delegate {
+            Border outer = Surface("NotesSurface", new Thickness(0)); outer.Tag = "bubble-shell";
+            outer.CornerRadius = new CornerRadius(24); Content = outer;
+            Grid layout = new Grid(); outer.Child = layout;
+            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(96) });
+            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Border header = new Border { Tag = "bubble-header", CornerRadius = new CornerRadius(23, 23, 0, 0), Padding = new Thickness(20, 12, 20, 12) };
+            header.SetResourceReference(Border.BackgroundProperty, "NotesHeader"); layout.Children.Add(header);
+            header.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e) {
+                if (e.ChangedButton == MouseButton.Left && e.LeftButton == MouseButtonState.Pressed) DragMove();
+            };
+            Grid heading = new Grid(); header.Child = heading;
+            heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+            heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            heading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Border avatar = Surface("NotesSelected", new Thickness(0)); avatar.Width = 56; avatar.Height = 56; avatar.CornerRadius = new CornerRadius(18);
+            if (portrait != null) {
+                Image art = new Image { Source = portrait, Width = 62, Height = 68, Stretch = Stretch.Uniform, IsHitTestVisible = false };
+                RenderOptions.SetBitmapScalingMode(art, BitmapScalingMode.HighQuality); avatar.Child = art;
+            } else {
+                TextBlock mark = Label("◌", 34, "NotesAccent"); mark.FontFamily = new FontFamily("Segoe UI Symbol");
+                mark.HorizontalAlignment = HorizontalAlignment.Center; mark.VerticalAlignment = VerticalAlignment.Center; avatar.Child = mark;
+            }
+            heading.Children.Add(avatar);
+            StackPanel title = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 8, 0) };
+            Grid.SetColumn(title, 1); heading.Children.Add(title);
+            TextBlock name = Label("灵感泡泡", 25, "NotesText"); name.FontWeight = FontWeights.Bold; title.Children.Add(name);
+            TextBlock subtitle = Label("DeepSeek · 收好每一个小想法", 11.5, "NotesMuted");
+            subtitle.TextTrimming = TextTrimming.CharacterEllipsis; subtitle.Margin = new Thickness(0, 5, 0, 0); title.Children.Add(subtitle);
+            StackPanel controls = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(controls, 2); heading.Children.Add(controls);
+            Button minimize = Button("—", delegate { WindowState = WindowState.Minimized; });
+            minimize.Tag = "bubble-minimize"; minimize.ToolTip = "最小化"; minimize.Width = minimize.Height = 32; minimize.Padding = new Thickness(0); controls.Children.Add(minimize);
+            System.Windows.Automation.AutomationProperties.SetName(minimize, "最小化灵感泡泡");
+            Button close = Button("×", delegate { Close(); }); close.Tag = "bubble-close"; close.ToolTip = "关闭";
+            close.Width = close.Height = 32; close.FontSize = 21; close.Padding = new Thickness(0); close.Margin = new Thickness(7, 0, 0, 0); controls.Children.Add(close);
+            System.Windows.Automation.AutomationProperties.SetName(close, "关闭灵感泡泡");
+
+            Grid main = new Grid { Margin = new Thickness(20, 14, 20, 0) }; Grid.SetRow(main, 1); layout.Children.Add(main);
+            main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(.55, GridUnitType.Star), MinHeight = 85, MaxHeight = 160 });
+            main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(12) });
+            main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 90 });
+            Border historyCard = Surface("NotesCard", new Thickness(12, 8, 12, 8)); main.Children.Add(historyCard);
+            DockPanel historyBody = new DockPanel(); historyCard.Child = historyBody;
+            DockPanel historyHeading = new DockPanel { Margin = new Thickness(0, 0, 0, 6) }; DockPanel.SetDock(historyHeading, Dock.Top); historyBody.Children.Add(historyHeading);
+            Button create = Button("＋ 新建", delegate { NewNote(); }); create.Tag = "新建"; create.Padding = new Thickness(10, 5, 10, 5); create.FontSize = 12;
+            DockPanel.SetDock(create, Dock.Right); historyHeading.Children.Add(create);
+            countLabel.FontSize = 12; countLabel.FontWeight = FontWeights.SemiBold; countLabel.VerticalAlignment = VerticalAlignment.Center;
+            countLabel.SetResourceReference(TextBlock.ForegroundProperty, "NotesMuted"); historyHeading.Children.Add(countLabel);
+            Grid historyArea = new Grid(); historyBody.Children.Add(historyArea);
+            history.Tag = "bubble-history"; history.Background = Brushes.Transparent; history.BorderThickness = new Thickness(0);
+            history.ItemTemplate = (DataTemplate)FindResource("NotesHistoryTemplate");
+            history.Padding = new Thickness(0); history.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+            ScrollViewer.SetHorizontalScrollBarVisibility(history, ScrollBarVisibility.Disabled); historyArea.Children.Add(history);
+            System.Windows.Automation.AutomationProperties.SetName(history, "已保存的灵感");
+            emptyHistory.Text = "还没有泡泡，写下第一个想法吧。"; emptyHistory.FontSize = 12;
+            emptyHistory.SetResourceReference(TextBlock.ForegroundProperty, "NotesMuted"); emptyHistory.IsHitTestVisible = false;
+            emptyHistory.HorizontalAlignment = HorizontalAlignment.Center; emptyHistory.VerticalAlignment = VerticalAlignment.Center; historyArea.Children.Add(emptyHistory);
+
+            Border editorCard = Surface("NotesCard", new Thickness(12, 10, 12, 12)); Grid.SetRow(editorCard, 2); main.Children.Add(editorCard);
+            DockPanel editorBody = new DockPanel(); editorCard.Child = editorBody;
+            DockPanel editorHeading = new DockPanel { Margin = new Thickness(0, 0, 0, 8) }; DockPanel.SetDock(editorHeading, Dock.Top); editorBody.Children.Add(editorHeading);
+            editorCount.FontSize = 11; editorCount.SetResourceReference(TextBlock.ForegroundProperty, "NotesMuted");
+            DockPanel.SetDock(editorCount, Dock.Right); editorHeading.Children.Add(editorCount);
+            TextBlock editorTitle = Label("此刻的灵感", 12, "NotesMuted"); editorTitle.FontWeight = FontWeights.SemiBold; editorHeading.Children.Add(editorTitle);
+            Editor.Tag = "bubble-editor"; Editor.AcceptsReturn = true; Editor.TextWrapping = TextWrapping.Wrap;
+            Editor.VerticalScrollBarVisibility = ScrollBarVisibility.Auto; Editor.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            Editor.MaxLength = BubbleNoteStorage.MaximumText; Editor.Padding = new Thickness(12); Editor.FontSize = 15;
+            System.Windows.Automation.AutomationProperties.SetName(Editor, "灵感正文，最多2000字");
+            editorBody.Children.Add(Editor);
+
+            Grid footer = new Grid { Margin = new Thickness(20, 12, 20, 17) }; Grid.SetRow(footer, 2); layout.Children.Add(footer);
+            footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            deleteButton = Button("删除所选", delegate {
                 if (String.IsNullOrEmpty(selectedId)) { Status.Text = "先选择一条已保存的泡泡。"; return; }
                 if (MessageBox.Show(this, "删除这条已保存的灵感？", "灵感泡泡", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK) DeleteSelected();
-            }));
-            Status.TextWrapping = TextWrapping.Wrap; Status.FontSize = 12; footer.Children.Add(Status);
-            Grid main = new Grid(); main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(140) });
-            main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); layout.Children.Add(main);
-            history.Tag = "bubble-history"; history.Background = Brushes.White; history.BorderBrush = ColorBrush("#A4D2EA");
-            history.Padding = new Thickness(5); history.Margin = new Thickness(0, 0, 0, 12); main.Children.Add(history);
+            });
+            deleteButton.HorizontalAlignment = HorizontalAlignment.Left; deleteButton.SetResourceReference(Control.ForegroundProperty, "NotesAttention"); footer.Children.Add(deleteButton);
+            saveButton = Button("保存泡泡", delegate { SaveCurrent(); }); saveButton.Style = (Style)FindResource("NotesPrimaryButton");
+            Grid.SetColumn(saveButton, 1); footer.Children.Add(saveButton);
+            Status.TextWrapping = TextWrapping.Wrap; Status.FontSize = 11.5; Status.Margin = new Thickness(0, 10, 0, 0);
+            Status.MaxHeight = 32; Status.TextTrimming = TextTrimming.CharacterEllipsis;
+            Status.SetBinding(ToolTipProperty, new System.Windows.Data.Binding("Text") { Source = Status });
+            Status.SetResourceReference(TextBlock.ForegroundProperty, "NotesMuted"); Grid.SetRow(Status, 1); Grid.SetColumnSpan(Status, 2); footer.Children.Add(Status);
             history.SelectionChanged += delegate {
                 if (refreshing) return;
                 BubbleNote item = history.SelectedItem as BubbleNote;
@@ -169,21 +254,118 @@ namespace ClaudePet
                         return;
                     }
                     selectedId = item.Id; Editor.Text = item.Text; savedEditorText = Editor.Text;
+                    UpdateEditorState();
                     Status.Text = "正在编辑已保存的灵感；修改后请再次保存。";
                 }
             };
-            Editor.Tag = "bubble-editor"; Editor.AcceptsReturn = true; Editor.TextWrapping = TextWrapping.Wrap;
-            Editor.VerticalScrollBarVisibility = ScrollBarVisibility.Auto; Editor.MaxLength = BubbleNoteStorage.MaximumText;
-            Editor.Padding = new Thickness(12); Editor.Background = Brushes.White; Editor.Foreground = Foreground;
-            Editor.BorderBrush = ColorBrush("#A4D2EA"); Editor.FontSize = 15; Grid.SetRow(Editor, 1); main.Children.Add(Editor);
-            RefreshHistory(); Status.Text = notice ?? "最多100条，每条2000字。文字不会发送给模型。";
+            Editor.TextChanged += delegate { UpdateEditorState(); };
+            RefreshHistory(); UpdateEditorState(); Status.Text = notice ?? "只保存在本机 · 点击保存才会记录";
         }
         private static Brush ColorBrush(string value) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(value)); }
         private static Button Button(string label, Action action)
         {
-            Button button = new Button { Content = label, Tag = label, Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(15, 8, 15, 8),
-                Background = ColorBrush("#D7EFFD"), Foreground = ColorBrush("#174465"), BorderBrush = ColorBrush("#91C9E8") };
+            Button button = new Button { Content = label, Tag = label, Padding = new Thickness(15, 8, 15, 8), Cursor = Cursors.Hand };
+            System.Windows.Automation.AutomationProperties.SetName(button, label);
             button.Click += delegate { action(); }; return button;
+        }
+        private static TextBlock Label(string value, double size, string color)
+        { TextBlock label = new TextBlock { Text = value, FontSize = size }; label.SetResourceReference(TextBlock.ForegroundProperty, color); return label; }
+        private static Border Surface(string color, Thickness padding)
+        {
+            Border card = new Border { CornerRadius = new CornerRadius(13), Padding = padding, BorderThickness = new Thickness(1) };
+            card.SetResourceReference(Border.BackgroundProperty, color); card.SetResourceReference(Border.BorderBrushProperty, "NotesBorder"); return card;
+        }
+        private void UpdateEditorState()
+        {
+            editorCount.Text = Editor.Text.Length + " / 2000" + (Editor.Text == savedEditorText ? "" : " · 未保存");
+            saveButton.IsEnabled = !String.IsNullOrWhiteSpace(Editor.Text); deleteButton.IsEnabled = !String.IsNullOrEmpty(selectedId);
+        }
+        private void ConfigureTheme()
+        {
+            PetWindow.MenuPalette palette = PetWindow.MenuPalette.ForCharacter("deepseek");
+            string[] keys = { "NotesSurface", "NotesText", "NotesMuted", "NotesAccent", "NotesBorder", "NotesHover", "NotesSelected", "NotesDisabled", "NotesAttention" };
+            string[] colors = { palette.Surface, palette.Text, palette.Muted, palette.Accent, palette.Border, palette.Hover, palette.Checked, palette.Disabled, palette.Exit };
+            for (int i = 0; i < keys.Length; i++) Resources[keys[i]] = ColorBrush(colors[i]);
+            // Use the same lightly tinted card treatment as DailyHighlights.
+            Color surface = (Color)ColorConverter.ConvertFromString(palette.Surface), text = (Color)ColorConverter.ConvertFromString(palette.Text);
+            Resources["NotesCard"] = new SolidColorBrush(Color.FromRgb((byte)(surface.R + (text.R - surface.R) * .045),
+                (byte)(surface.G + (text.G - surface.G) * .045), (byte)(surface.B + (text.B - surface.B) * .045)));
+            Resources["NotesHeader"] = new LinearGradientBrush((Color)ColorConverter.ConvertFromString(palette.Checked), surface, 14);
+        }
+        private void ConfigureControls()
+        {
+            const string xaml = @"<ResourceDictionary xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
+<Style TargetType='{x:Type Button}'>
+ <Setter Property='Foreground' Value='{DynamicResource NotesText}'/><Setter Property='Background' Value='{DynamicResource NotesSurface}'/>
+ <Setter Property='BorderBrush' Value='{DynamicResource NotesBorder}'/><Setter Property='BorderThickness' Value='1'/>
+ <Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type Button}'>
+  <Border x:Name='Face' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='{TemplateBinding BorderThickness}' CornerRadius='10' Padding='{TemplateBinding Padding}'>
+   <ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center' RecognizesAccessKey='True'/>
+  </Border>
+  <ControlTemplate.Triggers>
+   <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Face' Property='Background' Value='{DynamicResource NotesHover}'/></Trigger>
+   <Trigger Property='IsPressed' Value='True'><Setter TargetName='Face' Property='Opacity' Value='.75'/></Trigger>
+   <Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Face' Property='BorderBrush' Value='{DynamicResource NotesAccent}'/><Setter TargetName='Face' Property='BorderThickness' Value='2'/></Trigger>
+   <Trigger Property='IsEnabled' Value='False'><Setter Property='Foreground' Value='{DynamicResource NotesDisabled}'/><Setter TargetName='Face' Property='Opacity' Value='.65'/></Trigger>
+  </ControlTemplate.Triggers>
+ </ControlTemplate></Setter.Value></Setter>
+</Style>
+<Style x:Key='NotesPrimaryButton' TargetType='{x:Type Button}' BasedOn='{StaticResource {x:Type Button}}'>
+ <Setter Property='Background' Value='{DynamicResource NotesAccent}'/><Setter Property='Foreground' Value='White'/><Setter Property='FontWeight' Value='SemiBold'/>
+ <Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type Button}'>
+  <Border x:Name='Face' Background='{TemplateBinding Background}' BorderBrush='{DynamicResource NotesAccent}' BorderThickness='1' CornerRadius='10' Padding='{TemplateBinding Padding}'><ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/></Border>
+  <ControlTemplate.Triggers>
+   <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Face' Property='Background' Value='{DynamicResource NotesText}'/></Trigger>
+   <Trigger Property='IsPressed' Value='True'><Setter TargetName='Face' Property='Opacity' Value='.75'/></Trigger>
+   <Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Face' Property='BorderBrush' Value='{DynamicResource NotesText}'/><Setter TargetName='Face' Property='BorderThickness' Value='2'/></Trigger>
+   <Trigger Property='IsEnabled' Value='False'><Setter TargetName='Face' Property='Background' Value='{DynamicResource NotesSelected}'/><Setter Property='Foreground' Value='{DynamicResource NotesMuted}'/></Trigger>
+  </ControlTemplate.Triggers>
+ </ControlTemplate></Setter.Value></Setter>
+</Style>
+<Style TargetType='{x:Type TextBox}'>
+ <Setter Property='Foreground' Value='{DynamicResource NotesText}'/><Setter Property='Background' Value='{DynamicResource NotesSurface}'/>
+ <Setter Property='BorderBrush' Value='{DynamicResource NotesBorder}'/><Setter Property='BorderThickness' Value='1'/>
+ <Setter Property='CaretBrush' Value='{DynamicResource NotesText}'/><Setter Property='SelectionBrush' Value='{DynamicResource NotesHover}'/>
+ <Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type TextBox}'>
+  <Border x:Name='Face' CornerRadius='9' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='{TemplateBinding BorderThickness}' Padding='{TemplateBinding Padding}'><ScrollViewer x:Name='PART_ContentHost'/></Border>
+  <ControlTemplate.Triggers>
+   <Trigger Property='IsKeyboardFocusWithin' Value='True'><Setter TargetName='Face' Property='BorderBrush' Value='{DynamicResource NotesAccent}'/></Trigger>
+   <Trigger Property='IsEnabled' Value='False'><Setter Property='Foreground' Value='{DynamicResource NotesDisabled}'/></Trigger>
+  </ControlTemplate.Triggers>
+ </ControlTemplate></Setter.Value></Setter>
+</Style>
+<Style TargetType='{x:Type ListBoxItem}'>
+ <Setter Property='Foreground' Value='{DynamicResource NotesText}'/><Setter Property='HorizontalContentAlignment' Value='Stretch'/>
+ <Setter Property='Padding' Value='9,6'/><Setter Property='Margin' Value='0,1,3,1'/><Setter Property='BorderThickness' Value='1'/>
+ <Setter Property='Background' Value='Transparent'/><Setter Property='BorderBrush' Value='Transparent'/>
+ <Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type ListBoxItem}'>
+  <Border x:Name='Face' CornerRadius='8' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='{TemplateBinding BorderThickness}' Padding='{TemplateBinding Padding}'><ContentPresenter HorizontalAlignment='{TemplateBinding HorizontalContentAlignment}'/></Border>
+  <ControlTemplate.Triggers>
+   <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Face' Property='Background' Value='{DynamicResource NotesHover}'/></Trigger>
+   <Trigger Property='IsSelected' Value='True'><Setter TargetName='Face' Property='Background' Value='{DynamicResource NotesSelected}'/><Setter TargetName='Face' Property='BorderBrush' Value='{DynamicResource NotesBorder}'/></Trigger>
+   <Trigger Property='IsKeyboardFocusWithin' Value='True'><Setter TargetName='Face' Property='BorderBrush' Value='{DynamicResource NotesAccent}'/></Trigger>
+  </ControlTemplate.Triggers>
+ </ControlTemplate></Setter.Value></Setter>
+</Style>
+<DataTemplate x:Key='NotesHistoryTemplate'><Grid>
+ <Grid.ColumnDefinitions><ColumnDefinition Width='*'/><ColumnDefinition Width='Auto'/></Grid.ColumnDefinitions>
+ <TextBlock Text='{Binding Preview}' FontSize='13' TextTrimming='CharacterEllipsis' Margin='0,0,12,0'/>
+ <TextBlock Grid.Column='1' Text='{Binding UpdatedLabel}' Foreground='{DynamicResource NotesMuted}' FontSize='11' VerticalAlignment='Center'/>
+</Grid></DataTemplate>
+<Style x:Key='NotesScrollPage' TargetType='{x:Type RepeatButton}'>
+ <Setter Property='Focusable' Value='False'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type RepeatButton}'><Border Background='Transparent'/></ControlTemplate></Setter.Value></Setter>
+</Style>
+<Style TargetType='{x:Type ScrollBar}'>
+ <Setter Property='Width' Value='10'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='{x:Type ScrollBar}'>
+  <Grid Background='Transparent'><Track x:Name='PART_Track' IsDirectionReversed='True' Orientation='Vertical'>
+   <Track.DecreaseRepeatButton><RepeatButton Command='ScrollBar.PageUpCommand' Style='{StaticResource NotesScrollPage}'/></Track.DecreaseRepeatButton>
+   <Track.Thumb><Thumb MinHeight='26'><Thumb.Template><ControlTemplate TargetType='{x:Type Thumb}'><Border x:Name='Face' Background='{DynamicResource NotesBorder}' CornerRadius='4' Margin='2,1'/><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Face' Property='Background' Value='{DynamicResource NotesAccent}'/></Trigger><Trigger Property='IsDragging' Value='True'><Setter TargetName='Face' Property='Background' Value='{DynamicResource NotesAccent}'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+   <Track.IncreaseRepeatButton><RepeatButton Command='ScrollBar.PageDownCommand' Style='{StaticResource NotesScrollPage}'/></Track.IncreaseRepeatButton>
+  </Track></Grid>
+ </ControlTemplate></Setter.Value></Setter>
+</Style>
+</ResourceDictionary>";
+            Resources.MergedDictionaries.Add((ResourceDictionary)XamlReader.Parse(xaml));
         }
         private void RefreshHistory()
         {
@@ -196,6 +378,8 @@ namespace ClaudePet
                 }
             }
             finally { refreshing = false; }
+            countLabel.Text = "已保存的灵感 · " + book.Notes.Count + " / 100";
+            emptyHistory.Visibility = book.Notes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         internal bool ConfirmDiscard()
         {
@@ -205,6 +389,7 @@ namespace ClaudePet
         {
             if (!ConfirmDiscard()) return false;
             selectedId = null; history.SelectedIndex = -1; Editor.Clear(); savedEditorText = "";
+            UpdateEditorState();
             Status.Text = "新泡泡还没有保存。"; Editor.Focus(); return true;
         }
         internal bool SaveCurrent()
@@ -220,6 +405,7 @@ namespace ClaudePet
             try {
                 BubbleNoteStorage.Save(path, candidate); book = candidate; selectedId = target.Id; RefreshHistory();
                 Editor.Text = text; savedEditorText = text;
+                UpdateEditorState();
                 Status.Text = "已保存在本机 · " + book.Notes.Count + " / 100 条。";
                 if (saved != null) saved(); return true;
             } catch (Exception error) { PetStorage.Log("deepseek-notes-save", error); Status.Text = "保存失败，文字仍在：" + error.Message; return false; }
@@ -320,7 +506,7 @@ namespace ClaudePet
             if (bubbleNotesWindow == null) {
                 bubbleNotesWindow = new BubbleNotesWindow(BubbleNoteStorage.DefaultPath, delegate {
                     if (currentCharacter == "deepseek") { bubbleEffectRemaining = 7; BeginAiCast(); ShowSpeech("叽咕！这颗灵感泡泡收好啦。" ); }
-                });
+                }, frames["idle"][0]);
                 bubbleNotesWindow.Closed += delegate { bubbleNotesWindow = null; };
             }
             bubbleEffectRemaining = 4; BeginAiCast();

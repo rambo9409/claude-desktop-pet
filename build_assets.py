@@ -9,8 +9,8 @@ from PIL import Image, ImageDraw, ImageFont
 from build_deepseek_v29 import load_frames as load_deepseek_reference_frames
 from build_kolo_v29 import load_frames as load_kolo_v29_frames
 from build_kolo_v29 import load_hitboxes as load_kolo_v29_hitboxes
-from build_gpt6a_v210 import load_frames as load_dragon_reference_frames
-from build_gpt6a_v210 import build_preview as build_dragon_preview
+from build_gpt6a_v212 import load_frames as load_dragon_reference_frames
+from build_gpt6a_v212 import build_preview as build_dragon_preview
 from build_kolo_v211 import load_stroll_frames, load_stroll_hitboxes, load_disguise_frames
 from build_kolo_v211 import build_preview as build_kolo_v211_preview
 
@@ -342,7 +342,7 @@ def build_preview(idle_images: dict[str, Image.Image]) -> None:
     draw = ImageDraw.Draw(canvas)
     title_font = load_font(22)
     name_font = load_font(19)
-    draw.text((28, 18), "原神启动 V2.11 · 珂洛的传送门与换装彩蛋", font=title_font, fill=(76, 48, 45, 255))
+    draw.text((28, 18), "原神启动 V2.12 · AI伙伴统一形象与交互", font=title_font, fill=(76, 48, 45, 255))
     card_width = 250
     for index, key in enumerate(CHARACTERS):
         left = 22 + index * 264
@@ -553,7 +553,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
             frame = frames_by_character[character][action].resize((220, 220), Image.Resampling.LANCZOS)
             sheet.paste(frame, (col * 220, row * 260 + 30), frame)
             draw.text((col * 220 + 8, row * 260 + 6), character + " · " + action, font=font, fill=fg)
-    sheet.save(preview_root / "ai-v210-contact-sheet.png")
+    sheet.save(preview_root / "ai-v212-contact-sheet.png")
     gait_sheet = Image.new("RGB", (960, 6 * 260), "#eef7f6")
     gait_draw = ImageDraw.Draw(gait_sheet)
     for character_row, character in enumerate(AI_CHARACTERS):
@@ -563,7 +563,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 pose = frames_by_character[character][f"{action}-{index + 1}"].resize((240, 240), Image.Resampling.LANCZOS)
                 gait_sheet.paste(pose, (index * 240, row * 260 + 20), pose)
                 gait_draw.text((index * 240 + 8, row * 260 + 2), f"{character} · {action} {index + 1}", font=font, fill="#254D59")
-    gait_sheet.save(preview_root / "ai-v210-gait-contact-sheet.png")
+    gait_sheet.save(preview_root / "ai-v212-gait-contact-sheet.png")
     animation = []
     for tick in range(48):
         canvas = Image.new("RGB", (1000, 540), "#eef7f6")
@@ -575,7 +575,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 canvas.paste(pose, (col * 250 + 5, row * 270 + 22), pose)
                 draw.text((col * 250 + 8, row * 270 + 2), character + " · " + action, font=font, fill="#254D59")
         animation.append(canvas)
-    animation[0].save(preview_root / "ai-v210-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
+    animation[0].save(preview_root / "ai-v212-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
 
 
 def append_ai_assets() -> None:
@@ -629,7 +629,7 @@ def refresh_reference_assets() -> None:
 
 
 def refresh_dragon_assets() -> None:
-    """Replace the 27 GPT6A images and retain all 173 unrelated resource bytes."""
+    """Replace the 27 GPT6A images, retaining unrelated resource bytes."""
     frames = load_dragon_reference_frames(GENERATED_ROOT)
     source_path, temporary = OUTPUT / "characters.zip", OUTPUT / "characters-building.zip"
     idle_images = {}
@@ -658,7 +658,7 @@ def refresh_dragon_assets() -> None:
     build_preview(idle_images)
     build_ai_preview({"gpt6a": frames, "deepseek": load_ai_frames("deepseek")})
     build_dragon_preview(frames, OUTPUT / "previews")
-    print("Updated 27 GPT6A frames; preserved all 173 other resource entries.")
+    print("Updated 27 GPT6A frames; preserved all unrelated resource entries.")
 
 
 def refresh_kolo_v211_assets() -> None:
@@ -762,7 +762,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     import sys
-    if "--refresh-v211" in sys.argv:
+    if "--refresh-v212" in sys.argv:
+        refresh_dragon_assets()
+    elif "--refresh-v211" in sys.argv:
         refresh_kolo_v211_assets()
     elif "--refresh-v210" in sys.argv:
         refresh_dragon_assets()

@@ -16,8 +16,8 @@ using System.Windows.Threading;
 [assembly: AssemblyTitle("原神启动")]
 [assembly: AssemblyDescription("多形象桌宠、资讯、窗口魔法与原神战斗循环助手")]
 [assembly: AssemblyProduct("原神启动")]
-[assembly: AssemblyVersion("2.11.0.0")]
-[assembly: AssemblyFileVersion("2.11.0.0")]
+[assembly: AssemblyVersion("2.12.0.0")]
+[assembly: AssemblyFileVersion("2.12.0.0")]
 
 namespace ClaudePet
 {
@@ -490,6 +490,7 @@ namespace ClaudePet
             bool leftWall = movement == "wallrun";
             if (leftWall) EndVaresaRun();
             currentCharacter = key;
+            ResetKoloEasterEggUsage();
             platformCacheTime = DateTime.MinValue;
             frames = LoadCharacterFrames(key);
             CancelButterflyEffects();
@@ -576,8 +577,6 @@ namespace ClaudePet
         {
             double minimumSeconds = quietMode ? 35 : 4;
             double randomSeconds = quietMode ? 40 : 7;
-            if (!quietMode && currentCharacter == "kolo" && KoloEasterEggEnabled)
-            { minimumSeconds = 16; randomSeconds = 12; }
             nextWalk = from.AddSeconds(minimumSeconds + random.NextDouble() * randomSeconds);
         }
 

@@ -64,13 +64,13 @@ namespace ClaudePet
 
         private string ActiveMovementFrameKey
         {
-            get { return currentCharacter == "varesa" && activeGait == "run" && !nightsoul.CanSprint ? "stroll" : MovementGait.FrameKey(activeGait); }
+            get { return currentCharacter == "kolo" || (currentCharacter == "varesa" && activeGait == "run" && !nightsoul.CanSprint) ? "stroll" : MovementGait.FrameKey(activeGait); }
         }
 
         private double CurrentMovementSpeed(double variation)
         {
             string speedCharacter = currentCharacter == "varesa" && !nightsoul.CanSprint ? "kolo" : currentCharacter;
-            return MovementGait.Speed(speedCharacter, activeGait, variation, Width);
+            return MovementGait.Speed(speedCharacter, currentCharacter == "kolo" ? "stroll" : activeGait, variation, Width);
         }
 
         private double NightsoulCapacity(Rect work)

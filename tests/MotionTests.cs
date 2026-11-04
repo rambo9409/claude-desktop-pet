@@ -108,10 +108,10 @@ internal static class MotionTests
             Set(pet, "runPhase", 0.32);
             Set(pet, "moveSpeed", 95.0);
             Tick(pet);
-            Require(ReferenceEquals(sprite.Source, frames["walk"][1]), character + " uses elapsed time for run pose.");
+            Require(ReferenceEquals(sprite.Source, frames[character == "kolo" ? "stroll" : "walk"][1]), character + " uses elapsed time for locomotion pose.");
             Set(pet, "moveSpeed", 140.0);
             Tick(pet);
-            Require(ReferenceEquals(sprite.Source, frames["walk"][1]), character + " skips pose when speed changes.");
+            Require(ReferenceEquals(sprite.Source, frames[character == "kolo" ? "stroll" : "walk"][1]), character + " skips pose when speed changes.");
             Require(((TransformGroup)sprite.RenderTransform).Children.Count == 1,
                 character + " still has a synthetic run bounce.");
 

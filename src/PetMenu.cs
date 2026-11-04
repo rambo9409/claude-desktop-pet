@@ -100,11 +100,12 @@ namespace ClaudePet
 
             menu.Items.Add(SectionLabel("动作与大小"));
             menu.Items.Add(StyledItem("♧", "慢慢走一会儿", delegate { if (state == "idle") StartStrolling(); }));
-            menu.Items.Add(StyledItem("➜", currentCharacter == "hutao" ? "化蝶飞行一会儿" : "立即跑步", delegate { if (state == "idle") StartWalking(); }));
+            if (currentCharacter != "kolo")
+                menu.Items.Add(StyledItem("➜", currentCharacter == "hutao" ? "化蝶飞行一会儿" : "立即跑步", delegate { if (state == "idle") StartWalking(); }));
             if (currentCharacter == "ganyu")
                 menu.Items.Add(StyledItem("↗", "蹬墙跳上附近窗口", delegate { if (state == "idle") StartGanyuJump(); }));
             MenuItem gait = StyledItem("⇄", "移动模式", null);
-            string[] modes = { "stroll", "run", "mixed" };
+            string[] modes = currentCharacter == "kolo" ? new[] { "stroll" } : new[] { "stroll", "run", "mixed" };
             string[] labels = { "慢速行走", currentCharacter == "hutao" ? "金蝶飞行" : "活力奔跑",
                 currentCharacter == "hutao" ? "走飞交替" : "走跑交替" };
             for (int i = 0; i < modes.Length; i++)
@@ -125,7 +126,6 @@ namespace ClaudePet
             quietItem.Click += delegate {
                 quietMode = quietItem.IsChecked;
                 PetSettings.SaveQuietMode(quietMode);
-                if (quietMode) CancelKoloEasterEgg();
                 if (quietMode) CancelAutomaticTraversal();
                 else ScheduleNextWalk(DateTime.Now);
                 ShowSpeech(quietMode ? "安静模式已开启，我会少跑动。" : "安静模式已关闭。活力回来啦！");
@@ -158,7 +158,7 @@ namespace ClaudePet
         private void RefreshMovementChecks()
         {
             foreach (MenuItem item in movementItems)
-                item.IsChecked = Convert.ToString(item.Tag) == preferredGait;
+                item.IsChecked = Convert.ToString(item.Tag) == (currentCharacter == "kolo" ? "stroll" : preferredGait);
         }
 
         private static void ConfigureMenuStyles(ContextMenu menu, MenuPalette palette)

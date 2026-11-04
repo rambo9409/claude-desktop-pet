@@ -6,56 +6,46 @@ using System.Windows.Media.Imaging;
 
 namespace ClaudePet
 {
-    // All lottery timing is independent of render frequency. Busy time never
-    // counts towards the uninterrupted idle requirement, and missed polls are
-    // not replayed after sleep or a blocked UI thread.
+    // Count visible use, not idle time or random polls. Readiness is latched
+    // until a safe opportunity, so moving or interrupting does not reroll it.
     internal sealed class KoloEasterEggSession
     {
-        internal const double IdleSeconds = 12;
-        internal const double PollSeconds = 30;
-        internal const double CooldownSeconds = 300;
-        internal const double GraceSeconds = 45;
+        internal const double RequiredUseSeconds = 180;
         internal const double DurationSeconds = 4.8;
-        internal const double Probability = .12;
-        private DateTime idleSinceUtc = DateTime.MinValue;
-        private DateTime lastObservedUtc = DateTime.MinValue;
-        internal DateTime NextAllowedUtc { get; private set; }
-        internal DateTime NextPollUtc { get; private set; }
+        private DateTime lastObservedUtc;
+        private bool previouslyInUse;
+        internal double UsedSeconds { get; private set; }
+        internal bool Completed { get; private set; }
+        internal bool Ready { get { return UsedSeconds >= RequiredUseSeconds && !Completed; } }
         internal bool Active { get; private set; }
         internal double Elapsed { get; private set; }
 
         internal KoloEasterEggSession(DateTime nowUtc)
         {
-            NextAllowedUtc = nowUtc.AddSeconds(CooldownSeconds);
-            NextPollUtc = NextAllowedUtc;
+            Reset(nowUtc);
         }
 
-        internal bool Observe(DateTime nowUtc, bool eligible, Func<double> draw)
+        internal void Reset(DateTime nowUtc)
         {
-            if (lastObservedUtc != DateTime.MinValue && nowUtc < lastObservedUtc)
-            {
-                Cancel(nowUtc);
-                NextAllowedUtc = nowUtc.AddSeconds(CooldownSeconds);
-                NextPollUtc = NextAllowedUtc;
+            lastObservedUtc = nowUtc; previouslyInUse = false;
+            UsedSeconds = 0; Completed = false; Active = false; Elapsed = 0;
+        }
+
+        internal bool Observe(DateTime nowUtc, bool inUse, bool eligible)
+        {
+            double elapsed = (nowUtc - lastObservedUtc).TotalSeconds;
+            // Ignore suspended/blocked gaps and clock corrections. Normal UI
+            // cadence and short stalls count actual elapsed time, not frames.
+            if (inUse && previouslyInUse && elapsed > 0 && elapsed <= 5 && !Completed) {
+                UsedSeconds = Math.Min(RequiredUseSeconds, UsedSeconds + elapsed);
+                if (UsedSeconds >= RequiredUseSeconds - .000001) UsedSeconds = RequiredUseSeconds;
             }
             lastObservedUtc = nowUtc;
-            if (!eligible)
-            {
-                idleSinceUtc = DateTime.MinValue;
-                if (Active) Cancel(nowUtc);
-                return false;
-            }
-            if (Active) return false;
-            if (idleSinceUtc == DateTime.MinValue) idleSinceUtc = nowUtc;
-            if ((nowUtc - idleSinceUtc).TotalSeconds < IdleSeconds || nowUtc < NextAllowedUtc || nowUtc < NextPollUtc)
-                return false;
-            NextPollUtc = nowUtc.AddSeconds(PollSeconds);
-            double sample = draw();
-            if (Double.IsNaN(sample) || sample < 0 || sample >= Probability) return false;
+            previouslyInUse = inUse;
+            if (!inUse || !eligible) { if (Active) Cancel(nowUtc); return false; }
+            if (Active || !Ready) return false;
             Active = true;
             Elapsed = 0;
-            idleSinceUtc = DateTime.MinValue;
-            NextAllowedUtc = nowUtc.AddSeconds(CooldownSeconds);
             return true;
         }
 
@@ -68,6 +58,7 @@ namespace ClaudePet
             Elapsed = Math.Min(DurationSeconds, Elapsed + Math.Min(.1, seconds));
             if (Elapsed < DurationSeconds - .000001) return false;
             Active = false;
+            Completed = true;
             return true;
         }
 
@@ -81,9 +72,8 @@ namespace ClaudePet
         {
             Active = false;
             Elapsed = 0;
-            idleSinceUtc = DateTime.MinValue;
-            DateTime grace = nowUtc.AddSeconds(GraceSeconds);
-            if (NextAllowedUtc < grace) NextAllowedUtc = grace;
+            lastObservedUtc = nowUtc;
+            previouslyInUse = false;
         }
     }
 
@@ -115,12 +105,17 @@ namespace ClaudePet
             StateChanged += delegate { if (WindowState == WindowState.Minimized) CancelKoloEasterEgg(); };
         }
 
+        private void ResetKoloEasterEggUsage()
+        {
+            koloEasterEgg.Reset(DateTime.UtcNow);
+        }
+
         private bool CanPlayKoloEasterEgg()
         {
             BitmapSource[] poses;
             if (!koloEasterEggEnabled || currentCharacter != "kolo" || !IsLoaded || !IsVisible || WindowState == WindowState.Minimized ||
-                quietMode || pointerHeld || notebook.Pressed || (notebookWindow != null && notebookWindow.Dragging) ||
-                state != "idle" || movement != "rest" || IsWindowAbilityActive || IsKoloPortalActive ||
+                pointerHeld || notebook.Pressed || (notebookWindow != null && notebookWindow.Dragging) ||
+                state != "idle" || (movement != "rest" && movement != "walk") || IsWindowAbilityActive || IsKoloPortalActive ||
                 (ContextMenu != null && ContextMenu.IsOpen) || !frames.TryGetValue("disguise", out poses) || poses.Length != 8)
                 return false;
             PlatformEdge support = FindSupport();
@@ -131,7 +126,8 @@ namespace ClaudePet
         {
             DateTime utc = now.ToUniversalTime();
             bool wasActive = koloEasterEgg.Active;
-            bool started = koloEasterEgg.Observe(utc, CanPlayKoloEasterEgg(), delegate { return random.NextDouble(); });
+            bool inUse = koloEasterEggEnabled && currentCharacter == "kolo" && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
+            bool started = koloEasterEgg.Observe(utc, inUse, CanPlayKoloEasterEgg());
             if (wasActive && !koloEasterEgg.Active)
             {
                 RestoreKoloEasterEggPose();
@@ -139,6 +135,7 @@ namespace ClaudePet
             }
             if (started)
             {
+                StopWalking();
                 // Closing a detached notebook is part of the existing recovery
                 // path. The change of costume never strands a second window.
                 ReturnNotebook(false);
@@ -181,8 +178,9 @@ namespace ClaudePet
             { ShowSpeech("换装彩蛋设置未保存，请稍后重试。" ); return; }
             koloEasterEggEnabled = enabled;
             CancelKoloEasterEgg();
+            ResetKoloEasterEggUsage();
             ScheduleNextWalk(DateTime.Now);
-            ShowSpeech(enabled ? "待机换装彩蛋已开启，偶尔留意我的发饰吧。" : "待机换装彩蛋已关闭。" );
+            ShowSpeech(enabled ? "换装彩蛋已开启，陪你三分钟就揭晓。" : "换装彩蛋已关闭。" );
         }
 
         private void AddKoloEasterEggMenu(ContextMenu menu)
@@ -191,7 +189,7 @@ namespace ClaudePet
             MenuItem item = StyledItem("♢", "待机换装彩蛋", null);
             item.IsCheckable = true;
             item.IsChecked = koloEasterEggEnabled;
-            item.ToolTip = "闲下来时，珂洛可能偷偷换装成DeepSeek；安静模式中暂停。";
+            item.ToolTip = "使用珂洛满3分钟必定换装成DeepSeek；移动与安静模式也计时，隐藏时暂停。拖拽或传送期间等动作结束再换装。";
             item.Click += delegate { SetKoloEasterEggEnabled(item.IsChecked); item.IsChecked = koloEasterEggEnabled; };
             menu.Items.Add(item);
         }
