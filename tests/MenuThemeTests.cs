@@ -64,8 +64,8 @@ internal static class MenuThemeTests
             new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             pet = new PetWindow();
             Field<DispatcherTimer>(pet, "timer").Stop();
-            string[] characters = { "kolo", "hutao", "ganyu", "varesa" };
-            string[] names = { "珂洛", "胡桃", "甘雨", "瓦雷莎" };
+            string[] characters = { "kolo", "hutao", "ganyu", "varesa", "gpt6a", "deepseek" };
+            string[] names = { "珂洛", "胡桃", "甘雨", "瓦雷莎", "GPT6A·龙女", "DeepSeek·小肥鱼" };
             HashSet<Color> backgrounds = new HashSet<Color>();
             for (int index = 0; index < characters.Length; index++)
             {
@@ -157,7 +157,7 @@ internal static class MenuThemeTests
                 Save(montage, 540, root.PixelHeight + 24, "artifacts/tests/menu-theme-" + character + ".png");
                 Console.WriteLine("PASS " + character + ": root + 3 actual submenu renders, checked/highlight/disabled colors, contrast, compact geometry, rebuilt state.");
             }
-            Console.WriteLine("PASS all four menu themes; no settings modified.");
+            Console.WriteLine("PASS all six menu themes; no settings modified.");
         }
         catch (Exception e) { Console.Error.WriteLine(e); Environment.ExitCode = 1; }
         finally { if (pet != null) pet.Close(); }

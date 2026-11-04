@@ -1,10 +1,10 @@
-# 原神启动 V2.9
+# 原神启动 V2.10
 
 Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼，以及胡桃、甘雨、瓦雷莎六套 Q 版形象。原名“珂洛桌宠”。
 
 ## 启动与升级
 
-解压 `release/V2.9/原神启动-V2.9.zip`，双击 `原神启动.exe`。先退出旧版再启动新版，设置和缓存会继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。
+解压 `release/V2.10/原神启动-V2.10.zip`，双击 `原神启动.exe`。先退出旧版再启动新版，设置和缓存会继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。
 
 ## 操作
 
@@ -27,6 +27,8 @@ Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼�
 珂洛的“窗口魔法”会随机缩小或拉近一个普通应用窗口，成功冷却5分钟。右键有独立开关：新安装默认关闭；已有窗口能力冷却存档的升级用户保持原先启用状态。关闭立即取消施法，双击扣冷却不会自动打开开关。
 
 V2.9中珂洛默认拿着本子，此时不对窗口施法。把本子拖离、再拖回或归还可以切换她的忙碌状态；隐藏、换形象和重启会回收本子。小肥鱼按用户参考重绘为蓝发鲸尾女仆少女，保留本地随手记。详见 [小本本与参考形象](docs/notebook-v2.9.md)。
+
+GPT6A·龙女在V2.10按用户参考重绘为白银发、浅紫眼、短龙角、蝠翼和卷尾的Q版少女，配白紫裙装。待机、慢走、跑步、攀爬、施法、拖拽和下落采用同一套形象，菜单与龙息专注显示同步为紫白配色，详见 [龙女参考形象](docs/dragon-v2.10.md)。
 
 GPT6A的右键能力菜单可选择15、25或45分钟专注，星环显示进度，到时提醒；切换角色、隐藏或退出会取消。DeepSeek可保存和回看灵感记录，保存后有泡泡反馈。两者是本地宠物功能，无需模型API或账号，详见 [AI伙伴说明](docs/ai-companions-v2.8.md)。
 
@@ -66,7 +68,7 @@ OCR 不可用时仍能手动填写。可在 Windows“设置 → 时间和语言
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.9 -InstructionsPath .\docs\usage-v2.9.txt
+.\package.cmd -Version 2.10 -InstructionsPath .\docs\usage-v2.10.txt
 ```
 
 CMD 包装只为当前 PowerShell 进程指定执行策略，不修改系统策略。默认测试20组，加 `-IncludeVisualSmoke` 共21组。`-SkipPreviews` 只跳过 GIF 编码，仍运行渲染与断言测试。重建素材或编码 GIF 才需 Python、Pillow、NumPy；通过 `-Python`、`KOLO_PYTHON`、PATH 或 `py` 查找。

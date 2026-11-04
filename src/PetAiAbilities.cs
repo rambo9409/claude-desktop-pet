@@ -246,20 +246,22 @@ namespace ClaudePet
             base.OnRender(draw);
             if (character == "gpt6a" && focusing) {
                 Point center = new Point(165, 283); double radius = 126;
-                Brush teal = new SolidColorBrush(Color.FromArgb(125, 91, 229, 195));
-                draw.DrawEllipse(null, new Pen(new SolidColorBrush(Color.FromArgb(35, 125, 248, 212)), 10), center, radius, radius);
-                draw.DrawEllipse(null, new Pen(teal, 1.5), center, radius, radius);
+                Brush lavender = new SolidColorBrush(Color.FromArgb(140, 148, 117, 191));
+                Brush lilac = new SolidColorBrush(Color.FromRgb(158, 126, 204));
+                Brush moonlight = new SolidColorBrush(Color.FromRgb(244, 237, 255));
+                draw.DrawEllipse(null, new Pen(new SolidColorBrush(Color.FromArgb(45, 204, 184, 235)), 10), center, radius, radius);
+                draw.DrawEllipse(null, new Pen(lavender, 1.5), center, radius, radius);
                 int lit = (int)Math.Floor(progress * 60);
                 for (int i = 0; i < 60; i++) {
                     double angle = -Math.PI / 2 + i * Math.PI / 30;
                     Point a = new Point(center.X + Math.Cos(angle) * (radius - 4), center.Y + Math.Sin(angle) * (radius - 4));
                     Point b = new Point(center.X + Math.Cos(angle) * (radius + 3), center.Y + Math.Sin(angle) * (radius + 3));
-                    draw.DrawLine(new Pen(i <= lit ? Brushes.LightGoldenrodYellow : teal, i <= lit ? 2.6 : 1), a, b);
+                    draw.DrawLine(new Pen(i <= lit ? lilac : lavender, i <= lit ? 2.6 : 1), a, b);
                 }
                 for (int i = 0; i < 3; i++) {
                     double angle = phase * .35 + i * Math.PI * 2 / 3;
                     Point p = new Point(center.X + Math.Cos(angle) * radius, center.Y + Math.Sin(angle) * radius);
-                    draw.DrawEllipse(Brushes.LightGoldenrodYellow, null, p, 4, 4);
+                    draw.DrawEllipse(moonlight, new Pen(lavender, 1), p, 4, 4);
                 }
             }
             if (character == "deepseek" && bubbleLife > 0) {
@@ -290,10 +292,10 @@ namespace ClaudePet
         private void InitializeAiAbilities(Grid root)
         {
             aiCompanionVisual = new AiCompanionVisual { IsHitTestVisible = false }; root.Children.Add(aiCompanionVisual);
-            dragonFocusLabel = new TextBlock { Foreground = Brushes.LightGoldenrodYellow, FontFamily = new FontFamily("Microsoft YaHei UI"),
+            dragonFocusLabel = new TextBlock { Foreground = new SolidColorBrush(Color.FromRgb(247, 244, 255)), FontFamily = new FontFamily("Microsoft YaHei UI"),
                 FontSize = 20, TextAlignment = TextAlignment.Center };
             dragonFocusHud = new Border { Width = 240, Height = 40, CornerRadius = new CornerRadius(12), Padding = new Thickness(8, 5, 8, 5),
-                Background = new SolidColorBrush(Color.FromArgb(235, 25, 65, 60)), BorderBrush = Brushes.PaleTurquoise, BorderThickness = new Thickness(1),
+                Background = new SolidColorBrush(Color.FromArgb(235, 55, 41, 76)), BorderBrush = new SolidColorBrush(Color.FromRgb(203, 185, 232)), BorderThickness = new Thickness(1),
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 94, 0, 0),
                 IsHitTestVisible = false, Visibility = Visibility.Collapsed, Child = dragonFocusLabel };
             root.Children.Add(dragonFocusHud);

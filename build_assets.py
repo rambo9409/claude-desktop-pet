@@ -9,6 +9,8 @@ from PIL import Image, ImageDraw, ImageFont
 from build_deepseek_v29 import load_frames as load_deepseek_reference_frames
 from build_kolo_v29 import load_frames as load_kolo_reference_frames
 from build_kolo_v29 import load_hitboxes as load_notebook_hitboxes
+from build_gpt6a_v210 import load_frames as load_dragon_reference_frames
+from build_gpt6a_v210 import build_preview as build_dragon_preview
 
 OUTPUT = Path(__file__).resolve().parent / "assets"
 GENERATED_ROOT = OUTPUT / "generated"
@@ -323,7 +325,7 @@ def build_preview(idle_images: dict[str, Image.Image]) -> None:
     draw = ImageDraw.Draw(canvas)
     title_font = load_font(22)
     name_font = load_font(19)
-    draw.text((28, 18), "原神启动 V2.9 · 鲸尾少女与珂洛的小本本", font=title_font, fill=(76, 48, 45, 255))
+    draw.text((28, 18), "原神启动 V2.10 · 白银淡紫龙女", font=title_font, fill=(76, 48, 45, 255))
     card_width = 250
     for index, key in enumerate(CHARACTERS):
         left = 22 + index * 264
@@ -512,67 +514,9 @@ def load_ai_frames(character: str) -> dict[str, Image.Image]:
     """
     if character == "deepseek":
         return load_deepseek_reference_frames(GENERATED_ROOT)
-    recipe = json.loads((GENERATED_ROOT / "ai-v28-crops.json").read_text(encoding="utf-8"))["characters"][character]
-    source = Image.open(GENERATED_ROOT / recipe["source"]).convert("RGBA")
-    if source.getchannel("A").getextrema()[0] != 0:
-        raise ValueError("AI character artwork requires real alpha")
-    rows = []
-    for row in range(5):
-        xs = recipe.get("lastRowXEdges", recipe["xEdges"]) if row == 4 else recipe["xEdges"]
-        ys = recipe["yEdges"]
-        cells = []
-        for col in range(4):
-            top, bottom = recipe.get("cellYOverrides", {}).get(f"{row},{col}", (ys[row], ys[row + 1]))
-            cells.append(source.crop((xs[col], top, xs[col + 1], bottom)))
-        boxes = [visible_bounds(cell) for cell in cells]
-        pivot = sum((box[0] + box[2]) / 2 for box in boxes) / 4
-        bottom = max(box[3] for box in boxes)
-        packed = []
-        for cell, box in zip(cells, boxes):
-            pose = cell.crop(box)
-            scale = recipe["scale"]
-            pose = pose.resize((round(pose.width * scale), round(pose.height * scale)), Image.Resampling.LANCZOS)
-            x = 400 - pose.width if row == 3 else round(256 + (box[0] - pivot) * scale)
-            y = 486 - pose.height if row == 0 else round(486 - (bottom - box[1]) * scale)
-            frame = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
-            frame.alpha_composite(pose, (x, y))
-            bounds = visible_bounds(frame)
-            if min(bounds[:2]) < 4 or max(bounds[2:]) > 508:
-                raise ValueError(f"Clipped AI pose: {character} row {row}: {bounds}")
-            packed.append(frame)
-        rows.append(packed)
-    result = {"idle": rows[0][0], "happy-1": rows[0][1], "happy-2": rows[0][0],
-              "pet-1": rows[0][2], "pet-2": rows[0][0], "rose-1": rows[0][1], "rose-2": rows[0][3],
-              "typing-1": rows[0][3], "typing-2": rows[4][1]}
-    for row, action in ((1, "stroll"), (2, "walk"), (3, "climb-up"), (4, "ability")):
-        for index, frame in enumerate(rows[row], 1):
-            result[f"{action}-{index}"] = frame
-    if "stroll" in recipe:
-        gait = recipe["stroll"]
-        atlas = Image.open(GENERATED_ROOT / gait["source"]).convert("RGBA")
-        xs, ys = gait["xEdges"], gait["yEdges"]
-        cells = [atlas.crop((xs[col], ys[row], xs[col + 1], ys[row + 1])) for row in range(2) for col in range(2)]
-        boxes = [visible_bounds(cell) for cell in cells]
-        center = sum((box[0] + box[2]) / 2 for box in boxes) / 4
-        for index, (cell, box) in enumerate(zip(cells, boxes), 1):
-            pose = cell.crop(box)
-            pose = pose.resize((round(pose.width * gait["scale"]), round(pose.height * gait["scale"])), Image.Resampling.LANCZOS)
-            frame = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
-            frame.alpha_composite(pose, (round(256 + (box[0] - center) * gait["scale"]), 486 - pose.height))
-            result[f"stroll-{index}"] = frame
-    airborne = Image.open(GENERATED_ROOT / "ai-airborne-v28.png").convert("RGBA")
-    for item in recipe["airborne"]:
-        pose = airborne.crop(tuple(item["crop"]))
-        pose = pose.crop(visible_bounds(pose))
-        scale = item["scale"]
-        pose = pose.resize((round(pose.width * scale), round(pose.height * scale)), Image.Resampling.LANCZOS)
-        frame = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
-        frame.alpha_composite(pose, ((512 - pose.width) // 2, 486 - pose.height))
-        bounds = visible_bounds(frame)
-        if min(bounds[:2]) < 4 or max(bounds[2:]) > 508:
-            raise ValueError(f"Clipped AI air pose: {character} {item['name']}: {bounds}")
-        result[item["name"]] = frame
-    return result
+    if character == "gpt6a":
+        return load_dragon_reference_frames(GENERATED_ROOT)
+    raise ValueError(f"Unknown AI character: {character}")
 
 
 def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> None:
@@ -592,7 +536,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
             frame = frames_by_character[character][action].resize((220, 220), Image.Resampling.LANCZOS)
             sheet.paste(frame, (col * 220, row * 260 + 30), frame)
             draw.text((col * 220 + 8, row * 260 + 6), character + " · " + action, font=font, fill=fg)
-    sheet.save(preview_root / "ai-v29-contact-sheet.png")
+    sheet.save(preview_root / "ai-v210-contact-sheet.png")
     gait_sheet = Image.new("RGB", (960, 6 * 260), "#eef7f6")
     gait_draw = ImageDraw.Draw(gait_sheet)
     for character_row, character in enumerate(AI_CHARACTERS):
@@ -602,7 +546,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 pose = frames_by_character[character][f"{action}-{index + 1}"].resize((240, 240), Image.Resampling.LANCZOS)
                 gait_sheet.paste(pose, (index * 240, row * 260 + 20), pose)
                 gait_draw.text((index * 240 + 8, row * 260 + 2), f"{character} · {action} {index + 1}", font=font, fill="#254D59")
-    gait_sheet.save(preview_root / "ai-v29-gait-contact-sheet.png")
+    gait_sheet.save(preview_root / "ai-v210-gait-contact-sheet.png")
     animation = []
     for tick in range(48):
         canvas = Image.new("RGB", (1000, 540), "#eef7f6")
@@ -614,7 +558,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 canvas.paste(pose, (col * 250 + 5, row * 270 + 22), pose)
                 draw.text((col * 250 + 8, row * 270 + 2), character + " · " + action, font=font, fill="#254D59")
         animation.append(canvas)
-    animation[0].save(preview_root / "ai-v29-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
+    animation[0].save(preview_root / "ai-v210-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
 
 
 def append_ai_assets() -> None:
@@ -665,6 +609,39 @@ def refresh_reference_assets() -> None:
     build_kolo_preview(idle_images["kolo"], replacements["kolo"])
     build_ai_preview({"gpt6a": load_ai_frames("gpt6a"), "deepseek": replacements["deepseek"]})
     print("Updated Kolo and DeepSeek; all other character entries preserved.")
+
+
+def refresh_dragon_assets() -> None:
+    """Replace the 27 GPT6A images and retain all 173 unrelated resource bytes."""
+    frames = load_dragon_reference_frames(GENERATED_ROOT)
+    source_path, temporary = OUTPUT / "characters.zip", OUTPUT / "characters-building.zip"
+    idle_images = {}
+    held_portrait = None
+    with ZipFile(source_path, "r") as source, ZipFile(temporary, "w", compression=ZIP_STORED) as destination:
+        replaced = [name for name in source.namelist() if name.startswith("gpt6a-")]
+        expected = {f"gpt6a-{name}.png" for name in frames}
+        if set(replaced) != expected:
+            raise ValueError("GPT6A replacement must retain the existing frame contract")
+        for entry in source.infolist():
+            if entry.filename.startswith("gpt6a-"):
+                continue
+            data = source.read(entry.filename)
+            if entry.filename == "kolo-book-idle.png":
+                held_portrait = Image.open(BytesIO(data)).convert("RGBA")
+            destination.writestr(entry, data)
+            if entry.filename.endswith("-idle.png") and "-book-" not in entry.filename:
+                idle_images[entry.filename[:-9]] = Image.open(BytesIO(data)).convert("RGBA")
+        if held_portrait is None:
+            raise ValueError("Missing Kolo held-notebook portrait")
+        idle_images["kolo"] = held_portrait
+        for name, frame in frames.items():
+            destination.writestr(f"gpt6a-{name}.png", to_png(frame))
+        idle_images["gpt6a"] = frames["idle"]
+    temporary.replace(source_path)
+    build_preview(idle_images)
+    build_ai_preview({"gpt6a": frames, "deepseek": load_ai_frames("deepseek")})
+    build_dragon_preview(frames, OUTPUT / "previews")
+    print("Updated 27 GPT6A frames; preserved all 173 other resource entries.")
 
 
 def main() -> None:
@@ -726,6 +703,7 @@ def main() -> None:
     build_motion_preview(motion_images)
     build_kolo_preview(idle_images["kolo"], motion_images["kolo"])
     build_ai_preview({character: motion_images[character] for character in AI_CHARACTERS})
+    build_dragon_preview(motion_images["gpt6a"], OUTPUT / "previews")
     expected = 153 + len(motion_images["kolo"])
     if count != expected:
         raise ValueError(f"Unexpected asset count: {count}")
@@ -736,7 +714,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     import sys
-    if "--refresh-v29" in sys.argv:
+    if "--refresh-v210" in sys.argv:
+        refresh_dragon_assets()
+    elif "--refresh-v29" in sys.argv:
         refresh_reference_assets()
     elif "--append-ai" in sys.argv:
         append_ai_assets()

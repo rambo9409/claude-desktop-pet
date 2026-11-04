@@ -1,4 +1,4 @@
-# V2.9 工程与构建
+# V2.10 工程与构建
 
 ## 目录
 
@@ -11,6 +11,7 @@
 | `tests/` | 测试源码与历史薄包装入口 |
 | `assets/characters.zip`、`assets/combat-teams.json`、`assets/combat-roster.json` | 内嵌动画、带来源的配队目录与角色名称/别名快照 |
 | `assets/generated/`、`assets/source/` | 当前和历史源素材、提示词、裁切参数 |
+| `build_gpt6a_v210.py`、`build_deepseek_v29.py`、`build_kolo_v29.py` | 参考形象的透明图集裁切与运行帧布局，由 `build_assets.py` 统一调用 |
 | `artifacts/build/` | 根据当前环境展开的生产编译响应文件 |
 | `artifacts/tests/` | 测试 EXE、日志、渲染截图、`latest-run.json` |
 | `release/V*/` | 精简用户发布包及独立预览 |
@@ -65,10 +66,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.9 -InstructionsPath .\docs\usage-v2.9.txt
+.\package.cmd -Version 2.10 -InstructionsPath .\docs\usage-v2.10.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。
+
+仅更新V2.10龙女素材使用 `build_assets.py --refresh-v210`。它替换27张 `gpt6a-*.png`，保留其余173项。完整重建入口仍是 `build.cmd -RebuildAssets -Python ...`。刷新与完整重建均应核对正式资源内容及裁切边界。
 
 `.gitattributes` 规定 C#/PowerShell/CMD/RSP 为 CRLF、Markdown/JSON/Python为LF；二进制不作换行转换。没有对历史仓库做全量换行重写。旧根目录构建和 Python 缓存归档说明见 [V2.6 整理记录](cleanup-v2.6.md)。历史使用说明和验证文档保留原路径，通过[索引](INDEX.md)导航，避免旧发布链接失效。
 

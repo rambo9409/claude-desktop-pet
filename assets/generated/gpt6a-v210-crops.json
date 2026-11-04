@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "description": "Measured transparent source cells. Preserve source RGBA; crop, uniformly scale and place only. Each action uses a shared pivot and scale.",
+  "rows": [
+    {
+      "action": "expressions", "source": "gpt6a-ground-v210.png", "scale": 1.0,
+      "crops": [[0,0,444,444],[444,0,887,444],[887,0,1330,444],[1330,0,1774,444]]
+    },
+    {
+      "action": "stroll", "source": "gpt6a-ground-v210.png", "scale": 1.0,
+      "crops": [[0,444,444,887],[444,444,887,887],[887,444,1330,887],[1330,444,1774,887]]
+    },
+    {
+      "action": "walk", "source": "gpt6a-motion-v210.png", "scale": 1.0,
+      "crops": [[0,0,444,444],[444,0,887,444],[887,0,1330,444],[1330,0,1774,444]]
+    },
+    {
+      "action": "climb-up", "source": "gpt6a-motion-v210.png", "scale": 1.0,
+      "crops": [[0,444,444,887],[444,444,887,887],[887,444,1330,887],[1330,444,1774,887]]
+    },
+    {
+      "action": "ability", "source": "gpt6a-focus-v210.png", "scale": 0.69,
+      "crops": [[0,0,543,724],[543,0,1086,724],[1086,0,1629,724],[1629,0,2172,724]]
+    }
+  ],
+  "airborneSource": "gpt6a-airborne-v210.png",
+  "airborne": [
+    {"name": "fall", "crop": [0,0,1086,724], "scale": 0.67},
+    {"name": "held", "crop": [1086,0,2172,724], "scale": 0.69}
+  ]
+}

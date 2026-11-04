@@ -27,7 +27,7 @@ namespace ClaudePet
             {
                 switch (character)
                 {
-                    case "gpt6a": return new MenuPalette("#102F2B", "#F0FFF7", "#B4D6C8", "#EDCA82", "#588A78", "#28594A", "#1D483D", "#91B4A5", "#FFBAA0");
+                    case "gpt6a": return new MenuPalette("#F7F4FF", "#342C55", "#6A5B83", "#7354A1", "#BBAAD3", "#E6DAF5", "#ECE3FA", "#786C8A", "#974A68");
                     case "deepseek": return new MenuPalette("#EFF7FF", "#183957", "#4A6785", "#245DA7", "#99BCE1", "#D0E5FF", "#DCEBFF", "#617C99", "#9C3856");
                     case "hutao": return new MenuPalette("#221A20", "#FFF0ED", "#CDB3B9", "#FF9B9F", "#984D5D", "#713341", "#492831", "#A58D94", "#FFADB0");
                     case "ganyu": return new MenuPalette("#F4FAFF", "#193F5D", "#496983", "#286694", "#A7CBE3", "#D1E9F9", "#E0EFFB", "#718BA0", "#9E3C56");

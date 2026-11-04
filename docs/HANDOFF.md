@@ -1,6 +1,10 @@
 # AI与开发者接手说明
 
-更新于2026-11-04。项目是 Windows WPF 桌宠“原神启动”，当前版本 V2.9。DeepSeek 采用蓝发鲸尾女仆形象，珂洛有持本和空手两组动作。持本时窗口魔法暂停，拖走和归还本子时更新施法资格。详见[本子与参考形象](notebook-v2.9.md)和[V2.9 验证](validation-v2.9.md)。
+更新于2026-11-04。项目是 Windows WPF 桌宠“原神启动”，当前版本 V2.10。GPT6A·龙女按用户参考采用白银发、浅紫眼、短龙角、蝠翼、卷尾及白紫裙装，菜单和专注显示同步为紫白色。详见[龙女形象](dragon-v2.10.md)。
+
+V2.10已完成正式构建、21组回归、27张龙女替换/173项其他资源保留检查、200项完整素材重建比较、启动和发布包内容校验。发布包为 `release/V2.10/原神启动-V2.10.zip`，预览在同目录 `previews/`，证据和限制见 [V2.10 验证](validation-v2.10.md)。后续修改仍需运行对应检查。
+
+DeepSeek采用蓝发鲸尾女仆形象，珂洛有持本和空手两组动作。持本时窗口魔法暂停，拖走和归还本子时更新施法资格，详见[本子与参考形象](notebook-v2.9.md)。
 
 V2.9已完成构建、21组回归、末轮素材修正后的Notebook/Motion复测、200项素材完整重建比较、正式EXE启动及发布包内容校验。发布包为 `release/V2.9/原神启动-V2.9.zip`，预览在同目录的 `previews/`。双屏覆盖为模拟坐标与路由事件测试，尚未进行物理鼠标在不同DPI显示器间拖拽的实测。
 
@@ -16,7 +20,7 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
 4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。20组默认回归加VisualSmoke共21组，V2.9新增NotebookTests。
-5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.9.md`。
+5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.10.md`。
 
 ## 模块地图
 
@@ -27,6 +31,7 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 | `src/PetAiAbilities.cs` | 龙息专注、星环和泡泡显示、灵感本UI与安全保存 |
 | `src/PetNotebook.cs` | 持本/离手状态、每帧命中、跨屏独立本子窗口、归还及生命周期 |
 | `build_deepseek_v29.py`、`build_kolo_v29.py` | 两角色参考重绘的裁切与归一化，主入口由build_assets.py统一调用 |
+| `build_gpt6a_v210.py` | GPT6A白银淡紫龙女的27张运行素材，由build_assets.py统一调用 |
 | `src/PetMovement.cs` | 移动状态、平台枚举、拖拽、跌落、跨屏运行时 |
 | `src/DesktopMovement.cs` | DesktopMovement纯几何、VaresaRunTrack路线类 |
 | `src/PetGanyuTraversal.cs` | 甘雨完整多段路径规划、单墙/屏幕接缝借力、小跑靠近、运行时取消 |
@@ -90,17 +95,17 @@ V2.8灵感本为 `deepseek-bubbles.json`，最多100条、每条2000字，沿用
 
 ## 验证与发布约定
 
-测试顺序执行；涉及用户设置的测试必须备份并finally还原。原生能力测试只操作测试创建的专用窗口，不应用用户真实窗口作为目标。界面测试应覆盖四主题、最小尺寸、长文字、错误态和OCR预览。
+测试顺序执行；涉及用户设置的测试必须备份并finally还原。原生能力测试只操作测试创建的专用窗口，不应用用户真实窗口作为目标。界面测试应覆盖六主题、最小尺寸、长文字、错误态和OCR预览。MenuTheme会逐个渲染六角色的菜单和子菜单，并检查悬停、选中与禁用文字的对比度。
 
 正式打包前同步程序集版本、README、使用说明及验证记录。命令：
 
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.9 -InstructionsPath .\docs\usage-v2.9.txt
+.\package.cmd -Version 2.10 -InstructionsPath .\docs\usage-v2.10.txt
 ```
 
-`release/V2.9/原神启动-V2.9.zip`只能含EXE和使用说明。预览独立放 `release/V2.9/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次两角色素材可用 `build_assets.py --refresh-v29`，完整重建仍用 `build.cmd -RebuildAssets -Python ...`。
+`release/V2.10/原神启动-V2.10.zip`只能含EXE和使用说明。预览独立放 `release/V2.10/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次龙女素材可用 `build_assets.py --refresh-v210`，只替换27张GPT6A素材，其余173项应逐字节保持。完整重建仍用 `build.cmd -RebuildAssets -Python ...`。V2.9两角色的 `--refresh-v29` 入口保留用于维护。
 
 素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 

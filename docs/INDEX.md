@@ -4,9 +4,10 @@
 
 - [用户说明](../README.md)
 - [更新记录](../CHANGELOG.md)
+- [V2.10龙女参考形象](dragon-v2.10.md)
+- [V2.10使用说明](usage-v2.10.txt)
+- [V2.10验证结果](validation-v2.10.md)
 - [V2.9参考形象与可拖本子](notebook-v2.9.md)
-- [V2.9使用说明](usage-v2.9.txt)
-- [V2.9验证结果](validation-v2.9.md)
 - [V2.8 AI伙伴与专属能力](ai-companions-v2.8.md)
 - [AI接手文档](HANDOFF.md)
 - [工程目录、依赖和命令](project-layout.md)
@@ -16,7 +17,7 @@
 - [GPT预测数据来源](gpt-reset-data-source.md)
 - [V2.6工程整理记录](cleanup-v2.6.md)
 
-V2.9的发布说明、验证记录以 `usage-v2.9.txt`、`validation-v2.9.md` 为准；发布时应与EXE一同更新，未验证的行为不能标记通过。
+V2.10的发布说明、验证记录以 `usage-v2.10.txt`、`validation-v2.10.md` 为准；发布时应与EXE一同更新，未验证的行为不能标记通过。
 
 ## 历史发布
 
@@ -24,6 +25,7 @@ V2.9的发布说明、验证记录以 `usage-v2.9.txt`、`validation-v2.9.md` �
 
 | 版本 | 使用说明 | 验证 |
 | --- | --- | --- |
+| V2.9 | [使用说明](usage-v2.9.txt) | [验证](validation-v2.9.md) |
 | V2.8 | [使用说明](usage-v2.8.txt) | [验证](validation-v2.8.md) |
 | V2.7 | [使用说明](usage-v2.7.txt) | [验证](validation-v2.7.md) |
 | V2.6 | [使用说明](usage-v2.6.txt) | [验证](validation-v2.6.md) |
