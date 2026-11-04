@@ -23,6 +23,7 @@ internal static class MenuThemeTests
     private static double Contrast(Brush a, Brush b) { double x = Light(ColorOf(a)), y = Light(ColorOf(b)); return (Math.Max(x, y) + 0.05) / (Math.Min(x, y) + 0.05); }
     private static void Layout(FrameworkElement element, double width)
     {
+        WpfTestRender.Drain();
         element.Measure(new Size(width, 2000));
         element.Arrange(new Rect(new Point(), element.DesiredSize));
         element.UpdateLayout();
@@ -31,7 +32,7 @@ internal static class MenuThemeTests
     {
         Require(element.ActualWidth > 0 && element.ActualHeight > 0, "Empty layout: " + element.GetType().Name);
         RenderTargetBitmap bitmap = new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth), (int)Math.Ceiling(element.ActualHeight), 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(element); return bitmap;
+        WpfTestRender.Render(bitmap, element); return bitmap;
     }
     private static MenuItem Find(ContextMenu menu, string label)
     {
@@ -50,7 +51,7 @@ internal static class MenuThemeTests
     }
     private static void Save(Visual visual, int width, int height, string path)
     {
-        RenderTargetBitmap bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(visual);
+        RenderTargetBitmap bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(bitmap, visual);
         PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using (FileStream stream = File.Create(path)) encoder.Save(stream);
     }

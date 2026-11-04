@@ -7,10 +7,12 @@ from zipfile import ZIP_STORED, ZipFile
 
 from PIL import Image, ImageDraw, ImageFont
 from build_deepseek_v29 import load_frames as load_deepseek_reference_frames
-from build_kolo_v29 import load_frames as load_kolo_reference_frames
-from build_kolo_v29 import load_hitboxes as load_notebook_hitboxes
+from build_kolo_v29 import load_frames as load_kolo_v29_frames
+from build_kolo_v29 import load_hitboxes as load_kolo_v29_hitboxes
 from build_gpt6a_v210 import load_frames as load_dragon_reference_frames
 from build_gpt6a_v210 import build_preview as build_dragon_preview
+from build_kolo_v211 import load_stroll_frames, load_stroll_hitboxes, load_disguise_frames
+from build_kolo_v211 import build_preview as build_kolo_v211_preview
 
 OUTPUT = Path(__file__).resolve().parent / "assets"
 GENERATED_ROOT = OUTPUT / "generated"
@@ -27,6 +29,21 @@ CHARACTERS = {
 AI_CHARACTERS = ("gpt6a", "deepseek")
 
 SPECIAL_CHARACTERS = ("hutao", "ganyu", "varesa")
+
+
+def load_kolo_reference_frames(generated_root=None):
+    root = GENERATED_ROOT if generated_root is None else generated_root
+    frames = load_kolo_v29_frames(root)
+    frames.update(load_stroll_frames(root))
+    frames.update(load_disguise_frames(root))
+    return frames
+
+
+def load_notebook_hitboxes(generated_root=None):
+    root = GENERATED_ROOT if generated_root is None else generated_root
+    boxes = load_kolo_v29_hitboxes(root)
+    boxes.update(load_stroll_hitboxes(root))
+    return boxes
 
 POSES = {
     "idle": (0, 0, 0.0, 1.0, 1.0),
@@ -325,7 +342,7 @@ def build_preview(idle_images: dict[str, Image.Image]) -> None:
     draw = ImageDraw.Draw(canvas)
     title_font = load_font(22)
     name_font = load_font(19)
-    draw.text((28, 18), "原神启动 V2.10 · 白银淡紫龙女", font=title_font, fill=(76, 48, 45, 255))
+    draw.text((28, 18), "原神启动 V2.11 · 珂洛的传送门与换装彩蛋", font=title_font, fill=(76, 48, 45, 255))
     card_width = 250
     for index, key in enumerate(CHARACTERS):
         left = 22 + index * 264
@@ -644,6 +661,36 @@ def refresh_dragon_assets() -> None:
     print("Updated 27 GPT6A frames; preserved all 173 other resource entries.")
 
 
+def refresh_kolo_v211_assets() -> None:
+    """Refresh eight stroll frames and hitboxes, then add eight costume poses."""
+    updated = {"kolo-" + name + ".png": to_png(frame) for name, frame in load_stroll_frames(GENERATED_ROOT).items()}
+    updated.update({"kolo-" + name + ".png": to_png(frame) for name, frame in load_disguise_frames(GENERATED_ROOT).items()})
+    boxes = load_notebook_hitboxes(GENERATED_ROOT)
+    updated["kolo-notebook-hitboxes.json"] = json.dumps(boxes, ensure_ascii=False).encode("utf-8")
+    source_path, temporary = OUTPUT / "characters.zip", OUTPUT / "characters-building.zip"
+    idle_images, held_portrait = {}, None
+    with ZipFile(source_path, "r") as source, ZipFile(temporary, "w", compression=ZIP_STORED) as destination:
+        for entry in source.infolist():
+            if entry.filename in updated:
+                continue
+            data = source.read(entry.filename)
+            if entry.filename == "kolo-book-idle.png":
+                held_portrait = Image.open(BytesIO(data)).convert("RGBA")
+            if entry.filename.endswith("-idle.png") and "-book-" not in entry.filename:
+                idle_images[entry.filename[:-9]] = Image.open(BytesIO(data)).convert("RGBA")
+            destination.writestr(entry, data)
+        for name, data in updated.items():
+            destination.writestr(name, data)
+    if held_portrait is None:
+        raise ValueError("Missing Kolo held-notebook portrait")
+    temporary.replace(source_path)
+    idle_images["kolo"] = held_portrait
+    build_preview(idle_images)
+    (GENERATED_ROOT / "kolo-notebook-hitboxes-v211.json").write_text(json.dumps(boxes, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+    build_kolo_v211_preview(OUTPUT / "previews", GENERATED_ROOT)
+    print("Updated eight stroll frames and notebook hitboxes; added eight costume poses.")
+
+
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     character_bases = {key: build_special_base(key) for key in SPECIAL_CHARACTERS}
@@ -704,6 +751,7 @@ def main() -> None:
     build_kolo_preview(idle_images["kolo"], motion_images["kolo"])
     build_ai_preview({character: motion_images[character] for character in AI_CHARACTERS})
     build_dragon_preview(motion_images["gpt6a"], OUTPUT / "previews")
+    build_kolo_v211_preview(OUTPUT / "previews", GENERATED_ROOT)
     expected = 153 + len(motion_images["kolo"])
     if count != expected:
         raise ValueError(f"Unexpected asset count: {count}")
@@ -714,7 +762,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     import sys
-    if "--refresh-v210" in sys.argv:
+    if "--refresh-v211" in sys.argv:
+        refresh_kolo_v211_assets()
+    elif "--refresh-v210" in sys.argv:
         refresh_dragon_assets()
     elif "--refresh-v29" in sys.argv:
         refresh_reference_assets()

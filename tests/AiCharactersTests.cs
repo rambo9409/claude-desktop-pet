@@ -14,6 +14,46 @@ internal static class AiCharactersTests
 {
     private static readonly BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
     private static int checks;
+    private static string lastStage = "not started";
+    private static readonly bool traceEnabled = Environment.GetEnvironmentVariable("AI_CHARACTERS_TEST_TRACE") == "1";
+    private static DispatcherTimer hostTimer;
+    private static string originalCharacterPath;
+    private static byte[] originalCharacterBytes;
+    private static bool originalCharacterCaptured;
+    private static void RestoreOriginalCharacter()
+    {
+        if (!originalCharacterCaptured) return;
+        if (originalCharacterBytes == null) {
+            if (File.Exists(originalCharacterPath)) File.Delete(originalCharacterPath);
+        } else File.WriteAllBytes(originalCharacterPath, originalCharacterBytes);
+    }
+    private static void Stage(string text)
+    {
+        lastStage = text;
+        if (!traceEnabled) return;
+        Console.WriteLine("TRACE AiCharacters " + DateTime.UtcNow.ToString("O") + " [" + checks + "] " + text);
+        Console.Out.Flush();
+    }
+    private static void LogException(string source, object value)
+    {
+        Exception error = value as Exception;
+        Console.Error.WriteLine("EXCEPTION AiCharacters " + source + " [stage=" + lastStage + ", checks=" + checks + "]: " +
+            (error == null ? "non-Exception value" : error.GetType().FullName + ": " + error.Message));
+        Console.Error.Flush();
+    }
+    private static void DrainDispatcher()
+    {
+        // Application is constructed below but has no Run loop. Process queued
+        // input/layout/render work before entering synchronous offscreen layout
+        // or rendering, never from within WPF's processing-disabled callbacks.
+        // Background uses the queue even on this thread; Send would run inline.
+        // https://learn.microsoft.com/dotnet/api/system.windows.threading.dispatcherpriority
+        if (hostTimer != null && hostTimer.IsEnabled)
+            throw new InvalidOperationException("The offscreen test timer must remain stopped while pumping WPF messages.");
+        WpfTestRender.Drain();
+        if (hostTimer != null && hostTimer.IsEnabled)
+            throw new InvalidOperationException("Pumping WPF messages unexpectedly restarted the pet timer.");
+    }
     private static T Get<T>(object target, string name) { return (T)target.GetType().GetField(name, Private).GetValue(target); }
     private static void Set(object target, string name, object value) { target.GetType().GetField(name, Private).SetValue(target, value); }
     private static object Call(object target, string name, params object[] args) { return target.GetType().GetMethod(name, Private).Invoke(target, args); }
@@ -33,10 +73,16 @@ internal static class AiCharactersTests
     }
     private static void Capture(FrameworkElement view, double width, double height, string path)
     {
+        Stage("capture layout " + Path.GetFileName(path));
+        DrainDispatcher();
         view.Measure(new Size(width, height)); view.Arrange(new Rect(0, 0, width, height)); view.UpdateLayout();
-        RenderTargetBitmap bitmap = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(view);
+        Stage("capture render " + Path.GetFileName(path));
+        DrainDispatcher();
+        RenderTargetBitmap bitmap = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(bitmap, view);
+        Stage("capture encode " + Path.GetFileName(path));
         PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using (FileStream output = File.Create(path)) encoder.Save(output);
+        DrainDispatcher();
     }
     private static void Gestures()
     {
@@ -92,6 +138,7 @@ internal static class AiCharactersTests
             Check(ColorOf(planner.Resources["PlannerSurface"]) == surface, "Combat planner lost the AI theme.");
             Check(ColorOf(reset.Resources["ResetSurface"]) == surface, "GPT reset tool lost the AI theme.");
         } finally { highlights.Close(); planner.Close(); reset.Close(); }
+        DrainDispatcher();
     }
     private static void Movement(PetWindow pet, Dictionary<string, BitmapSource[]> frames)
     {
@@ -163,41 +210,72 @@ internal static class AiCharactersTests
     [STAThread]
     private static int Main()
     {
+        AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) {
+            LogException("AppDomain terminating=" + e.IsTerminating, e.ExceptionObject);
+            // Native WPF callback failures can bypass Main's finally. Restore
+            // only the exact character-setting bytes captured by this test.
+            try { RestoreOriginalCharacter(); }
+            catch (Exception restoreError) { LogException("character restore failed", restoreError); }
+        };
+        Dispatcher.CurrentDispatcher.UnhandledException += delegate(object sender, DispatcherUnhandledExceptionEventArgs e) {
+            // Diagnostic only: keep Handled false and let the test fail.
+            LogException("Dispatcher", e.Exception);
+        };
+        Stage("application begin");
         Application app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-        string characterPath = Path.Combine(PetStorage.RootDirectory, "character.txt");
-        byte[] original = File.Exists(characterPath) ? File.ReadAllBytes(characterPath) : null;
+        originalCharacterPath = Path.Combine(PetStorage.RootDirectory, "character.txt");
+        originalCharacterBytes = File.Exists(originalCharacterPath) ? File.ReadAllBytes(originalCharacterPath) : null;
+        originalCharacterCaptured = true;
         string directory = Path.Combine("artifacts", "v28", "ai-characters"); Directory.CreateDirectory(directory);
         PetWindow pet = null;
         try {
-            Gestures(); pet = new PetWindow(); Get<DispatcherTimer>(pet, "timer").Stop(); Set(pet, "nextHighlightsRefresh", DateTime.MaxValue);
+            Stage("gestures"); Gestures(); Stage("pet constructor");
+            pet = new PetWindow(); hostTimer = Get<DispatcherTimer>(pet, "timer"); hostTimer.Stop(); Set(pet, "nextHighlightsRefresh", DateTime.MaxValue);
+            Stage("pet initialized"); DrainDispatcher();
             HashSet<string> palettes = new HashSet<string>();
             foreach (string old in new[] { "kolo", "hutao", "ganyu", "varesa" }) palettes.Add(PetWindow.MenuPalette.ForCharacter(old).Surface);
             foreach (string character in new[] { "gpt6a", "deepseek" }) {
+                Stage("switch " + character);
                 Call(pet, "SwitchCharacter", character);
                 if (character == "deepseek") Check(!Get<DragonFocusSession>(pet, "dragonFocus").Active, "Switching from GPT retained an active focus timer.");
                 Check(Get<string>(pet, "currentCharacter") == character && pet.Title.Contains(PetWindow.CharacterDisplayName(character)), "New character failed to switch.");
+                Stage("frames " + character);
                 Dictionary<string, BitmapSource[]> frames = Get<Dictionary<string, BitmapSource[]>>(pet, "frames"); Frames(character, frames, directory);
+                Stage("menu " + character);
                 ContextMenu menu = pet.ContextMenu; PetWindow.MenuPalette palette = PetWindow.MenuPalette.ForCharacter(character);
                 Check(palettes.Add(palette.Surface), "New character reuses another palette.");
                 Check(Contrast(palette.Text, palette.Surface) >= 4.5 && Contrast(palette.Text, palette.Checked) >= 4.5 && Contrast(palette.Text, palette.Hover) >= 4.5, "Menu theme text contrast.");
                 Check(Contrast(palette.Disabled, palette.Surface) >= 3, "Disabled menu contrast.");
                 Check(Item(menu, "选择形象").Items.Count == 6 && Get<List<MenuItem>>(pet, "characterItems").Count == 6, "Menu does not contain exactly six characters.");
                 if (character == "deepseek") { Item(menu, "慢慢走一会儿"); Item(menu, "立即跑步"); }
-                menu.ApplyTemplate(); Capture(menu, 280, 760, Path.Combine(directory, character + "-menu.png"));
-                Tools(character, frames["idle"][0]); Movement(pet, frames);
-                if (character == "gpt6a") FocusGesture(pet, frames);
+                DrainDispatcher(); menu.ApplyTemplate(); Capture(menu, 280, 760, Path.Combine(directory, character + "-menu.png"));
+                Stage("tools " + character); Tools(character, frames["idle"][0]);
+                Stage("movement " + character); Movement(pet, frames);
+                if (character == "gpt6a") { Stage("focus gesture " + character); FocusGesture(pet, frames); }
+                Stage("interaction complete " + character); DrainDispatcher();
+                Stage("reopen " + character);
                 PetWindow reopened = new PetWindow();
                 try { Get<DispatcherTimer>(reopened, "timer").Stop(); Check(Get<string>(reopened, "currentCharacter") == character, "Saved AI character falls back to Kolo on restart."); }
                 finally { reopened.Close(); }
+                Stage("reopened close " + character); DrainDispatcher();
             }
+            Stage("draft close protection");
             DraftCloseProtection(pet, directory);
+            DrainDispatcher();
             Console.WriteLine("PASS: " + checks + " AI character registration, six-entry menus, themes, tool labels, assets, movement, natural descent and gestures. Previews: " + directory);
             return 0;
-        } catch (Exception error) { Console.WriteLine("FAIL: " + error); return 1; }
+        } catch (Exception error) {
+            LogException("Main catch", error);
+            if (error.InnerException != null) LogException("Main cause", error.InnerException);
+            return 1;
+        }
         finally {
-            if (pet != null) pet.Close();
-            if (original == null) { if (File.Exists(characterPath)) File.Delete(characterPath); } else File.WriteAllBytes(characterPath, original);
-            app.Shutdown();
+            Stage("pet close");
+            try { if (pet != null) pet.Close(); }
+            finally {
+                try { RestoreOriginalCharacter(); }
+                finally { Stage("application shutdown"); app.Shutdown(); }
+            }
         }
     }
 }

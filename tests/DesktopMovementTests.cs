@@ -248,9 +248,10 @@ internal static class DesktopMovementTests
         Set(pet, "pointerHeld", true); Set(pet, "lastTick", DateTime.Now.AddMilliseconds(-40));
         Call(pet, "OnTick", null, EventArgs.Empty); Set(pet, "pointerHeld", false);
         FrameworkElement content = (FrameworkElement)pet.Content;
+        WpfTestRender.Drain();
         content.Measure(new Size(pet.Width, pet.Height)); content.Arrange(new Rect(0, 0, pet.Width, pet.Height)); content.UpdateLayout();
         RenderTargetBitmap bitmap = new RenderTargetBitmap((int)Math.Ceiling(pet.Width), (int)Math.Ceiling(pet.Height), 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(content); bitmap.Freeze();
+        WpfTestRender.Render(bitmap, content); bitmap.Freeze();
         return bitmap;
     }
 
@@ -284,7 +285,7 @@ internal static class DesktopMovementTests
                 DrawLabel(dc, "面具 / 风火轮 · 4 倍普通跑速", 590, 22, 14);
                 dc.DrawImage(character, new Rect(pet.Left, pet.Top, pet.Width, pet.Height));
             }
-            RenderTargetBitmap bitmap = new RenderTargetBitmap(920, 640, 96, 96, PixelFormats.Pbgra32); bitmap.Render(scene);
+            RenderTargetBitmap bitmap = new RenderTargetBitmap(920, 640, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(bitmap, scene);
             SaveImage(bitmap, Path.Combine(directory, frame.ToString("000") + ".png"));
         }
         PrepareSprint(pet, work, 1);
@@ -310,7 +311,7 @@ internal static class DesktopMovementTests
                 DrawLabel(dc, wanted.ToString("0") + "°  /  " + VaresaRunTrack.Fit(wanted).ToString("0.00") + "×", x + 20, y + 12, 13);
             }
         }
-        RenderTargetBitmap sheet = new RenderTargetBitmap(800, 520, 96, 96, PixelFormats.Pbgra32); sheet.Render(contact);
+        RenderTargetBitmap sheet = new RenderTargetBitmap(800, 520, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(sheet, contact);
         SaveImage(sheet, "artifacts/v21/wallrun-contact.png");
         Console.WriteLine("Wrote 140 actual WPF frames and the 8-angle contact sheet in artifacts/v21/.");
     }

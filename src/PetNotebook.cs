@@ -169,6 +169,7 @@ namespace ClaudePet
         private bool TryBeginNotebookPress(Point spritePoint, Point screenPoint)
         {
             if (!NotebookHit(spritePoint)) return false;
+            CancelKoloEasterEgg();
             tapSequence.Reset(); CancelWindowAbility();
             // WPF can dispatch a synchronous MouseMove while establishing capture.
             // Arm only after that transfer, and consume the hit if capture failed.

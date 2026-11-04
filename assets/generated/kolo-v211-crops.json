@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "description": "Measured source rectangles and body anchors. Preserve source RGBA; only crop, uniform scale and position. All walking support soles align to y486.",
+  "stroll": {
+    "source": "kolo-stroll-v211.png",
+    "rows": [
+      {"prefix": "", "scale": 0.94, "cells": [
+        {"crop": [0,0,444,444], "anchorX": 270, "targetX": 270},
+        {"crop": [444,0,887,444], "anchorX": 714, "targetX": 270},
+        {"crop": [887,0,1330,444], "anchorX": 1157, "targetX": 270},
+        {"crop": [1330,0,1774,444], "anchorX": 1600, "targetX": 270}
+      ]},
+      {"prefix": "book-", "scale": 0.94, "cells": [
+        {"crop": [0,444,444,887], "anchorX": 270, "targetX": 270, "book": [238,656,70,84]},
+        {"crop": [444,444,887,887], "anchorX": 714, "targetX": 270, "book": [682,656,70,84]},
+        {"crop": [887,444,1330,887], "anchorX": 1157, "targetX": 270, "book": [1125,656,70,84]},
+        {"crop": [1330,444,1774,887], "anchorX": 1600, "targetX": 270, "book": [1568,656,70,84]}
+      ]}
+    ]
+  },
+  "disguise": {
+    "source": "kolo-disguise-v211.png", "scale": 0.973,
+    "terminalFrame": "Exact DeepSeek idle from build_deepseek_v29; the eighth generated cell is retained as source reference only.",
+    "cells": [
+      {"crop": [0,0,444,444], "anchorX": 229.4, "targetX": 270},
+      {"crop": [444,0,887,444], "anchorX": 655.2, "targetX": 270},
+      {"crop": [887,0,1310,444], "anchorX": 1083.1, "targetX": 268},
+      {"crop": [1310,0,1774,444], "anchorX": 1493.7, "targetX": 264},
+      {"crop": [0,444,444,887], "anchorX": 236.1, "targetX": 276},
+      {"crop": [444,444,887,887], "anchorX": 665.5, "targetX": 288},
+      {"crop": [887,444,1330,887], "anchorX": 1123.9, "targetX": 299},
+      {"crop": [1330,444,1774,887], "anchorX": 1565.2, "targetX": 299}
+    ]
+  }
+}

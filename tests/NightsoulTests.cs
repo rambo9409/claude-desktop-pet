@@ -220,8 +220,9 @@ internal static class NightsoulTests
             Set(pet, "nightsoulUpdatedAt", now.AddMilliseconds(-40));
             Call(pet, "OnTick", null, EventArgs.Empty); Set(pet, "pointerHeld", false);
             FrameworkElement content = (FrameworkElement)pet.Content;
+            WpfTestRender.Drain();
             content.Measure(new Size(pet.Width, pet.Height)); content.Arrange(new Rect(0, 0, pet.Width, pet.Height)); content.UpdateLayout();
-            RenderTargetBitmap character = new RenderTargetBitmap(165, 225, 96, 96, PixelFormats.Pbgra32); character.Render(content);
+            RenderTargetBitmap character = new RenderTargetBitmap(165, 225, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(character, content);
             DrawingVisual scene = new DrawingVisual();
             using (DrawingContext dc = scene.RenderOpen())
             {
@@ -232,7 +233,7 @@ internal static class NightsoulTests
                     FlowDirection.LeftToRight, new Typeface("Microsoft YaHei UI"), 20, Brushes.WhiteSmoke, 1.0), new Point(28, 18));
                 dc.DrawImage(character, new Rect(pet.Left, pet.Top, pet.Width, pet.Height));
             }
-            RenderTargetBitmap output = new RenderTargetBitmap(920, 640, 96, 96, PixelFormats.Pbgra32); output.Render(scene);
+            RenderTargetBitmap output = new RenderTargetBitmap(920, 640, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(output, scene);
             PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(output));
             using (FileStream file = File.Create(Path.Combine(directory, frame.ToString("000") + ".png"))) encoder.Save(file);
         }

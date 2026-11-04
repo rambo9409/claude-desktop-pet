@@ -117,6 +117,7 @@ function Invoke-PetCompile {
                 -replace '^/out:.*$', ('/out:artifacts\tests\' + $TestName + '.exe')
             if (-not $EntryPoint) { $EntryPoint = $TestName }
             $arguments += '/main:' + $EntryPoint
+            $arguments += 'tests\WpfTestRender.cs'
             $arguments += 'tests\' + $TestName + '.cs'
         } else {
             $outputDirectory = Join-Path $script:PetProjectRoot 'artifacts/build'

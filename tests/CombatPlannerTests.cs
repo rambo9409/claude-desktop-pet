@@ -151,7 +151,7 @@ internal static class CombatPlannerTests
                 dc.DrawText(new FormattedText(numbers[i], CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface("Arial"), 34, Brushes.Black, 1), new Point(760, 30 + i * 75));
             }
         }
-        RenderTargetBitmap panel = new RenderTargetBitmap(1100, 600, 96, 96, PixelFormats.Pbgra32); panel.Render(visual); panel.Freeze();
+        RenderTargetBitmap panel = new RenderTargetBitmap(1100, 600, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(panel, visual); panel.Freeze();
         string fixture = Path.Combine("artifacts", "tests", "combat-ocr-fixture.png");
         PngBitmapEncoder png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(panel));
         using (FileStream file = File.Create(fixture)) png.Save(file);
@@ -174,8 +174,10 @@ internal static class CombatPlannerTests
         try {
             foreach (string theme in new[] { "kolo", "hutao", "ganyu", "varesa" }) {
                 window.ApplyCharacterTheme(theme);
+                WpfTestRender.Drain();
                 FrameworkElement content = (FrameworkElement)window.Content;
                 content.Measure(new Size(window.Width, window.Height)); content.Arrange(new Rect(0, 0, window.Width, window.Height)); content.UpdateLayout();
+                WpfTestRender.Drain();
                 string text = AllText(content);
                 Check(text.Contains("战斗循环助手") && text.Contains("建议循环") && text.Contains("通用参考线"), "Planner sections missing for " + theme + ".");
                 Check(text.Contains("不读取内存") && text.Contains("不自动按键"), "Safety boundary missing.");
@@ -188,7 +190,7 @@ internal static class CombatPlannerTests
                 ComboBox role = Field<ComboBox>(characterEditors[0], "role");
                 Check(((SolidColorBrush)role.Background).Color == ((SolidColorBrush)window.Resources["PlannerCard"]).Color,
                     "Dropdown does not follow the theme: " + theme);
-                ComboBoxItem choice = (ComboBoxItem)role.Items[0]; choice.ApplyTemplate();
+                ComboBoxItem choice = (ComboBoxItem)role.Items[0]; WpfTestRender.Drain(); choice.ApplyTemplate();
                 Check(((SolidColorBrush)choice.Foreground).Color == ((SolidColorBrush)window.Resources["PlannerText"]).Color,
                     "Dropdown item uses a system foreground: " + theme);
                 SaveWindow(window, "combat-planner-" + theme + ".png");
@@ -250,10 +252,11 @@ internal static class CombatPlannerTests
 
     private static void SaveWindow(CombatRotationWindow window, string name)
     {
+        WpfTestRender.Drain();
         FrameworkElement view = (FrameworkElement)window.Content;
         view.Measure(new Size(window.Width, window.Height)); view.Arrange(new Rect(0, 0, window.Width, window.Height)); view.UpdateLayout();
         RenderTargetBitmap image = new RenderTargetBitmap((int)window.Width, (int)window.Height, 96, 96, PixelFormats.Pbgra32);
-        image.Render(view); PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
+        WpfTestRender.Render(image, view); PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
         using (FileStream output = File.Create(Path.Combine("artifacts", "tests", name))) encoder.Save(output);
     }
 

@@ -39,6 +39,8 @@ namespace ClaudePet
                 frames["climb-down"] = (BitmapSource[])frames["climb-up"].Clone();
                 Array.Reverse(frames["climb-down"]);
                 if (character == "kolo" || character == "gpt6a" || character == "deepseek") frames["ability"] = LoadSeries(archive, character, "ability", 4);
+                if (character == "kolo" && archive.GetEntry("kolo-disguise-1.png") != null)
+                    frames["disguise"] = LoadSeries(archive, character, "disguise", 8);
                 if (character == "ganyu") frames["jump"] = LoadSeries(archive, character, "jump", 4);
                 if (character == "hutao") frames["run-human"] = LoadSeries(archive, character, "run-human", 4);
                 if (character == "kolo" && archive.GetEntry("kolo-book-idle.png") != null)

@@ -41,14 +41,16 @@ internal static class VisualSmoke
     private static void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
     private static void Layout(HighlightsWindow window)
     {
+        WpfTestRender.Drain();
         FrameworkElement root = (FrameworkElement)window.Content;
         root.Measure(new Size(window.Width, window.Height)); root.Arrange(new Rect(0, 0, window.Width, window.Height)); root.UpdateLayout();
+        WpfTestRender.Drain();
     }
     private static void RenderPreview(HighlightsWindow window, string path)
     {
         Layout(window);
         RenderTargetBitmap bitmap = new RenderTargetBitmap((int)window.Width, (int)window.Height, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render((Visual)window.Content);
+        WpfTestRender.Render(bitmap, (Visual)window.Content);
         PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using (FileStream file = File.Create(path)) encoder.Save(file);
     }

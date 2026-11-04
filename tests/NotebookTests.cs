@@ -89,11 +89,12 @@ internal static class NotebookTests
 
     private static void Capture(PetWindow pet, string path)
     {
+        WpfTestRender.Drain();
         FrameworkElement view = (FrameworkElement)pet.Content;
         view.Measure(new Size(330, 450)); view.Arrange(new Rect(0, 0, 330, 450)); view.UpdateLayout();
         RenderTargetBitmap image = new RenderTargetBitmap(330, 450, 96, 96, PixelFormats.Pbgra32);
         DrawingVisual backdrop = new DrawingVisual(); using (DrawingContext draw = backdrop.RenderOpen()) draw.DrawRectangle(Brushes.Linen, null, new Rect(0, 0, 330, 450));
-        image.Render(backdrop); image.Render(view);
+        WpfTestRender.Render(image, backdrop); WpfTestRender.Render(image, view);
         PngBitmapEncoder png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image)); using (FileStream file = File.Create(path)) png.Save(file);
     }
 

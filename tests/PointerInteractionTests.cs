@@ -75,6 +75,8 @@ internal static class PointerInteractionTests
 
     private static DateTime Reset(string character)
     {
+        Call("CancelKoloPortal");
+        Call("CancelKoloEasterEgg");
         Get<PetTapSequence>("tapSequence").Reset();
         Set("currentCharacter", character);
         Set("movement", "rest");
@@ -82,6 +84,8 @@ internal static class PointerInteractionTests
         Set("pointerHeld", false);
         Set("dragged", false);
         pet.Left = 600; pet.Top = 300;
+        Set("monitorWorkAreas", new List<Rect> { new Rect(0, 0, 1920, 1080) });
+        Set("monitorsCachedAt", DateTime.Now);
         DateTime now = DateTime.UtcNow;
         WindowAbilityClock clock = new WindowAbilityClock(now, DateTime.MinValue);
         clock.Use(now);
@@ -146,7 +150,7 @@ internal static class PointerInteractionTests
         Up(2, 0);
         Require(controller.Clock.NextUseUtc == deadline && saves == 0,
             "Dragging away and returning to the initial point is still a drag, never a tap.");
-        Require(Get<string>("movement") == "fall", "Returning a dragged character to the original point still resumes falling.");
+        Require(Get<string>("movement") == "portal", "Returning dragged Kolo to the original point must still start the airborne portal.");
         Tap(3); Tap(4);
         Require(controller.Clock.NextUseUtc == deadline.AddMinutes(-1) && saves == 1,
             "A drag must not permanently poison a later complete pair of taps.");
@@ -156,11 +160,19 @@ internal static class PointerInteractionTests
         Down(1);
         Require(Get<string>("movement") == "held" && Get<bool>("dragged"), "Catching a falling character must enter the held pose.");
         Up(1, 0);
-        Require(Get<string>("movement") == "fall" && controller.Clock.NextUseUtc == deadline,
-            "A stationary first catch and release resumes falling without discounting cooldown.");
+        Require(Get<string>("movement") == "portal" && controller.Clock.NextUseUtc == deadline,
+            "A stationary first catch and release starts Kolo's portal without discounting cooldown.");
         Down(2); Up(2, 0);
-        Require(Get<string>("movement") == "fall" && controller.Clock.NextUseUtc == deadline.AddMinutes(-1) && saves == 1,
-            "A stationary airborne double click must reduce cooldown while retaining the fall on release.");
+        Require(Get<string>("movement") == "portal" && controller.Clock.NextUseUtc == deadline.AddMinutes(-1) && saves == 1,
+            "A stationary airborne double click must reduce cooldown while retaining the portal on release.");
+
+        foreach (string character in new[] { "hutao", "ganyu", "varesa", "gpt6a", "deepseek" })
+        {
+            Reset(character);
+            Set("movement", "fall");
+            Down(1); Up(1, 0);
+            Require(Get<string>("movement") == "fall", character + " must retain ordinary falling after catch and release.");
+        }
     }
 
     private static void CheckCharacterAndUnmatchedInput()

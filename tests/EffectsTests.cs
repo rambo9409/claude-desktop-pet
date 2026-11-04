@@ -40,6 +40,7 @@ internal static class EffectsTests
     }
     private static BitmapSource Capture(PetWindow pet, bool transparent = false)
     {
+        WpfTestRender.Drain();
         FrameworkElement content = (FrameworkElement)pet.Content;
         content.Measure(new Size(330, 450));
         content.Arrange(new Rect(0, 0, 330, 450));
@@ -48,8 +49,8 @@ internal static class EffectsTests
         DrawingVisual background = new DrawingVisual();
         using (DrawingContext dc = background.RenderOpen())
             dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(38, 32, 47)), null, new Rect(0, 0, 330, 450));
-        if (!transparent) bitmap.Render(background);
-        bitmap.Render(content);
+        if (!transparent) WpfTestRender.Render(bitmap, background);
+        WpfTestRender.Render(bitmap, content);
         bitmap.Freeze();
         return bitmap;
     }
@@ -82,7 +83,7 @@ internal static class EffectsTests
             dc.DrawImage(Capture(pet, true), new Rect(pet.Left, 0, 330, 450));
         }
         RenderTargetBitmap frame = new RenderTargetBitmap(980, 480, 96, 96, PixelFormats.Pbgra32);
-        frame.Render(track);
+        WpfTestRender.Render(frame, track);
         frame.Freeze();
         return frame;
     }
@@ -148,7 +149,7 @@ internal static class EffectsTests
             }
         }
         RenderTargetBitmap preview = new RenderTargetBitmap(1200, 600, 96, 96, PixelFormats.Pbgra32);
-        preview.Render(contact);
+        WpfTestRender.Render(preview, contact);
         Save(preview, "artifacts/tests/effects-transition-contact.png");
     }
     [STAThread]

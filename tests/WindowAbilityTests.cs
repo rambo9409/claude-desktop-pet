@@ -345,9 +345,10 @@ internal static class WindowAbilityTests
     {
         AbilityEffectVisual visual = new AbilityEffectVisual();
         visual.Update(controller, work);
+        WpfTestRender.Drain();
         visual.Measure(work.Size); visual.Arrange(new Rect(work.Size)); visual.UpdateLayout();
         RenderTargetBitmap bitmap = new RenderTargetBitmap((int)work.Width, (int)work.Height, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(visual);
+        WpfTestRender.Render(bitmap, visual);
         return bitmap;
     }
 
@@ -420,9 +421,10 @@ internal static class WindowAbilityTests
                     drawing.DrawText(footnote, new Point(30, 607));
                 }
                 RenderTargetBitmap bitmap = new RenderTargetBitmap(960, 640, 96, 96, PixelFormats.Pbgra32);
-                bitmap.Render(background);
+                WpfTestRender.Render(bitmap, background);
                 AbilityEffectVisual effect = new AbilityEffectVisual(); effect.Update(controller, work);
-                effect.Measure(work.Size); effect.Arrange(new Rect(work.Size)); effect.UpdateLayout(); bitmap.Render(effect);
+                WpfTestRender.Drain();
+                effect.Measure(work.Size); effect.Arrange(new Rect(work.Size)); effect.UpdateLayout(); WpfTestRender.Render(bitmap, effect);
                 PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
                 using (FileStream file = File.Create(Path.Combine(directory, output.ToString("D3") + ".png"))) encoder.Save(file);
                 if (i == 38)

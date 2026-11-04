@@ -248,6 +248,11 @@ namespace ClaudePet
 
         private void UpdateMovement(DateTime now, double deltaSeconds)
         {
+            if (IsKoloPortalActive)
+            {
+                UpdateKoloPortal(deltaSeconds);
+                return;
+            }
             if (movement == "wallrun")
             {
                 UpdateVaresaRun(now, deltaSeconds);
@@ -813,6 +818,8 @@ namespace ClaudePet
         private void OnPointerDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton != MouseButton.Left) return;
+            CancelKoloPortal();
+            CancelKoloEasterEgg();
             tapSequence.Begin(currentCharacter, e.ClickCount);
             CancelWindowAbility();
             ClearGanyuTraversal();
@@ -896,10 +903,14 @@ namespace ClaudePet
                 supportHandle = IntPtr.Zero;
                 movement = "rest";
                 direction = dragVelocityX < 0 ? -1 : 1;
-                BeginFall(dragVelocityX);
-                fallVelocityY = Math.Max(-220, Math.Min(300, dragVelocityY));
+                bool portal = TryBeginKoloPortal(dragVelocityX, dragVelocityY);
+                if (!portal) {
+                    BeginFall(dragVelocityX);
+                    fallVelocityY = currentCharacter == "kolo" ? Math.Max(-15, Math.Min(42, dragVelocityY)) :
+                        Math.Max(-220, Math.Min(300, dragVelocityY));
+                }
                 heldTilt = 0;
-                if (!abilityDoubleClick) ShowSpeech("放手啦！");
+                if (!abilityDoubleClick) ShowSpeech(portal ? "先稳住……开个传送门回去。" : "放手啦！");
             }
             if (abilityDoubleClick && !HandleAiDoubleClick()) ReduceWindowAbilityCooldownFromDoubleClick();
         }
@@ -945,6 +956,7 @@ namespace ClaudePet
 
         private void ResizePet(double factor, bool reset)
         {
+            CancelKoloEasterEgg();
             if (ganyuApproaching) StopWalking();
             bool leftWall = movement == "wallrun";
             if (leftWall) EndVaresaRun();

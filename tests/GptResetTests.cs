@@ -71,14 +71,16 @@ internal static class GptResetTests
 
     private static void Layout(GptResetWindow window)
     {
+        WpfTestRender.Drain();
         FrameworkElement content = (FrameworkElement)window.Content;
         content.Measure(new Size(window.Width, window.Height)); content.Arrange(new Rect(0, 0, window.Width, window.Height)); content.UpdateLayout();
+        WpfTestRender.Drain();
     }
     private static void Render(GptResetWindow window, string name)
     {
         Layout(window);
         RenderTargetBitmap image = new RenderTargetBitmap((int)window.Width, (int)window.Height, 96, 96, PixelFormats.Pbgra32);
-        image.Render((Visual)window.Content); PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
+        WpfTestRender.Render(image, (Visual)window.Content); PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
         using (FileStream output = File.Create(Path.Combine("artifacts", "tests", name + ".png"))) encoder.Save(output);
     }
     private static IEnumerable<TextBlock> Texts(DependencyObject parent)

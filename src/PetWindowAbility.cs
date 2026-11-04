@@ -539,6 +539,7 @@ namespace ClaudePet
 
         private void UpdateWindowAbility(DateTime now, double deltaSeconds)
         {
+            if (IsKoloPortalActive || IsKoloEasterEggActive) { CancelWindowAbility(); return; }
             // Ownership is checked before any native target enumeration or
             // animation advance, including an already pending spell.
             if (currentCharacter == "kolo" && NotebookBlocksMagic) { CancelWindowAbility(); return; }

@@ -15,6 +15,23 @@ internal static class WingTests
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
     private static int checks;
+    private static string lastStage = "not started";
+    private static readonly bool traceEnabled = Environment.GetEnvironmentVariable("WING_TEST_TRACE") == "1";
+    private static DispatcherTimer hostTimer;
+    private static void Stage(string text)
+    {
+        lastStage = text;
+        if (!traceEnabled) return;
+        Console.WriteLine("TRACE Wings " + DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture) + " [" + checks + "] " + text);
+        Console.Out.Flush();
+    }
+    private static void LogUnhandled(string source, object value)
+    {
+        Exception error = value as Exception;
+        Console.Error.WriteLine("EXCEPTION Wings " + source + " [stage=" + lastStage + ", checks=" + checks + "]: " +
+            (error == null ? "non-Exception value" : error.GetType().FullName + ": " + error.Message));
+        Console.Error.Flush();
+    }
     private static object Get(PetWindow pet, string name) { return typeof(PetWindow).GetField(name, Private).GetValue(pet); }
     private static void Set(PetWindow pet, string name, object value) { typeof(PetWindow).GetField(name, Private).SetValue(pet, value); }
     private static object Call(PetWindow pet, string name, params object[] args) { return typeof(PetWindow).GetMethod(name, Private).Invoke(pet, args); }
@@ -23,6 +40,30 @@ internal static class WingTests
     private static Image Body(PetWindow pet) { return (Image)Get(pet, "sprite"); }
     private static Image Wing(PetWindow pet, bool right) { return (Image)Get(pet, right ? "rightWingLayer" : "wingLayer"); }
     private static GlideAnimation Clock(PetWindow pet) { return (GlideAnimation)Get(pet, "glideAnimation"); }
+
+    private static void DrainDispatcher()
+    {
+        // This synchronous STA test has no Application.Run message loop.
+        // Flush pending input/layout/render work only at outer call boundaries,
+        // never inside Measure/Arrange/OnRender where WPF disables processing.
+        // Background goes through the queue even on this thread (Send does not):
+        // https://learn.microsoft.com/dotnet/api/system.windows.threading.dispatcherpriority
+        if (hostTimer != null && hostTimer.IsEnabled)
+            throw new InvalidOperationException("The offscreen test timer must remain stopped while pumping WPF messages.");
+        WpfTestRender.Drain();
+        if (hostTimer != null && hostTimer.IsEnabled)
+            throw new InvalidOperationException("Pumping WPF messages unexpectedly restarted the pet timer.");
+    }
+
+    private static void RenderBitmap(RenderTargetBitmap bitmap, Visual visual)
+    {
+        // A completed RenderTargetBitmap render queues asynchronous resource
+        // work. Drain it before entering another synchronous bitmap render.
+        // https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/RenderTargetBitmap.cs
+        DrainDispatcher();
+        WpfTestRender.Render(bitmap, visual);
+        DrainDispatcher();
+    }
 
     private static void Character(PetWindow pet, string character)
     {
@@ -109,12 +150,14 @@ internal static class WingTests
         pet.Top = 400;
         foreach (string character in new[] { "hutao", "ganyu", "varesa" })
         {
+            Stage("pointer character " + character);
             Character(pet, character);
             foreach (string previous in new[] { "fall", "held" })
             {
                 Set(pet, "movement", previous);
                 Settle(pet, Transform.Identity);
                 double airborneTime = Clock(pet).AirTime;
+                Stage("pointer down " + character + " from " + previous);
                 Call(pet, "OnPointerDown", pet, PointerEvent(true));
                 Require((string)Get(pet, "movement") == "held" && (bool)Get(pet, "dragged") && (bool)Get(pet, "pointerHeld"),
                     "Catching a " + previous + " character was treated as a ground click.");
@@ -129,6 +172,7 @@ internal static class WingTests
                         "A stationary midair catch folded the wings or replayed deployment.");
                 }
                 Require(Clock(pet).AirTime >= airborneTime + 0.59, "Catching reset the airborne animation clock.");
+                Stage("pointer up " + character + " from " + previous);
                 Call(pet, "OnPointerUp", pet, PointerEvent(false));
                 Require((string)Get(pet, "movement") == "fall" && (string)Get(pet, "state") == "idle" && !(bool)Get(pet, "pointerHeld"),
                     "Releasing a stationary midair catch did not continue falling.");
@@ -137,12 +181,14 @@ internal static class WingTests
             }
             Call(pet, "CancelWings");
             Set(pet, "movement", "jump");
+            Stage("pointer jump " + character);
             Call(pet, "OnPointerDown", pet, PointerEvent(true));
             Require((string)Get(pet, "movement") == "held" && (bool)Get(pet, "dragged"), "Catching a jump was treated as landing.");
             Call(pet, "OnPointerUp", pet, PointerEvent(false));
             Require((string)Get(pet, "movement") == "fall", "Releasing a caught jump did not fall.");
 
             Set(pet, "movement", "rest");
+            Stage("pointer ground " + character);
             Call(pet, "OnPointerDown", pet, PointerEvent(true));
             Require((string)Get(pet, "movement") == "rest" && !(bool)Get(pet, "dragged"), "A ground click was misclassified as airborne.");
             Call(pet, "OnPointerUp", pet, PointerEvent(false));
@@ -160,6 +206,7 @@ internal static class WingTests
 
     private static BitmapSource Capture(PetWindow pet)
     {
+        DrainDispatcher();
         FrameworkElement content = (FrameworkElement)pet.Content;
         content.Measure(new Size(pet.Width, pet.Height));
         content.Arrange(new Rect(0, 0, pet.Width, pet.Height));
@@ -168,8 +215,8 @@ internal static class WingTests
         DrawingVisual background = new DrawingVisual();
         using (DrawingContext dc = background.RenderOpen())
             dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(30, 31, 45)), null, new Rect(0, 0, pet.Width, pet.Height));
-        bitmap.Render(background);
-        bitmap.Render(content);
+        RenderBitmap(bitmap, background);
+        RenderBitmap(bitmap, content);
         bitmap.Freeze();
         return bitmap;
     }
@@ -246,7 +293,7 @@ internal static class WingTests
             }
         }
         RenderTargetBitmap bitmap = new RenderTargetBitmap(columns * cellWidth, rows * cellHeight, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(drawing);
+        RenderBitmap(bitmap, drawing);
         bitmap.Freeze();
         return bitmap;
     }
@@ -254,9 +301,18 @@ internal static class WingTests
     [STAThread]
     private static void Main()
     {
+        AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) {
+            LogUnhandled("AppDomain terminating=" + e.IsTerminating, e.ExceptionObject);
+        };
+        Dispatcher.CurrentDispatcher.UnhandledException += delegate(object sender, DispatcherUnhandledExceptionEventArgs e) {
+            // Diagnostic only: leave Handled false so the suite still fails.
+            LogUnhandled("Dispatcher", e.Exception);
+        };
+        Stage("main enter");
         try { Run(); }
         catch (Exception error)
         {
+            LogUnhandled("Main catch", error);
             Console.Error.WriteLine("FAIL: " + error.GetType().FullName + ": " + error.Message);
             if (error.InnerException != null) Console.Error.WriteLine("Cause: " + error.InnerException.Message);
             Environment.ExitCode = 1;
@@ -265,11 +321,15 @@ internal static class WingTests
 
     private static void Run()
     {
+        Stage("clock begin");
         VerifyClock();
+        Stage("constructor begin");
         PetWindow pet = new PetWindow();
+        Stage("constructor complete");
         pet.Width = 330;
         pet.Height = 450;
-        ((DispatcherTimer)Get(pet, "timer")).Stop();
+        hostTimer = (DispatcherTimer)Get(pet, "timer");
+        hostTimer.Stop();
         Set(pet, "nextHighlightsRefresh", DateTime.MaxValue);
         string[] characters = { "hutao", "ganyu", "varesa" };
         string[] names = { "胡桃", "甘雨", "瓦雷莎" };
@@ -277,10 +337,12 @@ internal static class WingTests
         {
             foreach (string character in characters)
             {
+                Stage("character " + character);
                 Character(pet, character);
                 Require(Frames(pet)["glide"].Length == 8, "Missing eight-frame body sequence: " + character);
                 foreach (string movement in new[] { "held", "fall" })
                 {
+                    Stage("deployment " + character + " " + movement);
                     Call(pet, "CancelWings");
                     Set(pet, "movement", movement);
                     Transform pose = Pose(movement, -1, 1);
@@ -288,6 +350,7 @@ internal static class WingTests
                     Require(Clock(pet).Phase == GlidePhase.Deploy && ReferenceEquals(Body(pet).Source, Frames(pet)["glide"][0]),
                         character + " did not raise its arms before gliding.");
                     Require(Wing(pet, false).Opacity > 0 && Wing(pet, false).Opacity < 1, "Wing appeared at full opacity.");
+                    Stage("deployment capture " + character + " " + movement);
                     Capture(pet);
                     VerifyAnchor(pet);
                     double clock = Clock(pet).AirTime;
@@ -297,12 +360,14 @@ internal static class WingTests
                     Require(Clock(pet).Phase == GlidePhase.Glide && Wing(pet, false).Opacity == 1,
                         character + " did not settle into gliding.");
                     Require(ReferenceEquals(Body(pet).Source, Frames(pet)["glide"][Clock(pet).BodyFrame]), "Body and wings use different clocks.");
+                    Stage("settled capture " + character + " " + movement);
                     BitmapSource opened = Capture(pet), closed = WithoutWings(pet);
                     Require(ChangedPixels(opened, closed, false) > 1000, character + " wings are hidden by hair or outside the canvas.");
                     Require(ChangedPixels(opened, closed, true) == 0, character + " wing clipped at the boundary.");
                     VerifyAnchor(pet);
                 }
 
+                Stage("landing and interruption " + character);
                 Set(pet, "movement", "held");
                 Settle(pet, Transform.Identity);
                 double airborneTime = Clock(pet).AirTime;
@@ -342,6 +407,7 @@ internal static class WingTests
                 foreach (int direction in new[] { -1, 1 })
                 foreach (int angleSign in new[] { -1, 1 })
                 {
+                    Stage("size " + character + " " + size + " " + movement + " facing=" + direction + " angle=" + angleSign);
                     pet.Width = size;
                     pet.Height = size * 450.0 / 330.0;
                     Call(pet, "CancelWings");
@@ -359,6 +425,7 @@ internal static class WingTests
                 pet.Height = 450;
             }
 
+            Stage("character switch continuity");
             Character(pet, "hutao");
             Set(pet, "movement", "held");
             Settle(pet, Transform.Identity);
@@ -378,6 +445,7 @@ internal static class WingTests
             }
 
             // Exercise the real OnTick integration, not only individual helpers.
+            Stage("real OnTick begin");
             Character(pet, "ganyu");
             Set(pet, "movement", "held");
             Set(pet, "pointerHeld", true);
@@ -387,7 +455,10 @@ internal static class WingTests
                 ReferenceEquals(Body(pet).Source, Frames(pet)["glide"][0]), "OnTick does not advance the shared body/wing clock once.");
             Set(pet, "pointerHeld", false);
 
+            Stage("pointer regrab begin");
             VerifyPointerRegrab(pet);
+            Stage("pointer regrab complete");
+            DrainDispatcher();
 
             Directory.CreateDirectory("artifacts/tests/wing-frames");
             List<BitmapSource>[] animation = new List<BitmapSource>[3];
@@ -397,11 +468,13 @@ internal static class WingTests
             string[] poseNames = { "抬臂", "展开", "受风", "滑翔 A", "滑翔 B", "滑翔 C", "收翼", "落地" };
             for (int character = 0; character < characters.Length; character++)
             {
+                Stage("animation capture " + characters[character]);
                 Character(pet, characters[character]);
                 Call(pet, "CancelWings");
                 animation[character] = new List<BitmapSource>();
                 for (int step = 0; step < 120; step++)
                 {
+                    if (step % 10 == 0) Stage("animation frame " + characters[character] + " " + step);
                     string movement = step < 48 ? "held" : step < 88 ? "fall" : "rest";
                     Set(pet, "movement", movement);
                     // Preview uses the actual rendering path; the gentle angle
@@ -417,9 +490,11 @@ internal static class WingTests
                     contactLabels.Add(names[character] + " / " + poseNames[i]);
                 }
             }
+            Stage("contact PNG begin");
             Save(Contact(contact, contactLabels, 8, 220), "artifacts/tests/wings-contact.png");
             for (int step = 0; step < 120; step++)
             {
+                if (step % 10 == 0) Stage("combined PNG " + step);
                 List<BitmapSource> row = new List<BitmapSource>();
                 List<string> labels = new List<string>();
                 for (int character = 0; character < characters.Length; character++)
@@ -431,6 +506,6 @@ internal static class WingTests
             }
             Console.WriteLine("PASS: " + checks + " glider phase/frame sequence, one shared clock, drag-to-fall continuity, short fall/re-grab, interruption, palettes, hinge anchors, all sizes/directions and WPF clipping checks.");
         }
-        finally { pet.Close(); }
+        finally { Stage("close begin"); pet.Close(); Stage("close complete"); }
     }
 }

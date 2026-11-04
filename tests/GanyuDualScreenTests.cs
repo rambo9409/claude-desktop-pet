@@ -268,9 +268,10 @@ internal static class GanyuDualScreenTests
         Set(pet, "pointerHeld", true); Set(pet, "lastTick", DateTime.Now.AddMilliseconds(-16));
         Call(pet, "OnTick", null, EventArgs.Empty); Set(pet, "pointerHeld", false);
         FrameworkElement content = (FrameworkElement)pet.Content;
+        WpfTestRender.Drain();
         content.Measure(new Size(pet.Width, pet.Height)); content.Arrange(new Rect(0, 0, pet.Width, pet.Height)); content.UpdateLayout();
         RenderTargetBitmap image = new RenderTargetBitmap((int)Math.Ceiling(pet.Width), (int)Math.Ceiling(pet.Height), 96, 96, PixelFormats.Pbgra32);
-        image.Render(content); image.Freeze(); return image;
+        WpfTestRender.Render(image, content); image.Freeze(); return image;
     }
 
     private static void Label(DrawingContext dc, string text, Point point, double size, Brush brush)
@@ -327,7 +328,7 @@ internal static class GanyuDualScreenTests
                 Label(dc, "屏幕交界", new Point(568, 120), 14, muted);
                 Label(dc, rested > 0 ? "已落到副屏窗口顶部" : (double)Get(pet, "ganyuContactRemaining") > 0 ? "压腿借力，换向蹬离" : "屏幕中间也可以起跳，连续向上借力", new Point(30, 725), 17, ink);
             }
-            RenderTargetBitmap bitmap = new RenderTargetBitmap(1120, 760, 96, 96, PixelFormats.Pbgra32); bitmap.Render(visual);
+            RenderTargetBitmap bitmap = new RenderTargetBitmap(1120, 760, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(bitmap, visual);
             Save(bitmap, Path.Combine(directory, frames.ToString("000") + ".png")); frames++;
         }
         Check((IntPtr)Get(pet, "supportHandle") == scenario.Roof.Handle, "The preview never lands on its roof.");

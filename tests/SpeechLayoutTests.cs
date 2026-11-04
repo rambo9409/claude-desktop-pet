@@ -63,11 +63,12 @@ internal static class SpeechLayoutTests
             "Speech must stay legible and must not take focus or mouse input.");
         window.Text.Text = "安静模式已开启，我会少跑动。";
         FrameworkElement content = (FrameworkElement)window.Content;
+        WpfTestRender.Drain();
         content.Measure(new Size(300, double.PositiveInfinity));
         content.Arrange(new Rect(content.DesiredSize));
         RenderTargetBitmap rendered = new RenderTargetBitmap((int)Math.Ceiling(content.ActualWidth),
             (int)Math.Ceiling(content.ActualHeight), 96, 96, PixelFormats.Pbgra32);
-        rendered.Render(content);
+        WpfTestRender.Render(rendered, content);
         PngBitmapEncoder encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(rendered));
         using (FileStream file = File.Create("artifacts/tests/speech-bubble-preview.png")) encoder.Save(file);

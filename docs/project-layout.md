@@ -1,4 +1,4 @@
-# V2.10 工程与构建
+# V2.11 工程与构建
 
 ## 目录
 
@@ -9,9 +9,11 @@
 | `build.cmd`、`test.cmd`、`package.cmd` | 无需更改系统执行策略的 Windows 入口 |
 | `scripts/` | 编译、测试、打包与预览编码 |
 | `tests/` | 测试源码与历史薄包装入口 |
+| `tests/WpfTestRender.cs` | 离屏WPF渲染的共享入口，在位图渲染前后处理Dispatcher队列；仅测试编译包含 |
 | `assets/characters.zip`、`assets/combat-teams.json`、`assets/combat-roster.json` | 内嵌动画、带来源的配队目录与角色名称/别名快照 |
 | `assets/generated/`、`assets/source/` | 当前和历史源素材、提示词、裁切参数 |
 | `build_gpt6a_v210.py`、`build_deepseek_v29.py`、`build_kolo_v29.py` | 参考形象的透明图集裁切与运行帧布局，由 `build_assets.py` 统一调用 |
+| `build_kolo_v211.py` | 珂洛新版慢走与换装帧，合并到既有珂洛素材和本子命中框 |
 | `artifacts/build/` | 根据当前环境展开的生产编译响应文件 |
 | `artifacts/tests/` | 测试 EXE、日志、渲染截图、`latest-run.json` |
 | `release/V*/` | 精简用户发布包及独立预览 |
@@ -43,12 +45,16 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 ## 测试
 
 ```powershell
-# 20组默认回归；加看点交互检查后共21组，无需Python
+# 22组默认回归；加看点交互检查后共23组，无需Python
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
 # 单独战斗助手
 .\test.cmd -Suite CombatPlanner -SkipPreviews
 # 角色拥有表、资料导入、筛选与实际WPF窗口
 .\test.cmd -Suite CombatRoster -SkipPreviews
+# 珂洛空中稳住与传送
+.\test.cmd -Suite KoloPortal -SkipPreviews
+# 待机概率、换装、取消与正式切换
+.\test.cmd -Suite KoloEasterEgg -SkipPreviews
 # 使用明确的Python编码预览
 .\test.cmd -Python C:\Python312\python.exe -IncludeVisualSmoke
 ```
@@ -59,19 +65,21 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps1' -Suite CombatPlanner,GanyuDualScreen -SkipPreviews"
 ```
 
-默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、CombatRoster、PointerInteraction、GanyuTraversal、GanyuDualScreen、AiAbilities、AiCharacters、Notebook。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
+默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、CombatRoster、PointerInteraction、GanyuTraversal、GanyuDualScreen、AiAbilities、AiCharacters、Notebook、KoloPortal、KoloEasterEgg。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
 
 按顺序运行，避免共享配置互相干扰。测试中需要暂时写配置的路径必须备份并在 finally 还原；窗口能力原生测试仅操作自己创建的窗口。`latest-run.json` 从 RUNNING 开始逐组写入 PASS/FAIL，未执行的组保持 PENDING，不使用旧日志冒充本次通过。
+
+18个含离屏绘图的测试入口统一使用 `WpfTestRender.Render(bitmap, visual)`，在RenderTargetBitmap渲染前后以Background优先级处理Dispatcher队列，避免没有Application.Run消息循环的同步测试积累WPF工作。`scripts/common.ps1`编译任何测试时会自动加入 `tests/WpfTestRender.cs`，无需在各测试或生产 `build.rsp` 重复列入。纯逻辑测试也可以共用该编译配置。调用必须位于Measure/Arrange/OnRender之外的安全边界；需确定性状态的测试先停止桌宠计时器，避免泵消息时意外推进角色。不得吞异常或跳过预览来绕过失败。此辅助类不进入正式EXE。
 
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.10 -InstructionsPath .\docs\usage-v2.10.txt
+.\package.cmd -Version 2.11 -InstructionsPath .\docs\usage-v2.11.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。
 
-仅更新V2.10龙女素材使用 `build_assets.py --refresh-v210`。它替换27张 `gpt6a-*.png`，保留其余173项。完整重建入口仍是 `build.cmd -RebuildAssets -Python ...`。刷新与完整重建均应核对正式资源内容及裁切边界。
+仅更新V2.11珂洛素材使用 `build_assets.py --refresh-v211`。它替换8张持本/空手慢走图片，更新命中框JSON中的4个慢走矩形，新增8张换装图片。正式资源总计208项，V2.10的191个其他条目应逐字节保留。完整重建入口仍是 `build.cmd -RebuildAssets -Python ...`。刷新与完整重建均应核对正式资源内容及裁切边界。
 
 `.gitattributes` 规定 C#/PowerShell/CMD/RSP 为 CRLF、Markdown/JSON/Python为LF；二进制不作换行转换。没有对历史仓库做全量换行重写。旧根目录构建和 Python 缓存归档说明见 [V2.6 整理记录](cleanup-v2.6.md)。历史使用说明和验证文档保留原路径，通过[索引](INDEX.md)导航，避免旧发布链接失效。
 

@@ -16,8 +16,8 @@ using System.Windows.Threading;
 [assembly: AssemblyTitle("原神启动")]
 [assembly: AssemblyDescription("多形象桌宠、资讯、窗口魔法与原神战斗循环助手")]
 [assembly: AssemblyProduct("原神启动")]
-[assembly: AssemblyVersion("2.10.0.0")]
-[assembly: AssemblyFileVersion("2.10.0.0")]
+[assembly: AssemblyVersion("2.11.0.0")]
+[assembly: AssemblyFileVersion("2.11.0.0")]
 
 namespace ClaudePet
 {
@@ -414,10 +414,12 @@ namespace ClaudePet
             InitializeEffects(root);
             InitializeNightsoul(root);
             InitializeAiAbilities(root);
+            InitializeKoloPortal(root);
 
             speechWindow = new SpeechWindow();
             speechWindow.Text.Text = "你好，我是" + CharacterNames[currentCharacter] + "。";
             InitializeNotebook();
+            InitializeKoloEasterEgg();
 
             ContextMenu = BuildMenu();
             MouseLeftButtonDown += OnPointerDown;
@@ -442,6 +444,8 @@ namespace ClaudePet
                 UpdateSpeechPosition();
             };
             IsVisibleChanged += delegate {
+                if (!IsVisible) CancelKoloEasterEgg();
+                if (!IsVisible) CancelKoloPortal();
                 if (!IsVisible) CancelWindowAbility();
                 if (!IsVisible) ReturnNotebook(false);
                 if (!IsVisible) CancelAiAbilities();
@@ -476,6 +480,8 @@ namespace ClaudePet
         private void SwitchCharacter(string key)
         {
             if (!CharacterNames.ContainsKey(key)) return;
+            CancelKoloEasterEgg();
+            CancelKoloPortal();
             ReturnNotebook(false);
             tapSequence.Reset();
             CancelWindowAbility();
@@ -570,11 +576,15 @@ namespace ClaudePet
         {
             double minimumSeconds = quietMode ? 35 : 4;
             double randomSeconds = quietMode ? 40 : 7;
+            if (!quietMode && currentCharacter == "kolo" && KoloEasterEggEnabled)
+            { minimumSeconds = 16; randomSeconds = 12; }
             nextWalk = from.AddSeconds(minimumSeconds + random.NextDouble() * randomSeconds);
         }
 
         private void Play(string nextState, string text, int durationMs, int speedMs)
         {
+            CancelKoloEasterEgg();
+            CancelKoloPortal();
             CancelWindowAbility();
             ClearGanyuTraversal();
             if (movement == "wallrun") EndVaresaRun();
@@ -653,9 +663,10 @@ namespace ClaudePet
                 frameMs = 150;
             }
 
+            UpdateKoloEasterEgg(now, deltaSeconds);
             UpdateWindowAbility(now, deltaSeconds);
             UpdateAiAbilities(now, deltaSeconds);
-            if (state == "idle" && !pointerHeld && !notebook.Pressed && !IsWindowAbilityActive) UpdateMovement(now, deltaSeconds);
+            if (state == "idle" && !pointerHeld && !notebook.Pressed && !IsWindowAbilityActive && !IsKoloEasterEggActive) UpdateMovement(now, deltaSeconds);
 
             string visibleState = state;
             DateTime animationStart = stateStarted;
@@ -741,8 +752,10 @@ namespace ClaudePet
             requested = PrepareAbilityFrame(requested);
             requested = PrepareAiAbilityFrame(requested);
             requested = PrepareNotebookFrame(requested);
+            requested = PrepareKoloEasterEggFrame(requested);
             RenderButterflyEffects(requested, transforms, deltaSeconds);
             RenderWings(transforms);
+            RenderKoloPortal();
 
             UpdateNightsoul(now, deltaSeconds);
 
@@ -758,6 +771,8 @@ namespace ClaudePet
         protected override void OnClosed(EventArgs e)
         {
             timer.Stop();
+            CancelKoloEasterEgg();
+            CancelKoloPortal();
             ReturnNotebook(false);
             CancelWindowAbility();
             CloseAiAbilities();

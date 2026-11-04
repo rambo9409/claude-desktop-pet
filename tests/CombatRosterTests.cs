@@ -144,8 +144,10 @@ internal static class CombatRosterTests
     { string text = ""; foreach (TextBlock block in Descendants<TextBlock>(root)) text += block.Text + "\n"; return text; }
     private static T Tagged<T>(Window window, string tag) where T : FrameworkElement
     {
+        WpfTestRender.Drain();
         FrameworkElement view = (FrameworkElement)window.Content;
         view.Measure(new Size(window.Width, window.Height)); view.Arrange(new Rect(0, 0, window.Width, window.Height)); view.UpdateLayout();
+        WpfTestRender.Drain();
         foreach (T item in Descendants<T>(view)) if (Convert.ToString(item.Tag) == tag) return item;
         throw new Exception("Missing tagged control: " + tag);
     }
@@ -186,9 +188,10 @@ internal static class CombatRosterTests
     }
     private static void Capture(Window window, string path)
     {
+        WpfTestRender.Drain();
         FrameworkElement view = (FrameworkElement)window.Content;
         view.Measure(new Size(window.Width, window.Height)); view.Arrange(new Rect(0, 0, window.Width, window.Height)); view.UpdateLayout();
-        RenderTargetBitmap image = new RenderTargetBitmap((int)window.Width, (int)window.Height, 96, 96, PixelFormats.Pbgra32); image.Render(view);
+        RenderTargetBitmap image = new RenderTargetBitmap((int)window.Width, (int)window.Height, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(image, view);
         PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
         using (FileStream output = File.Create(path)) encoder.Save(output);
     }

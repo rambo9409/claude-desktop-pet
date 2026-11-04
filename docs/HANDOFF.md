@@ -1,6 +1,8 @@
 # AI与开发者接手说明
 
-更新于2026-11-04。项目是 Windows WPF 桌宠“原神启动”，当前版本 V2.10。GPT6A·龙女按用户参考采用白银发、浅紫眼、短龙角、蝠翼、卷尾及白紫裙装，菜单和专注显示同步为紫白色。详见[龙女形象](dragon-v2.10.md)。
+更新于2026-11-04。项目是 Windows WPF 桌宠“原神启动”，当前版本 V2.11。珂洛新增拖拽松手后的空中稳住与黑色传送门演出，修正持本/空手慢走序列，并加入可关闭的待机换装DeepSeek彩蛋。设计及维护入口见[珂洛传送与换装](kolo-v2.11.md)。本版最终构建、23组回归、资源比较和发布结果见 [V2.11验证](validation-v2.11.md)；后续改动仍需重新运行相关检查。
+
+V2.11已完成正式构建、23组完整回归、EXE启动、208项素材及完整重建比较、发布包内容和哈希检查，全部PASS。最终全套时间为2026-11-04 18:14:17–18:15:17（UTC+08:00），稳定manifest为 `artifacts/v211/full-test-run.json`。18个含离屏绘图的测试入口已统一到共享 `WpfTestRender`，保留全部断言与预览，修复同步宿主的Dispatcher队列问题。发布包为 `release/V2.11/原神启动-V2.11.zip`，测试宿主修改不改变已核验的生产EXE，V2.10历史包保持不变。稳定证据保存在 `artifacts/v211/`，不要把会被后续测试覆盖的 `artifacts/tests/latest-run.json` 当作永久记录。尚未进行物理鼠标在不同DPI双屏之间拖拽的实测，模拟几何和路由事件通过不等于该项手测通过。
 
 V2.10已完成正式构建、21组回归、27张龙女替换/173项其他资源保留检查、200项完整素材重建比较、启动和发布包内容校验。发布包为 `release/V2.10/原神启动-V2.10.zip`，预览在同目录 `previews/`，证据和限制见 [V2.10 验证](validation-v2.10.md)。后续修改仍需运行对应检查。
 
@@ -19,8 +21,8 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 1. 读取 `git status --short` 与 `git log -5 --oneline`，保留未提交改动。`90b5a12` 是前任 V2.6 战斗助手原样保存的提交，`97baf61` 是V2.5基线；当前实现包含后续修复，不要以旧交接“构建损坏”为由覆盖它。
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
-4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。20组默认回归加VisualSmoke共21组，V2.9新增NotebookTests。
-5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.10.md`。
+4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。22组默认回归加VisualSmoke共23组，V2.11新增KoloPortal与KoloEasterEgg。
+5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.11.md`。
 
 ## 模块地图
 
@@ -30,8 +32,11 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 | `src/PetMenu.cs` | 六角色菜单与配色、工具入口、活动模式、能力入口 |
 | `src/PetAiAbilities.cs` | 龙息专注、星环和泡泡显示、灵感本UI与安全保存 |
 | `src/PetNotebook.cs` | 持本/离手状态、每帧命中、跨屏独立本子窗口、归还及生命周期 |
+| `src/PetKoloPortal.cs` | 拖拽松手后的稳住/开门/进入/底部出现/收门，当前屏落点与WPF门户绘制 |
+| `src/PetKoloEasterEgg.cs` | 待机资格、稀疏概率抽签、8帧换装、取消、开关与正式DeepSeek切换 |
 | `build_deepseek_v29.py`、`build_kolo_v29.py` | 两角色参考重绘的裁切与归一化，主入口由build_assets.py统一调用 |
 | `build_gpt6a_v210.py` | GPT6A白银淡紫龙女的27张运行素材，由build_assets.py统一调用 |
+| `build_kolo_v211.py` | 新慢走8帧、本子慢走命中框与换装8帧，与既有珂洛素材合并 |
 | `src/PetMovement.cs` | 移动状态、平台枚举、拖拽、跌落、跨屏运行时 |
 | `src/DesktopMovement.cs` | DesktopMovement纯几何、VaresaRunTrack路线类 |
 | `src/PetGanyuTraversal.cs` | 甘雨完整多段路径规划、单墙/屏幕接缝借力、小跑靠近、运行时取消 |
@@ -51,6 +56,7 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 | `assets/combat-roster.json` | 127个角色/元素形态条目与别名；维护者词典快照，非实时完整实装名册 |
 | `src/CombatPanelOcr.cs` | 本机OCR、面板文字解析、文件/剪贴板图片加载、可替换识别接口 |
 | `src/PetStorage.cs` | 原子文件替换、损坏存档唯一备份、可恢复错误诊断 |
+| `tests/WpfTestRender.cs` | 测试专用离屏渲染与Dispatcher安全边界，由测试编译器自动包含 |
 
 ## 构建约束
 
@@ -91,21 +97,27 @@ V2.7拥有表为 `combat-roster-owned.json`，独立于战斗面板。配队覆�
 
 V2.9中珂洛默认持本：`NotebookBlocksMagic`必须在目标枚举和Advance之前阻断施法，持本、取本拖拽和独立本子拖拽均不能施法。拖离不自动开魔法或清冷却。归还、隐藏、最小化、切换和关闭必须回收本子并取消施法；不持久化离手状态。`kolo-book-*`和空手帧分离，命中框由ZIP中的 `kolo-notebook-hitboxes.json` 指向实际BitmapSource；必须随WPF镜像、倾斜和缩放正确反变换。
 
+V2.11门户仅由珂洛拖拽松手触发。高于当前屏底足够距离才启动，近底部使用正常落地；自然走出窗口的掉落沿用旧路径。演出共约2.95秒，传送时重新读取工作区，处理负坐标、缩放与屏幕消失。`notebook.Pressed`期间不推进移动或传送时间；本子仍在手中或已拖离但未松手，都应保持暂停，松手再继续。取消时必须恢复Opacity、Clip和Transform，避免再次抓取或换角色后不可见。窗口魔法在门户和换装期间都必须先阻断，再枚举目标窗口。
+
+待机彩蛋开关存于 `kolo-easter-egg-enabled.txt`，默认开，原子保存。`KoloEasterEggSession`要求启动/触发后冷却300秒、连续idle12秒，每30秒一次12%抽签，禁止每帧随机或唤醒后补抽。开启彩蛋的非quiet珂洛等待16–28秒再自动移动，否则旧4–11秒间隔无法满足12秒条件。持本不阻止彩蛋，但按住本子、拖独立本子、无支撑、菜单、窗口魔法和门户均阻止；开始先收回本子。8帧持续4.8秒，在PrepareNotebookFrame后覆盖；最后一帧等于正式DeepSeek idle，再调用SwitchCharacter完成统一刷新与保存。手动切换、抓取、放大/缩小/恢复默认大小、隐藏、最小化、quiet、禁用和退出必须取消，不能留下稍后反向切换的回调。缩放的取消入口在ResizePet开头，不要仅在滚轮或某个按键分支处理。
+
 V2.8灵感本为 `deepseek-bubbles.json`，最多100条、每条2000字，沿用原子写入和损坏备份。隐藏/切换仅收起窗口并保留草稿，退出主窗通过 `CanCloseAiAbilities` 检查未保存内容，确认后 `CloseAiAbilities` 清理。龙息专注是内存内UTC截止时间，切换/隐藏/退出即取消；不恢复成系统定时任务，不更改quiet设置。
 
 ## 验证与发布约定
 
 测试顺序执行；涉及用户设置的测试必须备份并finally还原。原生能力测试只操作测试创建的专用窗口，不应用用户真实窗口作为目标。界面测试应覆盖六主题、最小尺寸、长文字、错误态和OCR预览。MenuTheme会逐个渲染六角色的菜单和子菜单，并检查悬停、选中与禁用文字的对比度。
 
+18个含离屏绘图的测试入口使用共享 `tests/WpfTestRender.cs`。`scripts/common.ps1`测试编译会自动加入它，生产 `build.rsp`不应包含此类。`WpfTestRender.Render`在同步RenderTargetBitmap前后以Background优先级处理Dispatcher队列，让已排队的WPF工作完成；不要在Measure/Arrange/OnRender中调用。需要确定性模拟的测试先停止桌宠计时器。不要改为Send（同线程可能直接执行而不清队列），也不要吞掉Dispatcher异常、删断言或跳过预览来伪造通过；这项修复属于测试宿主，不应改变正式程序渲染行为。AiCharacters在正常结束和异常退出时都会恢复测试前的角色设置；原生回调异常可能绕过Main的finally，因此异常路径恢复也应保留。
+
 正式打包前同步程序集版本、README、使用说明及验证记录。命令：
 
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.10 -InstructionsPath .\docs\usage-v2.10.txt
+.\package.cmd -Version 2.11 -InstructionsPath .\docs\usage-v2.11.txt
 ```
 
-`release/V2.10/原神启动-V2.10.zip`只能含EXE和使用说明。预览独立放 `release/V2.10/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次龙女素材可用 `build_assets.py --refresh-v210`，只替换27张GPT6A素材，其余173项应逐字节保持。完整重建仍用 `build.cmd -RebuildAssets -Python ...`。V2.9两角色的 `--refresh-v29` 入口保留用于维护。
+`release/V2.11/原神启动-V2.11.zip`只能含EXE和使用说明。预览独立放 `release/V2.11/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次珂洛素材可用 `build_assets.py --refresh-v211`，替换8张慢走图、更新JSON中4个持本慢走命中框、新增8张换装图，其他191个原条目须与V2.10逐字节一致。正式包应有208项（207PNG和1JSON）。完整重建仍用 `build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
 
 素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 

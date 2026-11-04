@@ -295,9 +295,10 @@ internal static class GanyuTraversalTests
         Set(pet, "pointerHeld", true); Set(pet, "lastTick", DateTime.Now.AddMilliseconds(-16));
         Call(pet, "OnTick", null, EventArgs.Empty); Set(pet, "pointerHeld", false);
         FrameworkElement content = (FrameworkElement)pet.Content;
+        WpfTestRender.Drain();
         content.Measure(new Size(pet.Width, pet.Height)); content.Arrange(new Rect(0, 0, pet.Width, pet.Height)); content.UpdateLayout();
         RenderTargetBitmap image = new RenderTargetBitmap((int)Math.Ceiling(pet.Width), (int)Math.Ceiling(pet.Height), 96, 96, PixelFormats.Pbgra32);
-        image.Render(content); image.Freeze(); return image;
+        WpfTestRender.Render(image, content); image.Freeze(); return image;
     }
     private static void Label(DrawingContext dc, string text, Point point, double size, Brush brush)
     { dc.DrawText(new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
@@ -347,7 +348,7 @@ internal static class GanyuTraversalTests
                 Label(dc, rested > 0 ? "稳稳落在窗口顶部" : (double)Get(pet, "ganyuContactRemaining") > 0 ? "碰壁压腿 · 换向蹬离" : "借力跳跃 · 连续上升",
                     new Point(44, 622), 16, Brushes.SteelBlue);
             }
-            RenderTargetBitmap bitmap = new RenderTargetBitmap(920, 680, 96, 96, PixelFormats.Pbgra32); bitmap.Render(scene);
+            RenderTargetBitmap bitmap = new RenderTargetBitmap(920, 680, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(bitmap, scene);
             Save(bitmap, Path.Combine(directory, frames.ToString("000") + ".png")); frames++;
         }
         Console.WriteLine("Wrote " + frames + " actual WPF frames to " + directory);

@@ -1,10 +1,10 @@
-# 原神启动 V2.10
+# 原神启动 V2.11
 
 Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼，以及胡桃、甘雨、瓦雷莎六套 Q 版形象。原名“珂洛桌宠”。
 
 ## 启动与升级
 
-解压 `release/V2.10/原神启动-V2.10.zip`，双击 `原神启动.exe`。先退出旧版再启动新版，设置和缓存会继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。
+解压 `release/V2.11/原神启动-V2.11.zip`，双击 `原神启动.exe`。先退出旧版再启动新版，设置和缓存会继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。
 
 ## 操作
 
@@ -12,6 +12,7 @@ Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼�
 | --- | --- |
 | 左键单击 | 对话 |
 | 左键按住拖动 | 移动角色，可跨显示器 |
+| 在空中松开珂洛 | 稳住后从脚下黑色传送门返回当前屏幕底部 |
 | 双击珂洛 | 窗口能力剩余冷却减少1分钟 |
 | 双击GPT6A·龙女 | 开始25分钟龙息专注；计时中显示剩余时间 |
 | 双击DeepSeek·小肥鱼 | 打开本地灵感随手记 |
@@ -23,6 +24,10 @@ Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼�
 | Esc | 退出 |
 
 角色有慢走和跑步模式。胡桃跑动后化为金蝶；甘雨通过屏幕边、双屏交界与窗口侧边蹬跳，站位不合适时先靠近；瓦雷莎消耗夜魂超快跑，可跑上墙与屏幕顶部，夜魂耗尽后60秒回满。三位原神角色在拖拽和下落时展开风之翼。菜单随角色配色变化，互动文字出现后固定位置。
+
+V2.11重做珂洛持本与空手的慢走序列。拖到空中松手后，她会先减速稳住，再通过脚下的黑色传送门回到当前显示器底部，全程约3秒，靠近底部时直接落地。这项演出只由拖拽松手触发；自然走出窗口边缘时沿用普通下落。传送中按住小本本会暂停，松手后继续，再次抓住角色则取消。
+
+珂洛待机时偶尔会摘换发饰、借不透明布料遮挡换装，最后成为蓝发鱼尾DeepSeek。右键“待机换装彩蛋”可关闭，安静模式中暂停。彩蛋不会在刚启动时出现；拖拽、调整大小或手动换角色会取消正在进行的换装。完成后可通过角色菜单切回珂洛。详见 [珂洛传送与换装](docs/kolo-v2.11.md)。
 
 珂洛的“窗口魔法”会随机缩小或拉近一个普通应用窗口，成功冷却5分钟。右键有独立开关：新安装默认关闭；已有窗口能力冷却存档的升级用户保持原先启用状态。关闭立即取消施法，双击扣冷却不会自动打开开关。
 
@@ -68,10 +73,10 @@ OCR 不可用时仍能手动填写。可在 Windows“设置 → 时间和语言
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.10 -InstructionsPath .\docs\usage-v2.10.txt
+.\package.cmd -Version 2.11 -InstructionsPath .\docs\usage-v2.11.txt
 ```
 
-CMD 包装只为当前 PowerShell 进程指定执行策略，不修改系统策略。默认测试20组，加 `-IncludeVisualSmoke` 共21组。`-SkipPreviews` 只跳过 GIF 编码，仍运行渲染与断言测试。重建素材或编码 GIF 才需 Python、Pillow、NumPy；通过 `-Python`、`KOLO_PYTHON`、PATH 或 `py` 查找。
+CMD 包装只为当前 PowerShell 进程指定执行策略，不修改系统策略。默认测试22组，加 `-IncludeVisualSmoke` 共23组。`-SkipPreviews` 只跳过 GIF 编码，仍运行渲染与断言测试。重建素材或编码 GIF 才需 Python、Pillow、NumPy；通过 `-Python`、`KOLO_PYTHON`、PATH 或 `py` 查找。
 
 [工程与构建说明](docs/project-layout.md) · [AI接手文档](docs/HANDOFF.md) · [更新记录](CHANGELOG.md) · [文档索引](docs/INDEX.md)
 

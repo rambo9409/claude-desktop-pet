@@ -70,8 +70,9 @@ internal static class AiAbilitiesTests
     }
     private static void Capture(FrameworkElement view, double width, double height, string path)
     {
+        WpfTestRender.Drain();
         view.Measure(new Size(width, height)); view.Arrange(new Rect(0, 0, width, height)); view.UpdateLayout();
-        RenderTargetBitmap bitmap = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(view);
+        RenderTargetBitmap bitmap = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(bitmap, view);
         PngBitmapEncoder encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using (FileStream file = File.Create(path)) encoder.Save(file);
     }
@@ -122,8 +123,9 @@ internal static class AiAbilitiesTests
     }
     private static int Pixels(FrameworkElement view)
     {
+        WpfTestRender.Drain();
         view.Measure(new Size(330, 450)); view.Arrange(new Rect(0, 0, 330, 450)); view.UpdateLayout();
-        RenderTargetBitmap bitmap = new RenderTargetBitmap(330, 450, 96, 96, PixelFormats.Pbgra32); bitmap.Render(view);
+        RenderTargetBitmap bitmap = new RenderTargetBitmap(330, 450, 96, 96, PixelFormats.Pbgra32); WpfTestRender.Render(bitmap, view);
         byte[] bytes = new byte[330 * 450 * 4]; bitmap.CopyPixels(bytes, 330 * 4, 0);
         int visible = 0; for (int i = 3; i < bytes.Length; i += 4) if (bytes[i] > 0) visible++;
         return visible;
