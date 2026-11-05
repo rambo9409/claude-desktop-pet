@@ -1,6 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [ValidateSet('All', 'DesktopMovement', 'Effects', 'Gait', 'MenuTheme', 'Motion', 'SpeechLayout', 'Wings', 'Highlights', 'VisualSmoke', 'GlideFall', 'Nightsoul', 'WindowAbility', 'GptReset', 'CombatPlanner', 'CombatRoster', 'PointerInteraction', 'GanyuTraversal', 'GanyuDualScreen', 'AiAbilities', 'AiCharacters', 'Notebook', 'KoloPortal', 'KoloEasterEgg')]
+    [ValidateSet('All', 'DesktopMovement', 'Effects', 'Gait', 'MenuTheme', 'Motion', 'SpeechLayout', 'Wings', 'Highlights', 'VisualSmoke', 'GlideFall', 'Nightsoul', 'WindowAbility', 'CombatPlanner', 'CombatRoster', 'PointerInteraction', 'GanyuTraversal', 'GanyuDualScreen', 'AiAbilities', 'AiCharacters', 'Notebook', 'KoloPortal', 'KoloEasterEgg')]
     [string[]]$Suite = @('All'),
     [string[]]$TestArguments = @(),
     [switch]$SkipPreviews,
@@ -9,7 +9,7 @@ param(
 )
 . (Join-Path $PSScriptRoot 'common.ps1')
 $suites = if ($Suite -contains 'All') {
-    @('DesktopMovement', 'Effects', 'Gait', 'MenuTheme', 'Motion', 'SpeechLayout', 'Wings', 'Highlights', 'GlideFall', 'Nightsoul', 'WindowAbility', 'GptReset', 'CombatPlanner', 'CombatRoster', 'PointerInteraction', 'GanyuTraversal', 'GanyuDualScreen', 'AiAbilities', 'AiCharacters', 'Notebook', 'KoloPortal', 'KoloEasterEgg')
+    @('DesktopMovement', 'Effects', 'Gait', 'MenuTheme', 'Motion', 'SpeechLayout', 'Wings', 'Highlights', 'GlideFall', 'Nightsoul', 'WindowAbility', 'CombatPlanner', 'CombatRoster', 'PointerInteraction', 'GanyuTraversal', 'GanyuDualScreen', 'AiAbilities', 'AiCharacters', 'Notebook', 'KoloPortal', 'KoloEasterEgg')
 } else { $Suite | Select-Object -Unique }
 if ($IncludeVisualSmoke -and $suites -notcontains 'VisualSmoke') { $suites = @($suites) + 'VisualSmoke' }
 Push-Location -LiteralPath $script:PetProjectRoot

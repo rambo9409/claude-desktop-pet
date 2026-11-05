@@ -39,7 +39,6 @@ src\PetKoloEasterEgg.cs
 src\PetNightsoul.cs
 src\DailyHighlights.cs
 src\DailyHighlightsData.cs
-src\GptResetPrediction.cs
 src\GenshinCombatPlanner.cs
 src\GenshinCombatPlannerIntegration.cs
 src\PetStorage.cs

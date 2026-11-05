@@ -82,7 +82,7 @@ internal static class MenuThemeTests
                 Require(Contrast(menu.Foreground, menu.Background) >= 4.5, "Root text contrast");
                 Require(Field<TextBlock>(pet, "menuCharacterText").Text.Contains(names[index] + "  ·  V" + typeof(PetWindow).Assembly.GetName().Version.ToString(2)), "Wrong header character/version");
                 Require(!Find(menu, "自动移动").IsChecked, "Rebuild reset autoWalk");
-                Find(menu, "每日看点"); Find(menu, "战斗循环助手"); Find(menu, "GPT 重置预测");
+                Find(menu, "每日看点"); Find(menu, "战斗循环助手");
                 Require(Field<List<MenuItem>>(pet, "characterItems").Count == 6 && Field<List<MenuItem>>(pet, "movementItems").Count == (character == "kolo" ? 1 : 3), "Rebuild duplicated check lists");
                 Find(menu, "慢慢走一会儿"); Find(menu, "移动模式");
                 if (character != "kolo") Find(menu, character == "hutao" ? "化蝶飞行一会儿" : "立即跑步");

@@ -1,10 +1,10 @@
-# 原神启动 V2.14
+# 原神启动 V2.15
 
 Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼，以及胡桃、甘雨、瓦雷莎六套 Q 版形象。原名“珂洛桌宠”。
 
 ## 启动与升级
 
-解压 `release/V2.14/原神启动-V2.14.zip`，双击 `原神启动.exe`。先退出旧版再启动新版，设置和缓存会继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。
+解压 `release/V2.15/原神启动-V2.15.zip`，双击 `原神启动.exe`。先退出旧版再启动新版，现有角色和工具设置继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。
 
 ## 操作
 
@@ -63,7 +63,8 @@ GPT6A的右键能力菜单可选择15、25或45分钟专注，星环显示进度
 ## 其他工具
 
 - **每日看点**：微博、B站、体育、虎扑NBA、GitHub热门Fork，以及AI、股票、汽车、游戏、美女·时尚。版块可折叠和拖拽排序，布局自动保存，失败会标注缓存。
-- **GPT重置预测**：同步 [tangyun.ai](https://tangyun.ai/) 的公开全站预测，每10分钟更新。它不是个人额度查询，概率不保证发生。详见[数据源说明](docs/gpt-reset-data-source.md)。
+
+V2.15已移除GPT重置预测，包括菜单、窗口和后台数据同步。每日看点、战斗循环助手及角色专属能力继续保留，详见[本版说明](docs/removal-v2.15.md)。
 
 工具不读取游戏内存，不修改游戏文件，不自动按键。资讯功能只访问公开来源；不会读取账号密码、Cookie 或上传个人文件。
 
@@ -80,10 +81,10 @@ OCR 不可用时仍能手动填写。可在 Windows“设置 → 时间和语言
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.14 -InstructionsPath .\docs\usage-v2.14.txt
+.\package.cmd -Version 2.15 -InstructionsPath .\docs\usage-v2.15.txt
 ```
 
-CMD 包装只为当前 PowerShell 进程指定执行策略，不修改系统策略。默认测试22组，加 `-IncludeVisualSmoke` 共23组。`-SkipPreviews` 只跳过 GIF 编码，仍运行渲染与断言测试。重建素材或编码 GIF 才需 Python、Pillow、NumPy；通过 `-Python`、`KOLO_PYTHON`、PATH 或 `py` 查找。
+CMD 包装只为当前 PowerShell 进程指定执行策略，不修改系统策略。默认测试21组，加 `-IncludeVisualSmoke` 共22组。`-SkipPreviews` 只跳过 GIF 编码，仍运行渲染与断言测试。重建素材或编码 GIF 才需 Python、Pillow、NumPy；通过 `-Python`、`KOLO_PYTHON`、PATH 或 `py` 查找。
 
 [工程与构建说明](docs/project-layout.md) · [AI接手文档](docs/HANDOFF.md) · [更新记录](CHANGELOG.md) · [文档索引](docs/INDEX.md)
 

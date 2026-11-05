@@ -1,4 +1,4 @@
-# V2.14 工程与构建
+# V2.15 工程与构建
 
 ## 目录
 
@@ -46,7 +46,7 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 ## 测试
 
 ```powershell
-# 22组默认回归；加看点交互检查后共23组，无需Python
+# 21组默认回归；加看点交互检查后共22组，无需Python
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
 # 单独战斗助手
 .\test.cmd -Suite CombatPlanner -SkipPreviews
@@ -68,16 +68,16 @@ Python 优先显式参数，其次 `KOLO_PYTHON`、PATH 的 python/python3、`py
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps1' -Suite CombatPlanner,GanyuDualScreen -SkipPreviews"
 ```
 
-默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、GptReset、CombatPlanner、CombatRoster、PointerInteraction、GanyuTraversal、GanyuDualScreen、AiAbilities、AiCharacters、Notebook、KoloPortal、KoloEasterEgg。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。
+默认组为 DesktopMovement、Effects、Gait、MenuTheme、Motion、SpeechLayout、Wings、Highlights、GlideFall、Nightsoul、WindowAbility、CombatPlanner、CombatRoster、PointerInteraction、GanyuTraversal、GanyuDualScreen、AiAbilities、AiCharacters、Notebook、KoloPortal、KoloEasterEgg。VisualSmoke 是额外一组，默认 `--verify` 后退出，不启动常驻交互窗口。V2.15随功能移除GptReset套件及其响应快照。
 
 按顺序运行，避免共享配置互相干扰。测试中需要暂时写配置的路径必须备份并在 finally 还原；窗口能力原生测试仅操作自己创建的窗口。`latest-run.json` 从 RUNNING 开始逐组写入 PASS/FAIL，未执行的组保持 PENDING，不使用旧日志冒充本次通过。
 
-18个含离屏绘图的测试入口统一使用 `WpfTestRender.Render(bitmap, visual)`，在RenderTargetBitmap渲染前后以Background优先级处理Dispatcher队列，避免没有Application.Run消息循环的同步测试积累WPF工作。`scripts/common.ps1`编译任何测试时会自动加入 `tests/WpfTestRender.cs`，无需在各测试或生产 `build.rsp` 重复列入。纯逻辑测试也可以共用该编译配置。调用必须位于Measure/Arrange/OnRender之外的安全边界；需确定性状态的测试先停止桌宠计时器，避免泵消息时意外推进角色。不得吞异常或跳过预览来绕过失败。此辅助类不进入正式EXE。
+含离屏绘图的测试入口统一使用 `WpfTestRender.Render(bitmap, visual)`，在RenderTargetBitmap渲染前后以Background优先级处理Dispatcher队列，避免没有Application.Run消息循环的同步测试积累WPF工作。`scripts/common.ps1`编译任何测试时会自动加入 `tests/WpfTestRender.cs`，无需在各测试或生产 `build.rsp` 重复列入。纯逻辑测试也可以共用该编译配置。调用必须位于Measure/Arrange/OnRender之外的安全边界；需确定性状态的测试先停止桌宠计时器，避免泵消息时意外推进角色。不得吞异常或跳过预览来绕过失败。此辅助类不进入正式EXE。
 
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.14 -InstructionsPath .\docs\usage-v2.14.txt
+.\package.cmd -Version 2.15 -InstructionsPath .\docs\usage-v2.15.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。

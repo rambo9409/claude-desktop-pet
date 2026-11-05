@@ -16,8 +16,8 @@ using System.Windows.Threading;
 [assembly: AssemblyTitle("原神启动")]
 [assembly: AssemblyDescription("多形象桌宠、资讯、窗口魔法与原神战斗循环助手")]
 [assembly: AssemblyProduct("原神启动")]
-[assembly: AssemblyVersion("2.14.0.0")]
-[assembly: AssemblyFileVersion("2.14.0.0")]
+[assembly: AssemblyVersion("2.15.0.0")]
+[assembly: AssemblyFileVersion("2.15.0.0")]
 
 namespace ClaudePet
 {
@@ -365,7 +365,6 @@ namespace ClaudePet
         private bool pointerHeld;
         private bool dragged;
         private HighlightsWindow highlightsWindow;
-        private GptResetWindow gptResetWindow;
         private TextBlock menuCharacterText;
 
         public PetWindow()
@@ -507,7 +506,6 @@ namespace ClaudePet
             ContextMenu = BuildMenu();
             if (highlightsWindow != null) highlightsWindow.ApplyCharacterTheme(key, CompanionPortrait());
             if (combatPlannerWindow != null) combatPlannerWindow.ApplyCharacterTheme(key);
-            if (gptResetWindow != null) gptResetWindow.ApplyCharacterTheme(key);
             ScheduleNextWalk(DateTime.Now);
             ShowSpeech("已换成" + CharacterNames[key] + "啦。");
         }
@@ -535,21 +533,6 @@ namespace ClaudePet
             {
                 highlightsWindow.ApplyCharacterTheme(currentCharacter, CompanionPortrait());
                 highlightsWindow.Activate();
-            }
-        }
-
-        private void OpenGptResetPrediction()
-        {
-            if (gptResetWindow == null)
-            {
-                gptResetWindow = new GptResetWindow(currentCharacter);
-                gptResetWindow.Closed += delegate { gptResetWindow = null; };
-                gptResetWindow.Show();
-            }
-            else
-            {
-                gptResetWindow.ApplyCharacterTheme(currentCharacter);
-                gptResetWindow.Activate();
             }
         }
 
@@ -778,7 +761,6 @@ namespace ClaudePet
             ClearGanyuTraversal();
             CancelWings();
             speechWindow.Close();
-            if (gptResetWindow != null) gptResetWindow.Close();
             base.OnClosed(e);
         }
     }

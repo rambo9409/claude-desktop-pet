@@ -1,10 +1,14 @@
 # AI与开发者接手说明
 
-更新于2026-11-05。项目是 Windows WPF 桌宠“原神启动”，当前发布版本V2.14，程序集2.14.0.0。本版修复手动换装在第8下触发后又被第9下普通点击取消的问题；保留V2.13全部素材和自动三分钟规则。当前设计与验证入口见[连续点击修复](ai-v2.14.md)，操作说明见`usage-v2.14.txt`。本轮正式构建、23组完整回归、正式EXE启动和发布校验均PASS；实际输入验证的范围见下段，不把未执行的12连点UI测试算作通过。
+更新于2026-11-05。项目是 Windows WPF 桌宠“原神启动”，当前发布版本V2.15，程序集2.15.0.0。按用户要求移除GPT重置预测的菜单、窗口、抓取刷新、缓存读取、编译项及专属测试；每日看点、战斗助手、角色能力与素材继续保留。当前说明与验证入口见[功能移除记录](removal-v2.15.md)，操作说明见`usage-v2.15.txt`。本轮正式构建、22组完整回归、源码和程序集清扫、正式EXE启动及发布校验均PASS。
+
+V2.15完整回归时间2026-11-05 10:09:43.737–10:10:41.298（UTC+08:00），21组默认加VisualSmoke共22组全部PASS，稳定记录为`artifacts/v215/full-test-run.json`。AiCharacters为297项（删除被移除工具的2项主题断言），PointerInteraction 268项、KoloEasterEgg 370项、Notebook 122项、KoloPortal 18409项。源码、编译清单及最终程序集没有预测模块或接口标记，见`removal-verification.json`；素材包保持，2.15.0.0正式EXE启动观察3秒通过。旧`gpt-reset-cache.json`不再读取或刷新，升级不主动删除用户目录。历史发布与数据源文档只作历史记录，不应恢复已删除功能。
+
+V2.15于10:12:23.375（UTC+08:00）完成发布校验，`release/V2.15/原神启动-V2.15.zip`仅含EXE和使用说明，与最终构建/文档逐字节一致；ZIP SHA256 `21008990fcdd7f333ac7cd8f5a184d807431064d11cd304e611fa36210150410`。历史V2.14包未覆盖。完整字节数、哈希与验证边界见[本版记录](removal-v2.15.md)，稳定证据保存在`artifacts/v215/`。
 
 V2.14新增回归对修复前代码按预期复现第9下取消，记录为`artifacts/v214/before-fix-test-run.json`。修复后完整回归时间2026-11-05 09:21:23.620–09:22:26.744（UTC+08:00），23组全部PASS，稳定manifest为`artifacts/v214/full-test-run.json`；PointerInteraction 268项、KoloEasterEgg 370项、Notebook 122项、KoloPortal 18409项、AiCharacters 299项。正式EXE观察3秒无新崩溃，09:23:11.023发布校验通过；EXE及使用说明与ZIP内容逐字节一致，素材和V2.13历史包哈希保持。发布包为`release/V2.14/原神启动-V2.14.zip`，SHA256 `fba36238eacc80eb1460ec85fb29b7f6844e51d1a9686040326c3dc009794520`。证据保存在`artifacts/v214/`。
 
-实际输入探针记录到4组双击成功触发并切换DeepSeek，但没有记录触发后的多余点击；超过阈值续点由自动回归覆盖。电脑操作截图超时后没有发送自动点击，真实12连点UI计划未执行，`live-probe-result.json`准确标记PARTIAL。探针已关闭，角色设置已按原字节恢复。完整发布哈希和验证边界见[本版说明](ai-v2.14.md)。
+V2.14实际输入探针记录到4组双击成功触发并切换DeepSeek，但没有记录触发后的多余点击；超过阈值续点由自动回归覆盖。电脑操作截图超时后没有发送自动点击，真实12连点UI计划未执行，`live-probe-result.json`准确标记PARTIAL。探针已关闭，角色设置已按原字节恢复。完整发布哈希和验证边界见[V2.14说明](ai-v2.14.md)。
 
 手动请求一旦发出（含等待落稳与已播放），普通续点不改变`pointerHeld/state`，也不取消请求、重启门户或重复扣冷却；真的拖动超过5px才转入常规拖拽并取消。预览本子命中必须转交同一保护逻辑，开始播放时立即出第一帧。前3组双击显示1/4至3/4进度，前4组各减1分钟冷却。回归必须涵盖8次后继续9–12次点按及实际拖拽转换；原测试恰好停在8次，漏掉了真实用户继续连点的场景。
 
@@ -35,8 +39,8 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 1. 读取 `git status --short` 与 `git log -5 --oneline`，保留未提交改动。`90b5a12` 是前任 V2.6 战斗助手原样保存的提交，`97baf61` 是V2.5基线；当前实现包含后续修复，不要以旧交接“构建损坏”为由覆盖它。
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
-4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。22组默认回归加VisualSmoke共23组，V2.11新增KoloPortal与KoloEasterEgg。
-5. 判断测试结果以本次`artifacts/tests/latest-run.json`的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版证据汇总在`docs/ai-v2.14.md`的验证部分，并保留到`artifacts/v214/`。
+4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。V2.15删除GptReset套件后，21组默认回归加VisualSmoke共22组。
+5. 判断测试结果以本次`artifacts/tests/latest-run.json`的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版证据汇总在`docs/removal-v2.15.md`的验证部分，并保留到`artifacts/v215/`。
 
 ## 模块地图
 
@@ -60,7 +64,6 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 | `src/PetWindowAbility.cs`、`PetAbilityEffects.cs` | 珂洛窗口目标选择、冷却/开关、实际Win32操作、施法显示 |
 | `src/DailyHighlights.cs` | 看点WPF界面、折叠排序与主题 |
 | `src/DailyHighlightsData.cs` | 看点模型、来源、解析、缓存和后台抓取 |
-| `src/GptResetPrediction.cs` | 公开全站预测的抓取、缓存、时间语义和工具界面 |
 | `src/GenshinCombatPlannerIntegration.cs` | 桌宠打开/复用战斗助手窗口，不设置桌宠Owner |
 | `src/GenshinCombatPlanner.cs` | 战斗助手WPF表单、主题、字段错误、OCR预览、推荐资料与结果显示 |
 | `src/CombatPlannerModel.cs` | 输入/结果模型、纯计算、全字段校验、本地存档 |
@@ -124,17 +127,17 @@ V2.12记事窗直接复用DeepSeek的共享浅蓝调色板。圆角窗的自定�
 
 测试顺序执行；涉及用户设置的测试必须备份并finally还原。原生能力测试只操作测试创建的专用窗口，不应用用户真实窗口作为目标。界面测试应覆盖六主题、最小尺寸、长文字、错误态和OCR预览。MenuTheme会逐个渲染六角色的菜单和子菜单，并检查悬停、选中与禁用文字的对比度。
 
-18个含离屏绘图的测试入口使用共享 `tests/WpfTestRender.cs`。`scripts/common.ps1`测试编译会自动加入它，生产 `build.rsp`不应包含此类。`WpfTestRender.Render`在同步RenderTargetBitmap前后以Background优先级处理Dispatcher队列，让已排队的WPF工作完成；不要在Measure/Arrange/OnRender中调用。需要确定性模拟的测试先停止桌宠计时器。不要改为Send（同线程可能直接执行而不清队列），也不要吞掉Dispatcher异常、删断言或跳过预览来伪造通过；这项修复属于测试宿主，不应改变正式程序渲染行为。AiCharacters在正常结束和异常退出时都会恢复测试前的角色设置；原生回调异常可能绕过Main的finally，因此异常路径恢复也应保留。
+含离屏绘图的测试入口使用共享 `tests/WpfTestRender.cs`。`scripts/common.ps1`测试编译会自动加入它，生产 `build.rsp`不应包含此类。`WpfTestRender.Render`在同步RenderTargetBitmap前后以Background优先级处理Dispatcher队列，让已排队的WPF工作完成；不要在Measure/Arrange/OnRender中调用。需要确定性模拟的测试先停止桌宠计时器。不要改为Send（同线程可能直接执行而不清队列），也不要吞掉Dispatcher异常、删断言或跳过预览来伪造通过；这项修复属于测试宿主，不应改变正式程序渲染行为。AiCharacters在正常结束和异常退出时都会恢复测试前的角色设置；原生回调异常可能绕过Main的finally，因此异常路径恢复也应保留。
 
 正式打包前同步程序集版本、README、使用说明及验证记录。命令：
 
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.14 -InstructionsPath .\docs\usage-v2.14.txt
+.\package.cmd -Version 2.15 -InstructionsPath .\docs\usage-v2.15.txt
 ```
 
-`release/V2.14/原神启动-V2.14.zip`只能含EXE和使用说明。需要新增预览时独立放`release/V2.14/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。本版资源不变，沿用V2.13的208项（207PNG和1JSON）。维护V2.13跑步素材时可用`build_assets.py --refresh-v213`，只替换两位AI各4张`walk-*`，其余200项须与V2.12逐字节一致，尤其保留`stroll-*`。完整重建仍用`build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
+`release/V2.15/原神启动-V2.15.zip`只能含EXE和使用说明。需要新增预览时独立放`release/V2.15/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。本版资源不变，沿用V2.13的208项（207PNG和1JSON）。维护V2.13跑步素材时可用`build_assets.py --refresh-v213`，只替换两位AI各4张`walk-*`，其余200项须与V2.12逐字节一致，尤其保留`stroll-*`。完整重建仍用`build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
 
 素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 

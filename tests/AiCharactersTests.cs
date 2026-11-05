@@ -130,14 +130,12 @@ internal static class AiCharactersTests
         PetWindow.MenuPalette palette = PetWindow.MenuPalette.ForCharacter(character);
         HighlightsWindow highlights = new HighlightsWindow(character, portrait);
         CombatRotationWindow planner = new CombatRotationWindow(character, false);
-        GptResetWindow reset = new GptResetWindow(character, false);
         try {
             Check(Get<TextBlock>(highlights, "companionText").Text.Contains(PetWindow.CharacterDisplayName(character)), "Daily highlights still names Kolo for a new AI.");
             Color surface = (Color)ColorConverter.ConvertFromString(palette.Surface);
             Check(ColorOf(highlights.Resources["WindowSurface"]) == surface, "Daily highlights lost the AI theme.");
             Check(ColorOf(planner.Resources["PlannerSurface"]) == surface, "Combat planner lost the AI theme.");
-            Check(ColorOf(reset.Resources["ResetSurface"]) == surface, "GPT reset tool lost the AI theme.");
-        } finally { highlights.Close(); planner.Close(); reset.Close(); }
+        } finally { highlights.Close(); planner.Close(); }
         DrainDispatcher();
     }
     private static void Movement(PetWindow pet, Dictionary<string, BitmapSource[]> frames)
