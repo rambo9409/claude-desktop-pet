@@ -882,6 +882,7 @@ namespace ClaudePet
             Vector releaseDelta = CursorPosition(e) - pointerStart;
             tapSequence.Move(Math.Abs(releaseDelta.X) + Math.Abs(releaseDelta.Y));
             bool abilityDoubleClick = tapSequence.Complete(currentCharacter);
+            bool costumeGesture = tapSequence.FourDoubleClicksCompleted;
             pointerHeld = false;
             ReleaseMouseCapture();
             if (!dragged)
@@ -915,6 +916,7 @@ namespace ClaudePet
                 if (!abilityDoubleClick) ShowSpeech(portal ? "先稳住……开个传送门回去。" : "放手啦！");
             }
             if (abilityDoubleClick && !HandleAiDoubleClick()) ReduceWindowAbilityCooldownFromDoubleClick();
+            if (costumeGesture) RequestKoloEasterEggFromGesture();
         }
 
         private PlatformEdge FindClosestPlatform(double range)

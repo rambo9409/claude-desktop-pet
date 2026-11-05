@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "source": "ai-runs-v213.png",
+  "description": "Measured after the directed leg correction. Preserve original RGBA; crop, uniformly scale and position only. A/C exchange near/far legs and B/D exchange support/passing legs. Shared ground per character retains small phase changes; no per-frame sole normalization.",
+  "characters": {
+    "gpt6a": {
+      "scale": 0.95545,
+      "source_ground_y": 419,
+      "target_ground_y": 486,
+      "target_anchor_x": 275,
+      "cells": [
+        {"crop": [0, 0, 444, 444], "anchor_x": 280},
+        {"crop": [444, 0, 887, 444], "anchor_x": 280},
+        {"crop": [887, 0, 1330, 444], "anchor_x": 280},
+        {"crop": [1330, 0, 1774, 444], "anchor_x": 280}
+      ]
+    },
+    "deepseek": {
+      "scale": 0.9215,
+      "source_ground_y": 420,
+      "target_ground_y": 486,
+      "target_anchor_x": 310,
+      "cells": [
+        {"crop": [0, 444, 444, 887], "anchor_x": 280},
+        {"crop": [444, 444, 887, 887], "anchor_x": 280},
+        {"crop": [887, 444, 1330, 887], "anchor_x": 280},
+        {"crop": [1330, 444, 1774, 887], "anchor_x": 280}
+      ]
+    }
+  }
+}

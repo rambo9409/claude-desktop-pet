@@ -37,11 +37,31 @@ internal static class PointerInteractionTests
     private static void Set(string field, object value) { typeof(PetWindow).GetField(field, Private).SetValue(pet, value); }
     private static void Call(string method, params object[] args) { typeof(PetWindow).GetMethod(method, Private).Invoke(pet, args); }
 
-    private static Point Cursor()
+    private static readonly Point InputPoint = new Point(650, 350);
+
+    private static void WithSyntheticCursor(Action action)
     {
-        NativeWindow.POINT cursor;
-        if (!NativeWindow.GetCursorPos(out cursor)) throw new Exception("The read-only cursor query failed.");
-        return Get<Matrix>("fromDevice").Transform(new Point(cursor.X, cursor.Y));
+        Matrix previous = Get<Matrix>("fromDevice");
+        List<Rect> monitors = Get<List<Rect>>("monitorWorkAreas");
+        List<PlatformEdge> platforms = Get<List<PlatformEdge>>("platformCache");
+        DateTime monitorTime = Get<DateTime>("monitorsCachedAt"), platformTime = Get<DateTime>("platformCacheTime");
+        try {
+            // Both production cursor reads map to one test coordinate even if
+            // the user's physical pointer moves between down and up. This does
+            // not move the OS cursor or synthesize any operating-system input.
+            Set("fromDevice", new Matrix(0, 0, 0, 0, InputPoint.X, InputPoint.Y));
+            // Keep monitor floors geometric while the cursor projection is
+            // constant. Forced window refreshes reject zero-width projected
+            // native rectangles through the normal minimum-window-size filter.
+            Set("monitorWorkAreas", new List<Rect> { new Rect(0, 0, 1920, 1080) });
+            Set("monitorsCachedAt", DateTime.MaxValue);
+            Set("platformCache", new List<PlatformEdge> { new PlatformEdge { Left = 0, Right = 1920, Y = 1080, Bottom = 1080, IsFloor = true } });
+            Set("platformCacheTime", DateTime.MaxValue);
+            action();
+        } finally {
+            Set("fromDevice", previous); Set("monitorWorkAreas", monitors); Set("monitorsCachedAt", monitorTime);
+            Set("platformCache", platforms); Set("platformCacheTime", platformTime);
+        }
     }
 
     private static MouseButtonEventArgs Button(int count, MouseButton button)
@@ -58,17 +78,15 @@ internal static class PointerInteractionTests
     private static void Down(int count)
     {
         MouseButtonEventArgs input = Button(count, MouseButton.Left);
-        Call("OnPointerDown", pet, input);
+        WithSyntheticCursor(delegate { Call("OnPointerDown", pet, input); });
         Require(input.Handled && Get<bool>("pointerHeld"), "The actual left-down handler must start the gesture.");
     }
     private static void Up(int count, double displaced)
     {
-        // Read the cursor immediately before delivery, so an unrelated user
-        // pointer movement between test cases cannot create a synthetic drag.
-        Set("pointerStart", Cursor() + new Vector(displaced, 0));
+        Set("pointerStart", InputPoint + new Vector(displaced, 0));
         MouseButtonEventArgs input = Button(count, MouseButton.Left);
         input.RoutedEvent = Mouse.MouseUpEvent;
-        Call("OnPointerUp", pet, input);
+        WithSyntheticCursor(delegate { Call("OnPointerUp", pet, input); });
         Require(!Get<bool>("pointerHeld"), "The actual left-up handler must end the gesture.");
     }
     private static void Tap(int count) { Down(count); Up(count, 0); }
@@ -77,6 +95,7 @@ internal static class PointerInteractionTests
     {
         Call("CancelKoloPortal");
         Call("CancelKoloEasterEgg");
+        Call("ResetKoloEasterEggUsage");
         Get<PetTapSequence>("tapSequence").Reset();
         Set("currentCharacter", character);
         Set("movement", "rest");
@@ -214,6 +233,78 @@ internal static class PointerInteractionTests
         Require(desktop.Calls == 0, "Pointer input must not enumerate, restore, resize, or move any application window.");
     }
 
+    private static void ClassifierTap(PetTapSequence taps, string character, int count, DateTime at, double distance)
+    {
+        taps.BeginAt(character, count, at);
+        taps.Move(distance);
+        taps.CompleteAt(character, at.AddMilliseconds(20));
+    }
+
+    private static void CheckCostumeClassifier()
+    {
+        DateTime at = new DateTime(2026, 11, 5, 0, 0, 0, DateTimeKind.Utc);
+        PetTapSequence taps = new PetTapSequence();
+        for (int click = 1; click <= 8; click++) {
+            ClassifierTap(taps, "kolo", click, at.AddMilliseconds(click * 80), 0);
+            Require(taps.FourDoubleClicksCompleted == (click == 8), "Costume needs exactly four disjoint pairs, not four clicks.");
+        }
+        taps.CompleteAt("kolo", at.AddSeconds(1));
+        Require(!taps.FourDoubleClicksCompleted, "An unmatched release repeated the costume pulse.");
+        taps.Reset();
+        for (int pair = 0; pair < 4; pair++) {
+            ClassifierTap(taps, "kolo", 1, at.AddMilliseconds(pair * 700), 0);
+            ClassifierTap(taps, "kolo", 2, at.AddMilliseconds(pair * 700 + 100), 0);
+            Require(taps.FourDoubleClicksCompleted == (pair == 3), "Separated system double-click sequences do not accumulate correctly.");
+        }
+        foreach (string interruption in new[] { "timeout", "drag", "unmatched", "character", "reset", "rollback" }) {
+            taps.Reset();
+            for (int pair = 0; pair < 3; pair++) {
+                ClassifierTap(taps, "kolo", 1, at.AddMilliseconds(pair * 300), 0);
+                ClassifierTap(taps, "kolo", 2, at.AddMilliseconds(pair * 300 + 80), 0);
+            }
+            DateTime next = at.AddSeconds(1);
+            if (interruption == "timeout") next = at.AddSeconds(3);
+            if (interruption == "rollback") next = at.AddMinutes(-1);
+            if (interruption == "drag") ClassifierTap(taps, "kolo", 1, next.AddMilliseconds(-100), 12);
+            if (interruption == "unmatched") ClassifierTap(taps, "kolo", 1, next.AddMilliseconds(-100), 0);
+            if (interruption == "character") ClassifierTap(taps, "deepseek", 1, next.AddMilliseconds(-100), 0);
+            if (interruption == "reset") taps.Reset();
+            ClassifierTap(taps, "kolo", 1, next, 0); ClassifierTap(taps, "kolo", 2, next.AddMilliseconds(80), 0);
+            Require(!taps.FourDoubleClicksCompleted && taps.ConsecutiveDoubleClicks == 1,
+                "Interrupted chain leaked into the next pair: " + interruption);
+        }
+        foreach (string character in new[] { "deepseek", "gpt6a", "hutao", "ganyu", "varesa" }) {
+            taps.Reset();
+            for (int click = 1; click <= 8; click++) ClassifierTap(taps, character, click, at.AddMilliseconds(click * 80), 0);
+            Require(!taps.FourDoubleClicksCompleted && taps.ConsecutiveDoubleClicks == 0, "Costume gesture leaked to " + character);
+        }
+    }
+
+    private static void CheckCostumePointerRouting()
+    {
+        foreach (bool independentPairs in new[] { false, true }) {
+            DateTime deadline = Reset("kolo");
+            Set("koloEasterEggEnabled", false);
+            for (int click = 1; click <= 8; click++) {
+                Tap(independentPairs ? (click - 1) % 2 + 1 : click);
+                Require(Get<KoloEasterEggSession>("koloEasterEgg").ManualRequested == (click == 8),
+                    "Actual pointer handlers did not require eight valid taps.");
+            }
+            Require(controller.Clock.NextUseUtc == deadline.AddMinutes(-4) && saves == 4,
+                "Four costume pairs must still deduct all four minutes of ability cooldown.");
+            Require(!Get<KoloEasterEggSession>("koloEasterEgg").Active,
+                "An unshown pet must not start a delayed manual costume.");
+            Call("SwitchCharacter", "deepseek"); Call("SwitchCharacter", "kolo");
+            Require(!Get<KoloEasterEggSession>("koloEasterEgg").ManualRequested,
+                "Switching away and back retained a manual request.");
+        }
+        Reset("kolo");
+        for (int click = 1; click <= 6; click++) Tap(click);
+        Down(7); Up(7, 40); Tap(8);
+        Require(!Get<KoloEasterEggSession>("koloEasterEgg").ManualRequested,
+            "A drag cannot complete the fourth pair.");
+    }
+
     [STAThread]
     private static int Main()
     {
@@ -227,7 +318,9 @@ internal static class PointerInteractionTests
             CheckOrdinaryAndRepeatedClicks();
             CheckDragsAndCatchRelease();
             CheckCharacterAndUnmatchedInput();
-            Console.WriteLine("Pointer interaction: " + checks + " checks passed (real WPF down/up handlers; read-only native cursor; no user windows changed).");
+            CheckCostumeClassifier();
+            CheckCostumePointerRouting();
+            Console.WriteLine("Pointer interaction: " + checks + " checks passed (real WPF down/up handlers; isolated logical cursor projection; no OS input or user windows changed).");
             return 0;
         }
         catch (Exception error)

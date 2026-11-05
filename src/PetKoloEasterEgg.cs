@@ -16,7 +16,8 @@ namespace ClaudePet
         private bool previouslyInUse;
         internal double UsedSeconds { get; private set; }
         internal bool Completed { get; private set; }
-        internal bool Ready { get { return UsedSeconds >= RequiredUseSeconds && !Completed; } }
+        internal bool ManualRequested { get; private set; }
+        internal bool Ready { get { return (ManualRequested || UsedSeconds >= RequiredUseSeconds) && !Completed; } }
         internal bool Active { get; private set; }
         internal double Elapsed { get; private set; }
 
@@ -28,8 +29,10 @@ namespace ClaudePet
         internal void Reset(DateTime nowUtc)
         {
             lastObservedUtc = nowUtc; previouslyInUse = false;
-            UsedSeconds = 0; Completed = false; Active = false; Elapsed = 0;
+            UsedSeconds = 0; Completed = false; Active = false; Elapsed = 0; ManualRequested = false;
         }
+
+        internal void RequestManual() { ManualRequested = true; Completed = false; }
 
         internal bool Observe(DateTime nowUtc, bool inUse, bool eligible)
         {
@@ -59,6 +62,7 @@ namespace ClaudePet
             if (Elapsed < DurationSeconds - .000001) return false;
             Active = false;
             Completed = true;
+            ManualRequested = false;
             return true;
         }
 
@@ -72,6 +76,7 @@ namespace ClaudePet
         {
             Active = false;
             Elapsed = 0;
+            ManualRequested = false;
             lastObservedUtc = nowUtc;
             previouslyInUse = false;
         }
@@ -102,7 +107,8 @@ namespace ClaudePet
 
         private void InitializeKoloEasterEgg()
         {
-            StateChanged += delegate { if (WindowState == WindowState.Minimized) CancelKoloEasterEgg(); };
+            StateChanged += delegate { if (WindowState == WindowState.Minimized) { CancelKoloEasterEgg(); tapSequence.Reset(); } };
+            ContextMenuOpening += delegate { CancelKoloEasterEgg(); tapSequence.Reset(); };
         }
 
         private void ResetKoloEasterEggUsage()
@@ -113,7 +119,7 @@ namespace ClaudePet
         private bool CanPlayKoloEasterEgg()
         {
             BitmapSource[] poses;
-            if (!koloEasterEggEnabled || currentCharacter != "kolo" || !IsLoaded || !IsVisible || WindowState == WindowState.Minimized ||
+            if ((!koloEasterEggEnabled && !koloEasterEgg.ManualRequested) || currentCharacter != "kolo" || !IsLoaded || !IsVisible || WindowState == WindowState.Minimized ||
                 pointerHeld || notebook.Pressed || (notebookWindow != null && notebookWindow.Dragging) ||
                 state != "idle" || (movement != "rest" && movement != "walk") || IsWindowAbilityActive || IsKoloPortalActive ||
                 (ContextMenu != null && ContextMenu.IsOpen) || !frames.TryGetValue("disguise", out poses) || poses.Length != 8)
@@ -125,8 +131,12 @@ namespace ClaudePet
         private void UpdateKoloEasterEgg(DateTime now, double seconds)
         {
             DateTime utc = now.ToUniversalTime();
+            if (ContextMenu != null && ContextMenu.IsOpen) {
+                tapSequence.Reset();
+                if (koloEasterEgg.ManualRequested) CancelKoloEasterEgg();
+            }
             bool wasActive = koloEasterEgg.Active;
-            bool inUse = koloEasterEggEnabled && currentCharacter == "kolo" && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
+            bool inUse = (koloEasterEggEnabled || koloEasterEgg.ManualRequested) && currentCharacter == "kolo" && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
             bool started = koloEasterEgg.Observe(utc, inUse, CanPlayKoloEasterEgg());
             if (wasActive && !koloEasterEgg.Active)
             {
@@ -149,6 +159,17 @@ namespace ClaudePet
             // portraits and persisted selection through a single existing path.
             SwitchCharacter("deepseek");
             ShowSpeech("咦，被发现啦！今天换我陪你。" );
+        }
+
+        private void RequestKoloEasterEggFromGesture()
+        {
+            if (currentCharacter != "kolo") return;
+            koloEasterEgg.RequestManual();
+            // The explicit completed gesture takes priority over the short
+            // happy reaction from earlier taps, but never relocates a held pet.
+            state = "idle"; stateEnds = DateTime.MaxValue;
+            UpdateKoloEasterEgg(DateTime.Now, 0);
+            ShowSpeech(koloEasterEgg.Active ? "四次双击，换装秘密被你发现啦！" : "收到啦，落稳后就给你看换装秘密。" );
         }
 
         private BitmapSource PrepareKoloEasterEggFrame(BitmapSource requested)
@@ -189,7 +210,7 @@ namespace ClaudePet
             MenuItem item = StyledItem("♢", "待机换装彩蛋", null);
             item.IsCheckable = true;
             item.IsChecked = koloEasterEggEnabled;
-            item.ToolTip = "使用珂洛满3分钟必定换装成DeepSeek；移动与安静模式也计时，隐藏时暂停。拖拽或传送期间等动作结束再换装。";
+            item.ToolTip = "使用珂洛满3分钟必定换装成DeepSeek；移动与安静模式也计时，隐藏时暂停。也可连续双击4次主动换装（共8下，每组间隔不超过1.5秒），无需开启自动彩蛋。拖拽或传送期间等动作结束再换装。";
             item.Click += delegate { SetKoloEasterEggEnabled(item.IsChecked); item.IsChecked = koloEasterEggEnabled; };
             menu.Items.Add(item);
         }

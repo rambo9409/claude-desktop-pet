@@ -144,13 +144,23 @@ internal static class AiCharactersTests
     {
         Image sprite = Get<Image>(pet, "sprite");
         Set(pet, "pointerHeld", true); Set(pet, "state", "idle"); Set(pet, "stateEnds", DateTime.MaxValue);
+        int priorDirection = Get<int>(pet, "direction");
         foreach (string gait in new[] { "stroll", "run" }) {
             Set(pet, "activeGait", gait); Set(pet, "movement", "walk");
-            for (int i = 0; i < 4; i++) {
-                Set(pet, "runPhase", (i + .15) / 4); Call(pet, "OnTick", null, EventArgs.Empty);
-                Check(Object.ReferenceEquals(sprite.Source, frames[MovementGait.FrameKey(gait)][i]), "A movement phase was skipped.");
+            foreach (int facing in new[] { -1, 1 }) {
+                Set(pet, "direction", facing);
+                for (int i = 0; i < 4; i++) {
+                    Set(pet, "runPhase", (i + .15) / 4); Call(pet, "OnTick", null, EventArgs.Empty);
+                    Check(Object.ReferenceEquals(sprite.Source, frames[MovementGait.FrameKey(gait)][i]), "A movement phase was skipped.");
+                    TransformGroup pose = sprite.RenderTransform as TransformGroup;
+                    ScaleTransform mirror = pose != null && pose.Children.Count == 1 ? pose.Children[0] as ScaleTransform : null;
+                    Check(mirror != null, "AI ground movement added a synthetic bounce, tilt or extra transform.");
+                    Check(mirror.ScaleX == facing && mirror.ScaleY == 1,
+                        "AI ground movement changes body scale instead of only mirroring the requested direction.");
+                }
             }
         }
+        Set(pet, "direction", priorDirection);
         Set(pet, "movement", "climb"); Set(pet, "climbVerticalDirection", -1);
         for (int i = 0; i < 4; i++) {
             Set(pet, "climbPhase", (i + .15) / 4); Call(pet, "OnTick", null, EventArgs.Empty);

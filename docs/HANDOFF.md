@@ -1,10 +1,14 @@
 # AI与开发者接手说明
 
-更新于2026-11-04。项目是 Windows WPF 桌宠“原神启动”，当前版本 V2.12。珂洛取消跑步，彩蛋改为累计可见使用180秒必定触发；DeepSeek记事窗复用同角色工具主题，龙女27个资源统一到另两位AI的画风。设计及维护入口见[AI伙伴调整](ai-v2.12.md)，最终验证状态见 [V2.12验证](validation-v2.12.md)。V2.11传送门和换装素材保留，但旧版的随机触发规则已被替换。
+更新于2026-11-05。项目是 Windows WPF 桌宠“原神启动”，当前发布版本 V2.13。本版只修正DeepSeek与GPT6A各4张跑步图，慢走和其余200项资源保持；新增珂洛连续四组双击（8次点击）主动换装。设计入口见[跑步与主动换装](ai-v2.13.md)，本次构建、23组回归、资源及发布结果见 [V2.13验证](validation-v2.13.md)。
+
+V2.13正式构建、23组完整回归、最终素材验证与人工审看、EXE启动和发布检查全部PASS。完整回归时间为2026-11-05 08:54:22.707–08:55:24.706（UTC+08:00），稳定manifest为`artifacts/v213/full-test-run.json`；AiCharacters 299项、PointerInteraction 230项、KoloEasterEgg 328项、Notebook 122项。真实屏幕/光标与模拟夹具混用的问题已在测试中隔离，未删减断言。末轮只调整跑步整体比例：龙女源图scale 0.95545，小肥鱼0.9215；随后09:01:26.647–09:01:32.816重新通过AiCharacters/Motion/Gait三组，见`artifacts/v213/final-asset-test-run.json`。最终资源208项中8改、200保留，慢走原字节不变，完整重建208项一致；2.13.0.0正式EXE启动观察3秒无新增崩溃日志。09:02:01.702完成发布校验，`release/V2.13/原神启动-V2.13.zip`仅含EXE和使用说明，均与最终构建/文档一致，历史V2.12包哈希未变。最终素材SHA256为`3d3eaea72831d16b31e89e186cd8a2a1b90ded0b8d5bd7f4d5ee4eb2effdd0d9`；发布大小、哈希和覆盖界限见[V2.13验证](validation-v2.13.md)。稳定证据位于`artifacts/v213/`，不要用后续可能被覆盖的`artifacts/tests/latest-run.json`替代。尚未进行真实等待180秒及物理鼠标跨不同DPI双屏拖拽的手测。
 
 V2.12正式构建、资源验证、23组完整回归、EXE启动及发布检查全部通过。资源208项中27张龙女帧更新、181项保持V2.11原字节，完整重建208项也一致；证据为 `artifacts/v212/asset-verification.json`。最终回归时间为2026-11-04 22:25:28–22:26:25（UTC+08:00），manifest为 `artifacts/v212/full-test-run.json`；2.12.0.0启动观察3秒无新增崩溃日志。发布包为 `release/V2.12/原神启动-V2.12.zip`，仅含EXE和使用说明且与构建/文档一致，历史V2.11 ZIP哈希不变；实际字节数、哈希及验证范围见 [V2.12验证](validation-v2.12.md)。稳定证据保存在 `artifacts/v212/`，避免后续测试覆盖 `artifacts/tests/latest-run.json`。三分钟阈值通过可控时钟测试验证，未另行做真实等待180秒的手测；不同DPI物理双屏拖拽也尚未手测。
 
 珂洛计时包含普通移动及安静模式，隐藏/最小化暂停，切换形象或重新开启彩蛋重置三分钟，重启不继承进度。到期遇到拖拽、菜单、传送或施法会保留资格，等安全支撑后播放；普通移动会停止后换装，中断不再重新随机等待。不要恢复V2.11的随机抽签、12秒连续待机或5分钟触发冷却。
+
+V2.13主动手势要求四组已完成的有效双击，相邻组完成时间间隔不超过1.5秒；支持WPF ClickCount连续1–8和四组独立1/2。每组仍减1分钟魔法冷却，第4组另发手动请求。手动请求独立于自动开关，地面第8次松手立即替代happy姿态并演出，空中/门户等待安全支撑。拖拽、超时、额外不成对单击、跨角色重置累计；本子命中优先处理，不得混入身体手势。新抓取、本子、菜单、隐藏、最小化、切角色清理手动待触发，手动中断不重试；已到期的自动Ready按原规则保留。后续修改务必区分手动请求和自动资格。
 
 V2.11已完成正式构建、23组完整回归、EXE启动、208项素材及完整重建比较、发布包内容和哈希检查，全部PASS。最终全套时间为2026-11-04 18:14:17–18:15:17（UTC+08:00），稳定manifest为 `artifacts/v211/full-test-run.json`。18个含离屏绘图的测试入口已统一到共享 `WpfTestRender`，保留全部断言与预览，修复同步宿主的Dispatcher队列问题。发布包为 `release/V2.11/原神启动-V2.11.zip`，测试宿主修改不改变已核验的生产EXE，V2.10历史包保持不变。稳定证据保存在 `artifacts/v211/`，不要把会被后续测试覆盖的 `artifacts/tests/latest-run.json` 当作永久记录。尚未进行物理鼠标在不同DPI双屏之间拖拽的实测，模拟几何和路由事件通过不等于该项手测通过。
 
@@ -26,7 +30,7 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
 4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。22组默认回归加VisualSmoke共23组，V2.11新增KoloPortal与KoloEasterEgg。
-5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.12.md`。
+5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.13.md`。
 
 ## 模块地图
 
@@ -37,14 +41,15 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 | `src/PetAiAbilities.cs` | 龙息专注、星环和泡泡显示、统一DeepSeek主题的灵感本UI与安全保存 |
 | `src/PetNotebook.cs` | 持本/离手状态、每帧命中、跨屏独立本子窗口、归还及生命周期 |
 | `src/PetKoloPortal.cs` | 拖拽松手后的稳住/开门/进入/底部出现/收门，当前屏落点与WPF门户绘制 |
-| `src/PetKoloEasterEgg.cs` | 180秒可见使用计时、到期资格保留、安全时机、8帧换装、开关与正式DeepSeek切换 |
+| `src/PetKoloEasterEgg.cs` | 自动180秒资格与手动换装请求、安全时机、8帧换装、开关与正式DeepSeek切换 |
 | `build_deepseek_v29.py`、`build_kolo_v29.py` | 两角色参考重绘的裁切与归一化，主入口由build_assets.py统一调用 |
 | `build_gpt6a_v212.py` | GPT6A统一画风后的27张运行素材，由build_assets.py统一调用；V2.10脚本保留历史 |
+| `build_ai_runs_v213.py` | 两位AI各4张跑步覆盖层，保留基础脚本的慢走和其他动作 |
 | `build_kolo_v211.py` | 新慢走8帧、本子慢走命中框与换装8帧，与既有珂洛素材合并 |
 | `src/PetMovement.cs` | 移动状态、平台枚举、拖拽、跌落、跨屏运行时 |
 | `src/DesktopMovement.cs` | DesktopMovement纯几何、VaresaRunTrack路线类 |
 | `src/PetGanyuTraversal.cs` | 甘雨完整多段路径规划、单墙/屏幕接缝借力、小跑靠近、运行时取消 |
-| `src/PetPointerGestures.cs` | 单击/双击与拖拽区分 |
+| `src/PetPointerGestures.cs` | 单击/双击与拖拽区分、四组双击累计与超时取消 |
 | `src/PetEffects.cs`、`PetWings.cs`、`PetNightsoul.cs` | 胡桃蝶化、三角色展翼缓降、瓦雷莎能量 |
 | `src/PetWindowAbility.cs`、`PetAbilityEffects.cs` | 珂洛窗口目标选择、冷却/开关、实际Win32操作、施法显示 |
 | `src/DailyHighlights.cs` | 看点WPF界面、折叠排序与主题 |
@@ -120,10 +125,10 @@ V2.12记事窗直接复用DeepSeek的共享浅蓝调色板。圆角窗的自定�
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.12 -InstructionsPath .\docs\usage-v2.12.txt
+.\package.cmd -Version 2.13 -InstructionsPath .\docs\usage-v2.13.txt
 ```
 
-`release/V2.12/原神启动-V2.12.zip`只能含EXE和使用说明。预览独立放 `release/V2.12/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次龙女素材可用 `build_assets.py --refresh-v212`，替换27张龙女资源，其他181个条目须与V2.11逐字节一致。正式包仍有208项（207PNG和1JSON）。完整重建仍用 `build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
+`release/V2.13/原神启动-V2.13.zip`只能含EXE和使用说明。预览独立放 `release/V2.13/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次跑步素材用 `build_assets.py --refresh-v213`，替换两位AI各4张`walk-*`，其余200个条目须与V2.12逐字节一致，尤其保留`stroll-*`。正式包仍有208项（207PNG和1JSON）。完整重建仍用 `build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
 
 素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 

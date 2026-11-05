@@ -13,6 +13,7 @@ from build_gpt6a_v212 import load_frames as load_dragon_reference_frames
 from build_gpt6a_v212 import build_preview as build_dragon_preview
 from build_kolo_v211 import load_stroll_frames, load_stroll_hitboxes, load_disguise_frames
 from build_kolo_v211 import build_preview as build_kolo_v211_preview
+from build_ai_runs_v213 import load_run_frames, build_preview as build_ai_runs_preview
 
 OUTPUT = Path(__file__).resolve().parent / "assets"
 GENERATED_ROOT = OUTPUT / "generated"
@@ -342,7 +343,7 @@ def build_preview(idle_images: dict[str, Image.Image]) -> None:
     draw = ImageDraw.Draw(canvas)
     title_font = load_font(22)
     name_font = load_font(19)
-    draw.text((28, 18), "原神启动 V2.12 · AI伙伴统一形象与交互", font=title_font, fill=(76, 48, 45, 255))
+    draw.text((28, 18), "原神启动 V2.13 · 跑步修正与主动换装", font=title_font, fill=(76, 48, 45, 255))
     card_width = 250
     for index, key in enumerate(CHARACTERS):
         left = 22 + index * 264
@@ -530,10 +531,13 @@ def load_ai_frames(character: str) -> dict[str, Image.Image]:
     body size each frame. Climbing shares x=400 contact, ground poses y=486.
     """
     if character == "deepseek":
-        return load_deepseek_reference_frames(GENERATED_ROOT)
-    if character == "gpt6a":
-        return load_dragon_reference_frames(GENERATED_ROOT)
-    raise ValueError(f"Unknown AI character: {character}")
+        frames = load_deepseek_reference_frames(GENERATED_ROOT)
+    elif character == "gpt6a":
+        frames = load_dragon_reference_frames(GENERATED_ROOT)
+    else:
+        raise ValueError(f"Unknown AI character: {character}")
+    frames.update(load_run_frames(character, GENERATED_ROOT))
+    return frames
 
 
 def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> None:
@@ -553,7 +557,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
             frame = frames_by_character[character][action].resize((220, 220), Image.Resampling.LANCZOS)
             sheet.paste(frame, (col * 220, row * 260 + 30), frame)
             draw.text((col * 220 + 8, row * 260 + 6), character + " · " + action, font=font, fill=fg)
-    sheet.save(preview_root / "ai-v212-contact-sheet.png")
+    sheet.save(preview_root / "ai-v213-contact-sheet.png")
     gait_sheet = Image.new("RGB", (960, 6 * 260), "#eef7f6")
     gait_draw = ImageDraw.Draw(gait_sheet)
     for character_row, character in enumerate(AI_CHARACTERS):
@@ -563,7 +567,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 pose = frames_by_character[character][f"{action}-{index + 1}"].resize((240, 240), Image.Resampling.LANCZOS)
                 gait_sheet.paste(pose, (index * 240, row * 260 + 20), pose)
                 gait_draw.text((index * 240 + 8, row * 260 + 2), f"{character} · {action} {index + 1}", font=font, fill="#254D59")
-    gait_sheet.save(preview_root / "ai-v212-gait-contact-sheet.png")
+    gait_sheet.save(preview_root / "ai-v213-gait-contact-sheet.png")
     animation = []
     for tick in range(48):
         canvas = Image.new("RGB", (1000, 540), "#eef7f6")
@@ -575,7 +579,7 @@ def build_ai_preview(frames_by_character: dict[str, dict[str, Image.Image]]) -> 
                 canvas.paste(pose, (col * 250 + 5, row * 270 + 22), pose)
                 draw.text((col * 250 + 8, row * 270 + 2), character + " · " + action, font=font, fill="#254D59")
         animation.append(canvas)
-    animation[0].save(preview_root / "ai-v212-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
+    animation[0].save(preview_root / "ai-v213-motion.gif", save_all=True, append_images=animation[1:], duration=60, loop=0, disposal=2)
 
 
 def append_ai_assets() -> None:
@@ -604,7 +608,7 @@ def append_ai_assets() -> None:
 def refresh_reference_assets() -> None:
     """Replace only the two revised characters, preserving the other PNGs."""
     replacements = {"kolo": load_kolo_reference_frames(GENERATED_ROOT),
-                    "deepseek": load_deepseek_reference_frames(GENERATED_ROOT)}
+                    "deepseek": load_ai_frames("deepseek")}
     source_path, temporary = OUTPUT / "characters.zip", OUTPUT / "characters-building.zip"
     idle_images = {}
     with ZipFile(source_path, "r") as source, ZipFile(temporary, "w", compression=ZIP_STORED) as destination:
@@ -630,7 +634,7 @@ def refresh_reference_assets() -> None:
 
 def refresh_dragon_assets() -> None:
     """Replace the 27 GPT6A images, retaining unrelated resource bytes."""
-    frames = load_dragon_reference_frames(GENERATED_ROOT)
+    frames = load_ai_frames("gpt6a")
     source_path, temporary = OUTPUT / "characters.zip", OUTPUT / "characters-building.zip"
     idle_images = {}
     held_portrait = None
@@ -689,6 +693,36 @@ def refresh_kolo_v211_assets() -> None:
     (GENERATED_ROOT / "kolo-notebook-hitboxes-v211.json").write_text(json.dumps(boxes, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
     build_kolo_v211_preview(OUTPUT / "previews", GENERATED_ROOT)
     print("Updated eight stroll frames and notebook hitboxes; added eight costume poses.")
+
+
+def refresh_ai_runs_assets() -> None:
+    """Replace eight run poses only; preserve slow walking and all other bytes."""
+    updated = {f"{character}-{name}.png": to_png(frame)
+               for character in AI_CHARACTERS
+               for name, frame in load_run_frames(character, GENERATED_ROOT).items()}
+    source_path, temporary = OUTPUT / "characters.zip", OUTPUT / "characters-building.zip"
+    idle_images = {}
+    held_portrait = None
+    with ZipFile(source_path, "r") as source, ZipFile(temporary, "w", compression=ZIP_STORED) as destination:
+        if not set(updated).issubset(source.namelist()) or len(updated) != 8:
+            raise ValueError("AI run refresh must replace exactly eight existing frames")
+        for entry in source.infolist():
+            data = updated.get(entry.filename)
+            if data is None:
+                data = source.read(entry.filename)
+            if entry.filename.endswith("-idle.png") and "-book-" not in entry.filename:
+                idle_images[entry.filename[:-9]] = Image.open(BytesIO(data)).convert("RGBA")
+            if entry.filename == "kolo-book-idle.png":
+                held_portrait = Image.open(BytesIO(data)).convert("RGBA")
+            destination.writestr(entry, data)
+    if held_portrait is None:
+        raise ValueError("Missing Kolo held-notebook portrait")
+    temporary.replace(source_path)
+    idle_images["kolo"] = held_portrait
+    build_preview(idle_images)
+    build_ai_preview({character: load_ai_frames(character) for character in AI_CHARACTERS})
+    build_ai_runs_preview(OUTPUT / "previews", GENERATED_ROOT)
+    print("Updated eight AI run frames; preserved all 200 other resource entries.")
 
 
 def main() -> None:
@@ -752,6 +786,7 @@ def main() -> None:
     build_ai_preview({character: motion_images[character] for character in AI_CHARACTERS})
     build_dragon_preview(motion_images["gpt6a"], OUTPUT / "previews")
     build_kolo_v211_preview(OUTPUT / "previews", GENERATED_ROOT)
+    build_ai_runs_preview(OUTPUT / "previews", GENERATED_ROOT)
     expected = 153 + len(motion_images["kolo"])
     if count != expected:
         raise ValueError(f"Unexpected asset count: {count}")
@@ -762,7 +797,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     import sys
-    if "--refresh-v212" in sys.argv:
+    if "--refresh-v213" in sys.argv:
+        refresh_ai_runs_assets()
+    elif "--refresh-v212" in sys.argv:
         refresh_dragon_assets()
     elif "--refresh-v211" in sys.argv:
         refresh_kolo_v211_assets()

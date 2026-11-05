@@ -66,6 +66,15 @@ internal static class KoloEasterEggTests
         session.Reset(start);
         Check(session.UsedSeconds == 0 && !session.Ready && !session.Active && !session.Completed,
             "Changing character or explicitly re-enabling must start a fresh use session.");
+        session.RequestManual();
+        Check(session.ManualRequested && session.Ready && session.UsedSeconds == 0,
+            "An explicit request must not forge three minutes of automatic usage.");
+        Check(!session.Observe(start, true, false) && session.ManualRequested,
+            "Unsafe positioning discarded a pending manual request.");
+        Check(session.Observe(start.AddMilliseconds(10), true, true), "A manual request could not start immediately.");
+        session.Cancel(start.AddMilliseconds(20));
+        Check(!session.ManualRequested && !session.Ready && !session.Active,
+            "Cancelling a manual-only performance left an unsolicited retry.");
     }
 
     private static void Settings(string directory)
@@ -170,6 +179,127 @@ internal static class KoloEasterEggTests
         Check(!use.Active && !use.Ready && use.UsedSeconds < 1, "Switching back instantly replayed the old deadline.");
     }
 
+    private static void ResetManualFixture(PetWindow pet)
+    {
+        Call(pet, "CancelKoloPortal"); Call(pet, "CancelKoloEasterEgg");
+        Call(pet, "ResetKoloEasterEggUsage");
+        Set(pet, "currentCharacter", "kolo"); Set(pet, "frames", PetAssets.Load("kolo"));
+        Set(pet, "state", "idle"); Set(pet, "movement", "rest");
+        Set(pet, "pointerHeld", false); Set(pet, "koloEasterEggEnabled", false);
+        Set(pet, "windowMagicEnabled", false); Set(pet, "autoWalk", false);
+        Call(pet, "ReturnNotebook", false); Get<PetTapSequence>(pet, "tapSequence").Reset();
+        Ground(pet);
+    }
+
+    private static MouseButtonEventArgs TapEvent(int count, bool down)
+    {
+        MouseButtonEventArgs value = new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) {
+            RoutedEvent = down ? Mouse.MouseDownEvent : Mouse.MouseUpEvent
+        };
+        typeof(MouseButtonEventArgs).GetProperty("ClickCount").GetSetMethod(true).Invoke(value, new object[] { count });
+        return value;
+    }
+
+    private static void ManualTap(PetWindow pet, int count)
+    {
+        Matrix previous = Get<Matrix>(pet, "fromDevice");
+        List<Rect> monitors = Get<List<Rect>>(pet, "monitorWorkAreas");
+        List<PlatformEdge> platforms = Get<List<PlatformEdge>>(pet, "platformCache");
+        DateTime monitorTime = Get<DateTime>(pet, "monitorsCachedAt"), platformTime = Get<DateTime>(pet, "platformCacheTime");
+        Point point = new Point(pet.Left + pet.Width / 2, pet.Top + pet.Height / 2);
+        try {
+            // Freeze only the synchronous synthetic input scope. Production
+            // reads the cursor normally, but unrelated physical pointer motion
+            // cannot turn these intended taps into a >5px test drag. Ground()
+            // supplied geometric monitor floors. A forced platform refresh
+            // rejects zero-width native windows via its normal size filter.
+            Set(pet, "fromDevice", new Matrix(0, 0, 0, 0, point.X, point.Y));
+            Set(pet, "monitorsCachedAt", DateTime.MaxValue); Set(pet, "platformCacheTime", DateTime.MaxValue);
+            Call(pet, "OnPointerDown", pet, TapEvent(count, true));
+            Call(pet, "OnPointerUp", pet, TapEvent(count, false));
+            Check(!Get<bool>(pet, "pointerHeld") && !Get<bool>(pet, "dragged"), "Synthetic gesture was not delivered as a complete tap.");
+        } finally {
+            Set(pet, "fromDevice", previous); Set(pet, "monitorWorkAreas", monitors); Set(pet, "platformCache", platforms);
+            Set(pet, "monitorsCachedAt", monitorTime); Set(pet, "platformCacheTime", platformTime);
+        }
+    }
+
+    private static void ManualGestureIntegration(PetWindow pet)
+    {
+        ResetManualFixture(pet);
+        KoloEasterEggSession session = Get<KoloEasterEggSession>(pet, "koloEasterEgg");
+        for (int click = 1; click <= 8; click++) {
+            ManualTap(pet, click);
+            Check(session.Active == (click == 8), "Manual routing must start on the eighth release, with no extra idle wait.");
+        }
+        Check(!Get<bool>(pet, "koloEasterEggEnabled") && session.UsedSeconds < 1,
+            "Explicit gesture changed the persisted automatic setting or timer.");
+        Check(Get<string>(pet, "state") == "idle" && Get<string>(pet, "movement") == "rest",
+            "The preceding single-click happy reaction delayed the manual costume.");
+        for (int step = 0; step < 100 && Get<string>(pet, "currentCharacter") == "kolo"; step++)
+            Call(pet, "UpdateKoloEasterEgg", DateTime.Now, .05);
+        Check(Get<string>(pet, "currentCharacter") == "deepseek", "Manual performance did not finish with the real DeepSeek switch.");
+
+        ResetManualFixture(pet); session = Get<KoloEasterEggSession>(pet, "koloEasterEgg");
+        pet.Top -= 300;
+        Check((bool)Call(pet, "TryBeginKoloPortal", 0.0, 0.0), "Manual air fixture failed to start portal.");
+        Call(pet, "RequestKoloEasterEggFromGesture");
+        Check(session.ManualRequested && !session.Active, "Manual request interrupted portal or was lost.");
+        for (int i = 0; i < 65; i++) Call(pet, "UpdateKoloPortal", .05);
+        Check(!Get<KoloPortalState>(pet, "koloPortal").Active && Get<string>(pet, "movement") == "rest" && session.ManualRequested,
+            "Portal did not finish normally while preserving the manual request.");
+        // A shown HWND intentionally refreshes native monitor work areas at
+        // both portal relocation and completion. Its real destination cannot
+        // use Ground()'s stale synthetic y=1040 floor. Rebuild only the floor
+        // fixture from that refreshed snapshot; never move the landed pet.
+        List<PlatformEdge> destinationFloors = new List<PlatformEdge>();
+        bool reachedFloor = false;
+        double foot = pet.Top + pet.Height - pet.Height * .038;
+        foreach (Rect work in Get<List<Rect>>(pet, "monitorWorkAreas")) {
+            destinationFloors.Add(new PlatformEdge { Left = work.Left, Right = work.Right, Y = work.Bottom, Bottom = work.Bottom, IsFloor = true });
+            if (pet.Left + pet.Width / 2 >= work.Left && pet.Left + pet.Width / 2 <= work.Right && Math.Abs(foot - work.Bottom) <= 2)
+                reachedFloor = true;
+        }
+        Check(reachedFloor, "The completed portal did not land at a current monitor's floor.");
+        Set(pet, "platformCache", destinationFloors); Set(pet, "platformCacheTime", DateTime.MaxValue);
+        Call(pet, "UpdateKoloEasterEgg", DateTime.Now, .01);
+        Check(session.Active, "Landing from the portal added an idle delay to a manual request.");
+        pet.Hide();
+        Check(!session.Active && !session.ManualRequested, "Hide retained an explicit pending costume.");
+        pet.Show(); Get<DispatcherTimer>(pet, "timer").Stop();
+
+        ResetManualFixture(pet); session = Get<KoloEasterEggSession>(pet, "koloEasterEgg");
+        for (int click = 1; click <= 6; click++) ManualTap(pet, click);
+        // A genuine notebook hit takes the preview handler and resets the
+        // body gesture, including its already completed three double-clicks.
+        Set(pet, "state", "idle");
+        Image sprite = Get<Image>(pet, "sprite");
+        sprite.Source = (BitmapSource)Call(pet, "PrepareNotebookFrame", PetAssets.Load("kolo")["idle"][0]);
+        pet.UpdateLayout();
+        BitmapSource body = (BitmapSource)sprite.Source;
+        Rect box = PetAssets.NotebookHitBox(body);
+        double scale = Math.Min(sprite.ActualWidth / body.Width, sprite.ActualHeight / body.Height);
+        Point bookPoint = new Point((sprite.ActualWidth - body.Width * scale) / 2 + (box.X + box.Width / 2) * scale,
+            (sprite.ActualHeight - body.Height * scale) / 2 + (box.Y + box.Height / 2) * scale);
+        Check((bool)Call(pet, "TryBeginNotebookPress", bookPoint, new Point(10, 10)), "Notebook gesture fixture missed the real hitbox.");
+        Call(pet, "FinishNotebookPress", false);
+        ManualTap(pet, 1); ManualTap(pet, 2);
+        Check(!session.ManualRequested && !session.Active, "Notebook click was counted as the fourth body double-click.");
+
+        ResetManualFixture(pet); session = Get<KoloEasterEggSession>(pet, "koloEasterEgg");
+        for (int click = 1; click <= 6; click++) ManualTap(pet, click);
+        pet.ContextMenu.IsOpen = true;
+        Call(pet, "UpdateKoloEasterEgg", DateTime.Now, .01);
+        pet.ContextMenu.IsOpen = false;
+        ManualTap(pet, 1); ManualTap(pet, 2);
+        Check(!session.ManualRequested && !session.Active, "Opening a menu failed to reset the body gesture.");
+        Call(pet, "RequestKoloEasterEggFromGesture");
+        pet.WindowState = WindowState.Minimized;
+        Check(!session.ManualRequested && !session.Active, "Minimize kept the manual request.");
+        pet.WindowState = WindowState.Normal;
+        ResetManualFixture(pet);
+    }
+
     private static void Integration(string directory)
     {
         string characterPath = Path.Combine(PetStorage.RootDirectory, "character.txt");
@@ -216,6 +346,7 @@ internal static class KoloEasterEggTests
             Check(pet.Title.Contains("DeepSeek") && Get<Dictionary<string, BitmapSource[]>>(pet, "frames").ContainsKey("fall"), "DeepSeek title/assets were not installed.");
 
             GuaranteedUseIntegration(pet);
+            ManualGestureIntegration(pet);
 
             Ready(pet); Set(pet, "quietMode", true); Call(pet, "UpdateKoloEasterEgg", DateTime.UtcNow, .05);
             Check(Get<KoloEasterEggSession>(pet, "koloEasterEgg").Active, "Quiet mode blocked the guaranteed sequence.");

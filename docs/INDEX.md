@@ -4,9 +4,10 @@
 
 - [用户说明](../README.md)
 - [更新记录](../CHANGELOG.md)
-- [V2.12 AI伙伴调整](ai-v2.12.md)
-- [V2.12使用说明](usage-v2.12.txt)
-- [V2.12验证结果](validation-v2.12.md)
+- [V2.13跑步与主动换装](ai-v2.13.md)
+- [V2.13使用说明](usage-v2.13.txt)
+- [V2.13验证结果](validation-v2.13.md)
+- [V2.12 AI伙伴画风与记事窗](ai-v2.12.md)
 - [V2.11珂洛传送与换装素材](kolo-v2.11.md)
 - [V2.10龙女参考形象](dragon-v2.10.md)
 - [V2.9参考形象与可拖本子](notebook-v2.9.md)
@@ -19,7 +20,7 @@
 - [GPT预测数据来源](gpt-reset-data-source.md)
 - [V2.6工程整理记录](cleanup-v2.6.md)
 
-V2.12的发布说明、验证记录以 `usage-v2.12.txt`、`validation-v2.12.md` 为准；珂洛彩蛋以V2.12三分钟规则为准。发布时应与EXE一同更新，未验证的行为不能标记通过。
+V2.13的发布说明、验证记录以 `usage-v2.13.txt`、`validation-v2.13.md` 为准；保留V2.12自动三分钟规则，并增加四组双击主动触发。发布时应与EXE一同更新，未验证的行为不能标记通过。
 
 ## 历史发布
 
@@ -27,6 +28,7 @@ V2.12的发布说明、验证记录以 `usage-v2.12.txt`、`validation-v2.12.md`
 
 | 版本 | 使用说明 | 验证 |
 | --- | --- | --- |
+| V2.12 | [使用说明](usage-v2.12.txt) | [验证](validation-v2.12.md) |
 | V2.11 | [使用说明](usage-v2.11.txt) | [验证](validation-v2.11.md) |
 | V2.10 | [使用说明](usage-v2.10.txt) | [验证](validation-v2.10.md) |
 | V2.9 | [使用说明](usage-v2.9.txt) | [验证](validation-v2.9.md) |
