@@ -1,6 +1,12 @@
 # AI与开发者接手说明
 
-更新于2026-11-05。项目是 Windows WPF 桌宠“原神启动”，当前发布版本 V2.13。本版只修正DeepSeek与GPT6A各4张跑步图，慢走和其余200项资源保持；新增珂洛连续四组双击（8次点击）主动换装。设计入口见[跑步与主动换装](ai-v2.13.md)，本次构建、23组回归、资源及发布结果见 [V2.13验证](validation-v2.13.md)。
+更新于2026-11-05。项目是 Windows WPF 桌宠“原神启动”，当前发布版本V2.14，程序集2.14.0.0。本版修复手动换装在第8下触发后又被第9下普通点击取消的问题；保留V2.13全部素材和自动三分钟规则。当前设计与验证入口见[连续点击修复](ai-v2.14.md)，操作说明见`usage-v2.14.txt`。本轮正式构建、23组完整回归、正式EXE启动和发布校验均PASS；实际输入验证的范围见下段，不把未执行的12连点UI测试算作通过。
+
+V2.14新增回归对修复前代码按预期复现第9下取消，记录为`artifacts/v214/before-fix-test-run.json`。修复后完整回归时间2026-11-05 09:21:23.620–09:22:26.744（UTC+08:00），23组全部PASS，稳定manifest为`artifacts/v214/full-test-run.json`；PointerInteraction 268项、KoloEasterEgg 370项、Notebook 122项、KoloPortal 18409项、AiCharacters 299项。正式EXE观察3秒无新崩溃，09:23:11.023发布校验通过；EXE及使用说明与ZIP内容逐字节一致，素材和V2.13历史包哈希保持。发布包为`release/V2.14/原神启动-V2.14.zip`，SHA256 `fba36238eacc80eb1460ec85fb29b7f6844e51d1a9686040326c3dc009794520`。证据保存在`artifacts/v214/`。
+
+实际输入探针记录到4组双击成功触发并切换DeepSeek，但没有记录触发后的多余点击；超过阈值续点由自动回归覆盖。电脑操作截图超时后没有发送自动点击，真实12连点UI计划未执行，`live-probe-result.json`准确标记PARTIAL。探针已关闭，角色设置已按原字节恢复。完整发布哈希和验证边界见[本版说明](ai-v2.14.md)。
+
+手动请求一旦发出（含等待落稳与已播放），普通续点不改变`pointerHeld/state`，也不取消请求、重启门户或重复扣冷却；真的拖动超过5px才转入常规拖拽并取消。预览本子命中必须转交同一保护逻辑，开始播放时立即出第一帧。前3组双击显示1/4至3/4进度，前4组各减1分钟冷却。回归必须涵盖8次后继续9–12次点按及实际拖拽转换；原测试恰好停在8次，漏掉了真实用户继续连点的场景。
 
 V2.13正式构建、23组完整回归、最终素材验证与人工审看、EXE启动和发布检查全部PASS。完整回归时间为2026-11-05 08:54:22.707–08:55:24.706（UTC+08:00），稳定manifest为`artifacts/v213/full-test-run.json`；AiCharacters 299项、PointerInteraction 230项、KoloEasterEgg 328项、Notebook 122项。真实屏幕/光标与模拟夹具混用的问题已在测试中隔离，未删减断言。末轮只调整跑步整体比例：龙女源图scale 0.95545，小肥鱼0.9215；随后09:01:26.647–09:01:32.816重新通过AiCharacters/Motion/Gait三组，见`artifacts/v213/final-asset-test-run.json`。最终资源208项中8改、200保留，慢走原字节不变，完整重建208项一致；2.13.0.0正式EXE启动观察3秒无新增崩溃日志。09:02:01.702完成发布校验，`release/V2.13/原神启动-V2.13.zip`仅含EXE和使用说明，均与最终构建/文档一致，历史V2.12包哈希未变。最终素材SHA256为`3d3eaea72831d16b31e89e186cd8a2a1b90ded0b8d5bd7f4d5ee4eb2effdd0d9`；发布大小、哈希和覆盖界限见[V2.13验证](validation-v2.13.md)。稳定证据位于`artifacts/v213/`，不要用后续可能被覆盖的`artifacts/tests/latest-run.json`替代。尚未进行真实等待180秒及物理鼠标跨不同DPI双屏拖拽的手测。
 
@@ -8,7 +14,7 @@ V2.12正式构建、资源验证、23组完整回归、EXE启动及发布检查�
 
 珂洛计时包含普通移动及安静模式，隐藏/最小化暂停，切换形象或重新开启彩蛋重置三分钟，重启不继承进度。到期遇到拖拽、菜单、传送或施法会保留资格，等安全支撑后播放；普通移动会停止后换装，中断不再重新随机等待。不要恢复V2.11的随机抽签、12秒连续待机或5分钟触发冷却。
 
-V2.13主动手势要求四组已完成的有效双击，相邻组完成时间间隔不超过1.5秒；支持WPF ClickCount连续1–8和四组独立1/2。每组仍减1分钟魔法冷却，第4组另发手动请求。手动请求独立于自动开关，地面第8次松手立即替代happy姿态并演出，空中/门户等待安全支撑。拖拽、超时、额外不成对单击、跨角色重置累计；本子命中优先处理，不得混入身体手势。新抓取、本子、菜单、隐藏、最小化、切角色清理手动待触发，手动中断不重试；已到期的自动Ready按原规则保留。后续修改务必区分手动请求和自动资格。
+V2.14保留四组有效双击规则：相邻组完成时间间隔不超过1.5秒，支持WPF ClickCount连续1–8和四组独立1/2。手动请求独立于自动开关，空中/门户等待安全支撑。触发前的拖拽、超时、额外不成对单击、本子操作及跨角色会重置累计；触发后的普通续点受保护，真实拖拽、菜单、隐藏、最小化、切角色等操作才清理手动待触发。手动中断不重试，已到期的自动Ready按原规则保留。不要恢复“每个MouseDown都算新抓取并取消”的旧行为。
 
 V2.11已完成正式构建、23组完整回归、EXE启动、208项素材及完整重建比较、发布包内容和哈希检查，全部PASS。最终全套时间为2026-11-04 18:14:17–18:15:17（UTC+08:00），稳定manifest为 `artifacts/v211/full-test-run.json`。18个含离屏绘图的测试入口已统一到共享 `WpfTestRender`，保留全部断言与预览，修复同步宿主的Dispatcher队列问题。发布包为 `release/V2.11/原神启动-V2.11.zip`，测试宿主修改不改变已核验的生产EXE，V2.10历史包保持不变。稳定证据保存在 `artifacts/v211/`，不要把会被后续测试覆盖的 `artifacts/tests/latest-run.json` 当作永久记录。尚未进行物理鼠标在不同DPI双屏之间拖拽的实测，模拟几何和路由事件通过不等于该项手测通过。
 
@@ -30,7 +36,7 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
 4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。22组默认回归加VisualSmoke共23组，V2.11新增KoloPortal与KoloEasterEgg。
-5. 判断测试结果以本次 `artifacts/tests/latest-run.json` 的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版发布证据写入 `docs/validation-v2.13.md`。
+5. 判断测试结果以本次`artifacts/tests/latest-run.json`的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版证据汇总在`docs/ai-v2.14.md`的验证部分，并保留到`artifacts/v214/`。
 
 ## 模块地图
 
@@ -125,10 +131,10 @@ V2.12记事窗直接复用DeepSeek的共享浅蓝调色板。圆角窗的自定�
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.13 -InstructionsPath .\docs\usage-v2.13.txt
+.\package.cmd -Version 2.14 -InstructionsPath .\docs\usage-v2.14.txt
 ```
 
-`release/V2.13/原神启动-V2.13.zip`只能含EXE和使用说明。预览独立放 `release/V2.13/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。仅刷新本次跑步素材用 `build_assets.py --refresh-v213`，替换两位AI各4张`walk-*`，其余200个条目须与V2.12逐字节一致，尤其保留`stroll-*`。正式包仍有208项（207PNG和1JSON）。完整重建仍用 `build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
+`release/V2.14/原神启动-V2.14.zip`只能含EXE和使用说明。需要新增预览时独立放`release/V2.14/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。本版资源不变，沿用V2.13的208项（207PNG和1JSON）。维护V2.13跑步素材时可用`build_assets.py --refresh-v213`，只替换两位AI各4张`walk-*`，其余200项须与V2.12逐字节一致，尤其保留`stroll-*`。完整重建仍用`build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
 
 素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 

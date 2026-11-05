@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace ClaudePet
@@ -104,11 +105,41 @@ namespace ClaudePet
         private bool koloEasterEggEnabled = KoloEasterEggSettings.Load(KoloEasterEggSettings.DefaultPath);
         private bool IsKoloEasterEggActive { get { return koloEasterEgg.Active; } }
         private bool KoloEasterEggEnabled { get { return koloEasterEggEnabled; } }
+        private bool koloCostumeTapHeld;
+        private Point koloCostumeTapStart;
+        private bool ProtectKoloCostumeTaps { get { return currentCharacter == "kolo" && koloEasterEgg.ManualRequested; } }
 
         private void InitializeKoloEasterEgg()
         {
             StateChanged += delegate { if (WindowState == WindowState.Minimized) { CancelKoloEasterEgg(); tapSequence.Reset(); } };
             ContextMenuOpening += delegate { CancelKoloEasterEgg(); tapSequence.Reset(); };
+            LostMouseCapture += delegate { koloCostumeTapHeld = false; };
+        }
+
+        private bool TryBeginKoloCostumeTap(MouseButtonEventArgs e, Point point)
+        {
+            if (!ProtectKoloCostumeTaps) return false;
+            // The ninth click is still part of the user's rapid gesture. Only
+            // an actual drag should cancel a requested/playing transformation.
+            koloCostumeTapStart = point;
+            CaptureMouse();
+            koloCostumeTapHeld = true;
+            e.Handled = true;
+            return true;
+        }
+
+        private bool ContinueKoloCostumeTap(Point point)
+        {
+            if (!koloCostumeTapHeld) return false;
+            Vector delta = point - koloCostumeTapStart;
+            double distance = Math.Abs(delta.X) + Math.Abs(delta.Y);
+            if (distance <= 5) return true;
+            Point start = koloCostumeTapStart;
+            koloCostumeTapHeld = false;
+            BeginPointerPress(1, start);
+            dragged = true;
+            tapSequence.Move(distance);
+            return false;
         }
 
         private void ResetKoloEasterEggUsage()
@@ -152,6 +183,7 @@ namespace ClaudePet
                 CancelWindowAbility();
                 tapSequence.Reset();
                 nextWalk = now.AddSeconds(KoloEasterEggSession.DurationSeconds + 2);
+                sprite.Source = PrepareKoloEasterEggFrame(sprite.Source as BitmapSource);
                 return;
             }
             if (!koloEasterEgg.Advance(seconds)) return;
@@ -188,6 +220,10 @@ namespace ClaudePet
 
         private void CancelKoloEasterEgg()
         {
+            if (koloCostumeTapHeld) {
+                koloCostumeTapHeld = false;
+                if (IsMouseCaptured) ReleaseMouseCapture();
+            }
             bool wasActive = koloEasterEgg.Active;
             koloEasterEgg.Cancel(DateTime.UtcNow);
             if (wasActive) { RestoreKoloEasterEggPose(); ScheduleNextWalk(DateTime.Now); }

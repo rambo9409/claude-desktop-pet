@@ -185,7 +185,7 @@ internal static class KoloEasterEggTests
         Call(pet, "ResetKoloEasterEggUsage");
         Set(pet, "currentCharacter", "kolo"); Set(pet, "frames", PetAssets.Load("kolo"));
         Set(pet, "state", "idle"); Set(pet, "movement", "rest");
-        Set(pet, "pointerHeld", false); Set(pet, "koloEasterEggEnabled", false);
+        Set(pet, "pointerHeld", false); Set(pet, "dragged", false); Set(pet, "koloEasterEggEnabled", false);
         Set(pet, "windowMagicEnabled", false); Set(pet, "autoWalk", false);
         Call(pet, "ReturnNotebook", false); Get<PetTapSequence>(pet, "tapSequence").Reset();
         Ground(pet);
@@ -200,7 +200,7 @@ internal static class KoloEasterEggTests
         return value;
     }
 
-    private static void ManualTap(PetWindow pet, int count)
+    private static void WithManualCursor(PetWindow pet, Action action)
     {
         Matrix previous = Get<Matrix>(pet, "fromDevice");
         List<Rect> monitors = Get<List<Rect>>(pet, "monitorWorkAreas");
@@ -215,13 +215,20 @@ internal static class KoloEasterEggTests
             // rejects zero-width native windows via its normal size filter.
             Set(pet, "fromDevice", new Matrix(0, 0, 0, 0, point.X, point.Y));
             Set(pet, "monitorsCachedAt", DateTime.MaxValue); Set(pet, "platformCacheTime", DateTime.MaxValue);
-            Call(pet, "OnPointerDown", pet, TapEvent(count, true));
-            Call(pet, "OnPointerUp", pet, TapEvent(count, false));
-            Check(!Get<bool>(pet, "pointerHeld") && !Get<bool>(pet, "dragged"), "Synthetic gesture was not delivered as a complete tap.");
+            action();
         } finally {
             Set(pet, "fromDevice", previous); Set(pet, "monitorWorkAreas", monitors); Set(pet, "platformCache", platforms);
             Set(pet, "monitorsCachedAt", monitorTime); Set(pet, "platformCacheTime", platformTime);
         }
+    }
+
+    private static void ManualTap(PetWindow pet, int count)
+    {
+        WithManualCursor(pet, delegate {
+            Call(pet, "OnPointerDown", pet, TapEvent(count, true));
+            Call(pet, "OnPointerUp", pet, TapEvent(count, false));
+            Check(!Get<bool>(pet, "pointerHeld") && !Get<bool>(pet, "dragged"), "Synthetic gesture was not delivered as a complete tap.");
+        });
     }
 
     private static void ManualGestureIntegration(PetWindow pet)
@@ -236,6 +243,19 @@ internal static class KoloEasterEggTests
             "Explicit gesture changed the persisted automatic setting or timer.");
         Check(Get<string>(pet, "state") == "idle" && Get<string>(pet, "movement") == "rest",
             "The preceding single-click happy reaction delayed the manual costume.");
+        session.Advance(.1);
+        double progressBeforeExtraClicks = session.Elapsed;
+        for (int click = 9; click <= 12; click++) {
+            ManualTap(pet, click);
+            Check(session.Active && session.ManualRequested,
+                "An extra body click cancelled the costume that the eighth click had just started.");
+            Check(session.Elapsed == progressBeforeExtraClicks && !Get<bool>(pet, "pointerHeld"),
+                "An extra body click restarted or paused the accepted manual performance.");
+        }
+        MouseButtonEventArgs notebookPreview = TapEvent(13, true);
+        Call(pet, "OnNotebookDown", pet, notebookPreview);
+        Check(!notebookPreview.Handled && !Get<NotebookState>(pet, "notebook").Pressed && session.Active,
+            "Notebook preview intercepted an extra tap during the accepted costume.");
         for (int step = 0; step < 100 && Get<string>(pet, "currentCharacter") == "kolo"; step++)
             Call(pet, "UpdateKoloEasterEgg", DateTime.Now, .05);
         Check(Get<string>(pet, "currentCharacter") == "deepseek", "Manual performance did not finish with the real DeepSeek switch.");
@@ -245,6 +265,11 @@ internal static class KoloEasterEggTests
         Check((bool)Call(pet, "TryBeginKoloPortal", 0.0, 0.0), "Manual air fixture failed to start portal.");
         Call(pet, "RequestKoloEasterEggFromGesture");
         Check(session.ManualRequested && !session.Active, "Manual request interrupted portal or was lost.");
+        for (int click = 9; click <= 12; click++) {
+            ManualTap(pet, click);
+            Check(session.ManualRequested && !session.Active && Get<KoloPortalState>(pet, "koloPortal").Active,
+                "An extra tap cancelled the airborne request or interrupted its portal.");
+        }
         for (int i = 0; i < 65; i++) Call(pet, "UpdateKoloPortal", .05);
         Check(!Get<KoloPortalState>(pet, "koloPortal").Active && Get<string>(pet, "movement") == "rest" && session.ManualRequested,
             "Portal did not finish normally while preserving the manual request.");
@@ -297,7 +322,76 @@ internal static class KoloEasterEggTests
         pet.WindowState = WindowState.Minimized;
         Check(!session.ManualRequested && !session.Active, "Minimize kept the manual request.");
         pet.WindowState = WindowState.Normal;
+        ManualProtectionInterruptions(pet);
         ResetManualFixture(pet);
+    }
+
+    private static void ManualProtectionInterruptions(PetWindow pet)
+    {
+        foreach (bool inPortal in new[] { false, true }) {
+            ResetManualFixture(pet);
+            if (inPortal) {
+                pet.Top -= 300;
+                Check((bool)Call(pet, "TryBeginKoloPortal", 0.0, 0.0), "Drag fixture could not start the portal.");
+            }
+            Call(pet, "RequestKoloEasterEggFromGesture");
+            KoloEasterEggSession session = Get<KoloEasterEggSession>(pet, "koloEasterEgg");
+            WithManualCursor(pet, delegate {
+                Point start = new Point(pet.Left + pet.Width / 2, pet.Top + pet.Height / 2);
+                Call(pet, "OnPointerDown", pet, TapEvent(9, true));
+                Check(Get<bool>(pet, "koloCostumeTapHeld") && !Get<bool>(pet, "pointerHeld") && session.ManualRequested,
+                    "An accepted manual request did not protect the next body press.");
+                if (!inPortal) {
+                    double before = session.Elapsed;
+                    Call(pet, "UpdateKoloEasterEgg", DateTime.Now, .05);
+                    Check(session.Active && session.Elapsed > before,
+                        "Holding an extra click stopped the running costume animation.");
+                }
+                Check((bool)Call(pet, "ContinueKoloCostumeTap", start + new Vector(5, 0)),
+                    "A five-pixel click excursion was prematurely treated as a drag.");
+                Check(!(bool)Call(pet, "ContinueKoloCostumeTap", start + new Vector(40, 0)),
+                    "A genuine drag remained trapped by costume click protection.");
+                Check(!session.Active && !session.ManualRequested && !Get<bool>(pet, "koloCostumeTapHeld") &&
+                    Get<bool>(pet, "pointerHeld") && Get<bool>(pet, "dragged"),
+                    "A genuine drag did not cancel the accepted request and transfer to normal dragging.");
+                Call(pet, "OnPointerUp", pet, TapEvent(9, false));
+                Check(!Get<bool>(pet, "pointerHeld") && !session.ManualRequested,
+                    "Releasing the cancelling drag left a held pet or retriggered the costume.");
+            });
+        }
+
+        // A move can be missed between down/up; the real release handler must
+        // still cancel if it observes a pointer displacement beyond the limit.
+        ResetManualFixture(pet); Call(pet, "RequestKoloEasterEggFromGesture");
+        WithManualCursor(pet, delegate {
+            Call(pet, "OnPointerDown", pet, TapEvent(9, true));
+            Matrix frozen = Get<Matrix>(pet, "fromDevice");
+            Set(pet, "fromDevice", new Matrix(0, 0, 0, 0, frozen.OffsetX + 40, frozen.OffsetY));
+            Call(pet, "OnPointerUp", pet, TapEvent(9, false));
+            Check(!Get<KoloEasterEggSession>(pet, "koloEasterEgg").ManualRequested &&
+                !Get<bool>(pet, "koloCostumeTapHeld") && !Get<bool>(pet, "pointerHeld"),
+                "A displaced release without MouseMove bypassed the drag cancellation path.");
+        });
+
+        foreach (string interruption in new[] { "hide", "menu", "resize", "switch" }) {
+            ResetManualFixture(pet); Call(pet, "RequestKoloEasterEggFromGesture");
+            KoloEasterEggSession session = Get<KoloEasterEggSession>(pet, "koloEasterEgg");
+            WithManualCursor(pet, delegate {
+                Call(pet, "OnPointerDown", pet, TapEvent(9, true));
+                Check(Get<bool>(pet, "koloCostumeTapHeld"), "Lifecycle fixture did not begin a protected click.");
+                if (interruption == "hide") pet.Hide();
+                else if (interruption == "menu") {
+                    pet.ContextMenu.IsOpen = true;
+                    Call(pet, "UpdateKoloEasterEgg", DateTime.Now, .01);
+                }
+                else if (interruption == "resize") Call(pet, "ResizePet", 1.0, false);
+                else Call(pet, "SwitchCharacter", "ganyu");
+                Check(!session.Active && !session.ManualRequested && !Get<bool>(pet, "koloCostumeTapHeld") && !pet.IsMouseCaptured,
+                    "Lifecycle cancellation left a protected press or manual request: " + interruption);
+            });
+            if (pet.ContextMenu.IsOpen) pet.ContextMenu.IsOpen = false;
+            if (!pet.IsVisible) { pet.Show(); Get<DispatcherTimer>(pet, "timer").Stop(); }
+        }
     }
 
     private static void Integration(string directory)

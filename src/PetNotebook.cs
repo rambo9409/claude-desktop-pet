@@ -163,6 +163,9 @@ namespace ClaudePet
         }
         private void OnNotebookDown(object sender, MouseButtonEventArgs e)
         {
+            // Extra taps after the eighth click belong to the accepted costume
+            // gesture, including the area where the notebook was just drawn.
+            if (ProtectKoloCostumeTaps) return;
             if (e.ChangedButton != MouseButton.Left || !TryBeginNotebookPress(e.GetPosition(sprite), CursorPosition(e))) return;
             e.Handled = true;
         }

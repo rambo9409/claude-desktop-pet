@@ -289,11 +289,32 @@ internal static class PointerInteractionTests
                 Tap(independentPairs ? (click - 1) % 2 + 1 : click);
                 Require(Get<KoloEasterEggSession>("koloEasterEgg").ManualRequested == (click == 8),
                     "Actual pointer handlers did not require eight valid taps.");
+                if (click % 2 == 0 && click < 8)
+                    Require(Get<SpeechWindow>("speechWindow").Text.Text.Contains("换装准备 " + (click / 2) + "/4"),
+                        "A completed costume pair gives no visible progress feedback.");
             }
             Require(controller.Clock.NextUseUtc == deadline.AddMinutes(-4) && saves == 4,
                 "Four costume pairs must still deduct all four minutes of ability cooldown.");
             Require(!Get<KoloEasterEggSession>("koloEasterEgg").Active,
                 "An unshown pet must not start a delayed manual costume.");
+            for (int click = 9; click <= 12; click++) {
+                int extraClick = independentPairs ? (click - 1) % 2 + 1 : click;
+                WithSyntheticCursor(delegate {
+                    MouseButtonEventArgs down = Button(extraClick, MouseButton.Left);
+                    Call("OnPointerDown", pet, down);
+                    Require(down.Handled && !Get<bool>("pointerHeld") && Get<bool>("koloCostumeTapHeld"),
+                        "An extra press started a normal hold instead of protecting the accepted request.");
+                    MouseButtonEventArgs up = Button(extraClick, MouseButton.Left); up.RoutedEvent = Mouse.MouseUpEvent;
+                    Call("OnPointerUp", pet, up);
+                    Require(up.Handled && !Get<bool>("koloCostumeTapHeld") && !Get<bool>("pointerHeld"),
+                        "The protected tap did not release its input state.");
+                });
+                Require(Get<KoloEasterEggSession>("koloEasterEgg").ManualRequested &&
+                    !Get<KoloEasterEggSession>("koloEasterEgg").Active,
+                    "Tapping past eight lost a manual request while waiting for safe support.");
+                Require(controller.Clock.NextUseUtc == deadline.AddMinutes(-4) && saves == 4,
+                    "Protected extra clicks repeated the cooldown deduction.");
+            }
             Call("SwitchCharacter", "deepseek"); Call("SwitchCharacter", "kolo");
             Require(!Get<KoloEasterEggSession>("koloEasterEgg").ManualRequested,
                 "Switching away and back retained a manual request.");

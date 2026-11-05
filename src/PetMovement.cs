@@ -820,9 +820,17 @@ namespace ClaudePet
         private void OnPointerDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton != MouseButton.Left) return;
+            Point point = CursorPosition(e);
+            if (TryBeginKoloCostumeTap(e, point)) return;
+            BeginPointerPress(e.ClickCount, point);
+            e.Handled = true;
+        }
+
+        private void BeginPointerPress(int clickCount, Point screenPoint)
+        {
             CancelKoloPortal();
             CancelKoloEasterEgg();
-            tapSequence.Begin(currentCharacter, e.ClickCount);
+            tapSequence.Begin(currentCharacter, clickCount);
             CancelWindowAbility();
             ClearGanyuTraversal();
             bool airborne = movement == "fall" || movement == "held" || movement == "jump" || movement == "wallrun";
@@ -837,7 +845,6 @@ namespace ClaudePet
             CancelButterflyEffects();
             state = "idle";
             stateEnds = DateTime.MaxValue;
-            Point screenPoint = CursorPosition(e);
             pointerStart = screenPoint;
             lastDragPoint = screenPoint;
             lastDragTime = DateTime.Now;
@@ -846,11 +853,11 @@ namespace ClaudePet
             heldTilt = 0;
             windowStart = new Point(Left, Top);
             CaptureMouse();
-            e.Handled = true;
         }
 
         private void OnPointerMove(object sender, MouseEventArgs e)
         {
+            if (koloCostumeTapHeld && e.LeftButton == MouseButtonState.Pressed && ContinueKoloCostumeTap(CursorPosition(e))) return;
             if (!pointerHeld || e.LeftButton != MouseButtonState.Pressed) return;
             Point current = CursorPosition(e);
             Vector delta = current - pointerStart;
@@ -878,7 +885,14 @@ namespace ClaudePet
 
         private void OnPointerUp(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton != MouseButton.Left || !pointerHeld) return;
+            if (e.ChangedButton != MouseButton.Left) return;
+            if (koloCostumeTapHeld && ContinueKoloCostumeTap(CursorPosition(e))) {
+                koloCostumeTapHeld = false;
+                ReleaseMouseCapture();
+                e.Handled = true;
+                return;
+            }
+            if (!pointerHeld) return;
             Vector releaseDelta = CursorPosition(e) - pointerStart;
             tapSequence.Move(Math.Abs(releaseDelta.X) + Math.Abs(releaseDelta.Y));
             bool abilityDoubleClick = tapSequence.Complete(currentCharacter);
@@ -916,6 +930,8 @@ namespace ClaudePet
                 if (!abilityDoubleClick) ShowSpeech(portal ? "先稳住……开个传送门回去。" : "放手啦！");
             }
             if (abilityDoubleClick && !HandleAiDoubleClick()) ReduceWindowAbilityCooldownFromDoubleClick();
+            if (abilityDoubleClick && currentCharacter == "kolo" && !costumeGesture && tapSequence.ConsecutiveDoubleClicks > 0)
+                ShowSpeech("换装准备 " + tapSequence.ConsecutiveDoubleClicks + "/4，继续双击。\n" + speechWindow.Text.Text);
             if (costumeGesture) RequestKoloEasterEggFromGesture();
         }
 
