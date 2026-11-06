@@ -1,15 +1,17 @@
-# V2.16 工程与构建
+# V2.17 工程与构建
 
 ## 目录
 
 | 路径 | 用途 |
 | --- | --- |
 | `src/` | C# 5 / WPF / .NET Framework 4.8 生产代码 |
+| `src/PetSpeechWindow.cs` | 六角色字幕的矢量气泡、文字布局、透明窗口与边缘放置；跟随锚点由PetWindow维护 |
 | `build.rsp` | 唯一生产源文件、资源与引用模板，生产和测试共用 |
 | `build.cmd`、`test.cmd`、`package.cmd` | 无需更改系统执行策略的 Windows 入口 |
 | `scripts/` | 编译、测试、打包与预览编码 |
 | `tests/` | 测试源码与历史薄包装入口 |
 | `tests/WpfTestRender.cs` | 离屏WPF渲染的共享入口，在位图渲染前后处理Dispatcher队列；仅测试编译包含 |
+| `tests/SpeechThemeChecks.cs` | 随SpeechLayout编译的六角色字幕主题、对比度及布局检查，不单列测试组 |
 | `assets/characters.zip`、`assets/combat-teams.json`、`assets/combat-roster.json` | 内嵌动画、带来源的配队目录与角色名称/别名快照 |
 | `assets/generated/`、`assets/source/` | 当前和历史源素材、提示词、裁切参数 |
 | `build_gpt6a_v212.py`、`build_deepseek_v29.py`、`build_kolo_v29.py` | 当前参考形象的透明图集裁切与运行帧布局，由 `build_assets.py` 统一调用；V2.10龙女脚本保留历史 |
@@ -77,7 +79,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.16 -InstructionsPath .\docs\usage-v2.16.txt
+.\package.cmd -Version 2.17 -InstructionsPath .\docs\usage-v2.17.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。

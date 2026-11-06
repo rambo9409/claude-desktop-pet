@@ -1,6 +1,14 @@
 # AI与开发者接手说明
 
-更新于2026-11-06。项目是 Windows WPF 桌宠“原神启动”，当前发布版本V2.16，程序集2.16.0.0。本版将珂洛换装播放快1.5倍：`KoloEasterEggSession.DurationSeconds`从4.8缩短至3.2秒，8阶段每个约0.4秒；自动180秒资格、四组双击与续点保护保持。操作说明见`usage-v2.16.txt`，当前验证见[换装加速](costume-speed-v2.16.md)。正式构建、22组完整回归、程序集时长检查、启动和发布校验全部PASS，稳定证据在`artifacts/v216/`。
+更新于2026-11-06。项目是 Windows WPF 桌宠“原神启动”，当前发布版本V2.17，程序集2.17.0.0。本版为六角色增加不同字幕样式，并使字幕随角色移动、缩放与跨屏；当前要求替代旧的固定屏幕坐标规则。操作说明见`usage-v2.17.txt`，当前设计与验证见[字幕样式与跟随](speech-v2.17.md)。本轮构建、22组回归、视觉审看、正式EXE启动与发布校验全部通过，证据保存到`artifacts/v217/`。
+
+V2.17完整回归时间2026-11-06 17:23:41.583–17:24:46.681（UTC+08:00）；17:25:24.492发布校验通过，ZIP SHA256为`45e17dcb5cb4fb330469b6585b2151b5304c1fe43ff9e5bee56da0798df43b27`。浅/深背景实际渲染预览保留在`assets/previews/speech-themes-v217-*.png`。角色素材和历史V2.16发布不变。跨屏覆盖使用模拟工作区与WPF位置事件，未做物理鼠标跨不同DPI双屏手测。
+
+字幕以角色稳定待机轮廓作相对锚点，真实窗口移动时跟随，动作帧、镜像与旋转不改变锚点。靠近顶部或屏幕边缘时让位并限制在工作区内。`PetSpeechWindow.cs`负责六角色矢量外观、文字约束及放置；`PetWindow`负责跟随更新，更新布局时须防重入。不要恢复`speechPositionLocked`的屏幕锁定行为，也不要每帧从当前动作alpha重新定位。字幕不抢焦点、不拦截鼠标；主题与布局检查合并在SpeechLayout，默认21组加VisualSmoke共22组。
+
+布局必须取父容器槽与待机比例，不能使用随当前图片宽高变化的Image实际尺寸；小于1 DIP的取整差异保持原位置，真实位移累计到阈值继续跟随。新句/换主题立即刷新测量，避免第一帧气泡大小滞后。顶部左右均放不下则放到角色下方，窄工作区约束宽高。
+
+V2.16将珂洛换装从4.8秒缩短至3.2秒，8阶段每个约0.4秒；自动180秒资格、四组双击与续点保护保持。该版构建、22组回归、时长、启动及发布验证通过，历史记录见[换装加速](costume-speed-v2.16.md)，证据保留在`artifacts/v216/`。
 
 V2.15完整回归时间2026-11-05 10:09:43.737–10:10:41.298（UTC+08:00），21组默认加VisualSmoke共22组全部PASS，稳定记录为`artifacts/v215/full-test-run.json`。AiCharacters为297项（删除被移除工具的2项主题断言），PointerInteraction 268项、KoloEasterEgg 370项、Notebook 122项、KoloPortal 18409项。源码、编译清单及最终程序集没有预测模块或接口标记，见`removal-verification.json`；素材包保持，2.15.0.0正式EXE启动观察3秒通过。旧`gpt-reset-cache.json`不再读取或刷新，升级不主动删除用户目录。历史发布与数据源文档只作历史记录，不应恢复已删除功能。
 
@@ -40,13 +48,14 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
 4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。V2.15删除GptReset套件后，21组默认回归加VisualSmoke共22组。
-5. 判断测试结果以本次`artifacts/tests/latest-run.json`的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版证据汇总在`docs/costume-speed-v2.16.md`，并保留到`artifacts/v216/`。
+5. 判断测试结果以本次`artifacts/tests/latest-run.json`的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版证据汇总在`docs/speech-v2.17.md`，并保留到`artifacts/v217/`。
 
 ## 模块地图
 
 | 文件 | 职责与入口 |
 | --- | --- |
 | `src/ClaudePetMotion.cs` | 程序入口、PetWindow生命周期、主计时循环、基础设置与程序集版本 |
+| `src/PetSpeechWindow.cs` | 六角色字幕气泡、文本布局、透明窗口和边缘放置，跟随锚点由PetWindow更新 |
 | `src/PetMenu.cs` | 六角色菜单与配色、工具入口、活动模式、能力入口 |
 | `src/PetAiAbilities.cs` | 龙息专注、星环和泡泡显示、统一DeepSeek主题的灵感本UI与安全保存 |
 | `src/PetNotebook.cs` | 持本/离手状态、每帧命中、跨屏独立本子窗口、归还及生命周期 |
@@ -134,10 +143,10 @@ V2.12记事窗直接复用DeepSeek的共享浅蓝调色板。圆角窗的自定�
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.16 -InstructionsPath .\docs\usage-v2.16.txt
+.\package.cmd -Version 2.17 -InstructionsPath .\docs\usage-v2.17.txt
 ```
 
-`release/V2.16/原神启动-V2.16.zip`只能含EXE和使用说明。需要新增预览时独立放`release/V2.16/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。本版资源不变，沿用V2.13的208项（207PNG和1JSON）。维护V2.13跑步素材时可用`build_assets.py --refresh-v213`，只替换两位AI各4张`walk-*`，其余200项须与V2.12逐字节一致，尤其保留`stroll-*`。完整重建仍用`build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
+`release/V2.17/原神启动-V2.17.zip`只能含EXE和使用说明。需要新增预览时独立放`release/V2.17/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。本版字幕由WPF绘制，角色资源不变，沿用V2.13的208项（207PNG和1JSON）。维护V2.13跑步素材时可用`build_assets.py --refresh-v213`，只替换两位AI各4张`walk-*`，其余200项须与V2.12逐字节一致，尤其保留`stroll-*`。完整重建仍用`build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
 
 素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 

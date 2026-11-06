@@ -4,8 +4,9 @@
 
 - [用户说明](../README.md)
 - [更新记录](../CHANGELOG.md)
-- [V2.16换装加速与验证](costume-speed-v2.16.md)
-- [V2.16使用说明](usage-v2.16.txt)
+- [V2.17字幕样式、跟随与验证](speech-v2.17.md)
+- [V2.17使用说明](usage-v2.17.txt)
+- [V2.16换装加速](costume-speed-v2.16.md)
 - [V2.15功能移除记录](removal-v2.15.md)
 - [V2.14连续点击修复](ai-v2.14.md)
 - [V2.13跑步素材说明](ai-v2.13.md)
@@ -21,7 +22,7 @@
 - [配队来源及核验方式](combat-data-sources.md)
 - [V2.6工程整理记录](cleanup-v2.6.md)
 
-V2.16的操作说明以`usage-v2.16.txt`为准，本版将珂洛换装快放1.5倍至3.2秒，说明与验证见`costume-speed-v2.16.md`。发布时应与EXE一同更新，未验证的行为不能标记通过。
+V2.17的操作说明以`usage-v2.17.txt`为准，本版更新六角色字幕样式与移动跟随，说明与验证见`speech-v2.17.md`。发布时应与EXE一同更新，未验证的行为不能标记通过。
 
 ## 历史发布
 
@@ -29,6 +30,7 @@ V2.16的操作说明以`usage-v2.16.txt`为准，本版将珂洛换装快放1.5�
 
 | 版本 | 使用说明 | 验证 |
 | --- | --- | --- |
+| V2.16 | [使用说明](usage-v2.16.txt) | [验证](costume-speed-v2.16.md) |
 | V2.15 | [使用说明](usage-v2.15.txt) | [验证](removal-v2.15.md) |
 | V2.14 | [使用说明](usage-v2.14.txt) | [验证](ai-v2.14.md) |
 | V2.13 | [使用说明](usage-v2.13.txt) | [验证](validation-v2.13.md) |

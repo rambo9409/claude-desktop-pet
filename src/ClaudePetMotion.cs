@@ -16,8 +16,8 @@ using System.Windows.Threading;
 [assembly: AssemblyTitle("原神启动")]
 [assembly: AssemblyDescription("多形象桌宠、资讯、窗口魔法与原神战斗循环助手")]
 [assembly: AssemblyProduct("原神启动")]
-[assembly: AssemblyVersion("2.16.0.0")]
-[assembly: AssemblyFileVersion("2.16.0.0")]
+[assembly: AssemblyVersion("2.17.0.0")]
+[assembly: AssemblyFileVersion("2.17.0.0")]
 
 namespace ClaudePet
 {
@@ -176,103 +176,6 @@ namespace ClaudePet
         }
     }
 
-    // A separate window keeps speech readable even when the pet's Viewbox is tiny.
-    // It is owned by the pet and cannot take focus or intercept mouse interaction.
-    internal sealed class SpeechWindow : Window
-    {
-        internal readonly TextBlock Text;
-
-        internal SpeechWindow()
-        {
-            WindowStyle = WindowStyle.None;
-            ResizeMode = ResizeMode.NoResize;
-            AllowsTransparency = true;
-            Background = Brushes.Transparent;
-            Topmost = true;
-            ShowInTaskbar = false;
-            ShowActivated = false;
-            Focusable = false;
-            IsHitTestVisible = false;
-            SizeToContent = SizeToContent.WidthAndHeight;
-            UseLayoutRounding = true;
-            Text = new TextBlock {
-                FontFamily = new FontFamily("Microsoft YaHei UI"),
-                FontSize = 15,
-                LineHeight = 22,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromRgb(55, 43, 36)),
-                TextAlignment = TextAlignment.Center,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(12, 7, 12, 7)
-            };
-            Content = new Border {
-                Child = Text,
-                Background = new SolidColorBrush(Color.FromArgb(250, 255, 248, 235)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(105, 77, 65)),
-                BorderThickness = new Thickness(1.25),
-                CornerRadius = new CornerRadius(12),
-                MinWidth = 112,
-                MaxWidth = 300
-            };
-            SourceInitialized += delegate {
-                IntPtr handle = new WindowInteropHelper(this).Handle;
-                const int extendedStyle = -20;
-                const int noActivate = 0x08000000;
-                const int transparent = 0x00000020;
-                const int toolWindow = 0x00000080;
-                NativeWindow.SetWindowLong(handle, extendedStyle,
-                    NativeWindow.GetWindowLong(handle, extendedStyle) | noActivate | transparent | toolWindow);
-            };
-        }
-
-        internal static Rect FindVisiblePixels(BitmapSource source)
-        {
-            BitmapSource pixels = source;
-            if (pixels.Format != PixelFormats.Bgra32 && pixels.Format != PixelFormats.Pbgra32)
-                pixels = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
-            int width = pixels.PixelWidth;
-            int height = pixels.PixelHeight;
-            int stride = width * 4;
-            byte[] data = new byte[stride * height];
-            pixels.CopyPixels(data, stride, 0);
-            int left = width, top = height, right = -1, bottom = -1;
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    // Ignore faint shadow/antialias pixels when finding the character's head.
-                    if (data[y * stride + x * 4 + 3] < 32) continue;
-                    left = Math.Min(left, x);
-                    right = Math.Max(right, x);
-                    top = Math.Min(top, y);
-                    bottom = Math.Max(bottom, y);
-                }
-            }
-            if (right < left) return new Rect(0, 0, 1, 1);
-            return new Rect((double)left / width, (double)top / height,
-                (double)(right - left + 1) / width, (double)(bottom - top + 1) / height);
-        }
-
-        internal static Point Place(Rect character, Size speech, Rect work)
-        {
-            const double gap = 5;
-            double x = character.Left + (character.Width - speech.Width) / 2;
-            double y = character.Top - speech.Height - gap;
-            if (y < work.Top + gap)
-            {
-                // At the top edge put speech beside the head instead of covering it.
-                y = character.Top;
-                if (character.Right + gap + speech.Width <= work.Right - gap)
-                    x = character.Right + gap;
-                else if (character.Left - gap - speech.Width >= work.Left + gap)
-                    x = character.Left - gap - speech.Width;
-            }
-            return new Point(
-                Math.Max(work.Left + gap, Math.Min(x, work.Right - speech.Width - gap)),
-                Math.Max(work.Top + gap, Math.Min(y, work.Bottom - speech.Height - gap)));
-        }
-    }
-
     public sealed partial class PetWindow : Window
     {
         private static readonly string[] CharacterOrder = { "kolo", "gpt6a", "deepseek", "hutao", "ganyu", "varesa" };
@@ -306,7 +209,7 @@ namespace ClaudePet
         private readonly Image sprite;
         private readonly SpeechWindow speechWindow;
         private readonly Dictionary<BitmapSource, Rect> visiblePixelCache = new Dictionary<BitmapSource, Rect>();
-        private bool speechPositionLocked;
+        private bool speechPositionUpdating;
         private readonly DispatcherTimer timer;
         private readonly Dictionary<string, Dictionary<string, BitmapSource[]>> characterCache = new Dictionary<string, Dictionary<string, BitmapSource[]>>();
         private readonly List<MenuItem> characterItems = new List<MenuItem>();
@@ -416,6 +319,7 @@ namespace ClaudePet
             InitializeKoloPortal(root);
 
             speechWindow = new SpeechWindow();
+            speechWindow.ApplyCharacterTheme(currentCharacter);
             speechWindow.Text.Text = "你好，我是" + CharacterNames[currentCharacter] + "。";
             InitializeNotebook();
             InitializeKoloEasterEgg();
@@ -426,6 +330,9 @@ namespace ClaudePet
             MouseLeftButtonUp += OnPointerUp;
             MouseWheel += OnMouseWheel;
             KeyDown += OnKeyDown;
+            LocationChanged += delegate { UpdateSpeechPosition(); };
+            SizeChanged += delegate { UpdateSpeechPosition(); };
+            StateChanged += delegate { UpdateSpeechPosition(); };
 
             SourceInitialized += delegate {
                 ownHandle = new WindowInteropHelper(this).Handle;
@@ -437,9 +344,9 @@ namespace ClaudePet
             };
 
             Loaded += delegate {
+                speechWindow.Owner = this;
                 PlaceAtStart();
                 if (ShowActivated) Activate();
-                speechWindow.Owner = this;
                 UpdateSpeechPosition();
             };
             IsVisibleChanged += delegate {
@@ -581,8 +488,9 @@ namespace ClaudePet
 
         private void ShowSpeech(string text)
         {
+            speechWindow.ApplyCharacterTheme(currentCharacter);
             speechWindow.Text.Text = text;
-            speechPositionLocked = false;
+            speechWindow.RefreshTextLayout();
             bubbleEnds = DateTime.Now.AddSeconds(Math.Max(2.8, text.Length * 0.16));
             UpdateSpeechPosition();
         }
@@ -592,18 +500,22 @@ namespace ClaudePet
             if (!IsLoaded || !IsVisible || WindowState == WindowState.Minimized || DateTime.Now >= bubbleEnds)
             {
                 if (speechWindow.IsVisible) speechWindow.Hide();
-                if (DateTime.Now >= bubbleEnds) speechPositionLocked = false;
                 return;
             }
-            // A phrase belongs to its initial screen position for its lifetime.
-            // Animation, movement, resizing and transformation must not jitter it.
-            if (speechPositionLocked)
-            {
-                if (!speechWindow.IsVisible) speechWindow.Show();
-                return;
-            }
+            if (speechPositionUpdating || speechWindow.Owner == null) return;
+            speechPositionUpdating = true;
+            try { PlaceFollowingSpeech(); }
+            finally { speechPositionUpdating = false; }
+        }
+
+        private void PlaceFollowingSpeech()
+        {
             if (!sprite.IsArrangeValid) UpdateLayout();
-            BitmapSource bitmap = sprite.Source as BitmapSource;
+            // Anchor to the character's stable idle silhouette, not each
+            // animation frame. Only real movement/layout changes move speech.
+            BitmapSource[] idle;
+            if (frames == null || !frames.TryGetValue("idle", out idle) || idle.Length == 0) return;
+            BitmapSource bitmap = idle[0];
             if (bitmap == null || sprite.ActualWidth <= 0 || sprite.ActualHeight <= 0) return;
             Rect visible;
             if (!visiblePixelCache.TryGetValue(bitmap, out visible))
@@ -611,23 +523,37 @@ namespace ClaudePet
                 visible = SpeechWindow.FindVisiblePixels(bitmap);
                 visiblePixelCache[bitmap] = visible;
             }
-            double imageScale = Math.Min(sprite.ActualWidth / bitmap.Width, sprite.ActualHeight / bitmap.Height);
+            // Image's arranged size depends on its current source aspect ratio.
+            // Use the stable parent layout slot and the idle aspect instead.
+            Rect slot = System.Windows.Controls.Primitives.LayoutInformation.GetLayoutSlot(sprite);
+            Thickness margin = sprite.Margin;
+            double slotWidth = Math.Max(1, slot.Width - margin.Left - margin.Right);
+            double slotHeight = Math.Max(1, slot.Height - margin.Top - margin.Bottom);
+            double imageScale = Math.Min(slotWidth / bitmap.Width, slotHeight / bitmap.Height);
             double imageWidth = bitmap.Width * imageScale;
             double imageHeight = bitmap.Height * imageScale;
-            Rect local = new Rect((sprite.ActualWidth - imageWidth) / 2 + visible.X * imageWidth,
-                (sprite.ActualHeight - imageHeight) / 2 + visible.Y * imageHeight,
+            double imageLeft = slot.Left + margin.Left + (slotWidth - imageWidth) / 2;
+            double imageTop = slot.Top + margin.Top + slotHeight - imageHeight;
+            Rect local = new Rect(imageLeft + visible.X * imageWidth,
+                imageTop + visible.Y * imageHeight,
                 visible.Width * imageWidth, visible.Height * imageHeight);
-            Rect onPet = sprite.TransformToAncestor(this).TransformBounds(local);
+            FrameworkElement parent = VisualTreeHelper.GetParent(sprite) as FrameworkElement;
+            if (parent == null) return;
+            // Exclude sprite.RenderTransform (mirror, gait, wallrun, portal).
+            Rect onPet = parent.TransformToAncestor(this).TransformBounds(local);
             Point pixelTop = PointToScreen(onPet.TopLeft);
             Point pixelBottom = PointToScreen(onPet.BottomRight);
             Rect character = new Rect(fromDevice.Transform(pixelTop), fromDevice.Transform(pixelBottom));
-            Rect work = GetWorkAreaForPoint(new Point(character.Left + character.Width / 2, character.Top));
+            Rect work = GetWorkAreaForPoint(new Point(character.Left + character.Width / 2, character.Top + character.Height / 2));
+            speechWindow.ConstrainToWorkArea(work.Size);
             FrameworkElement speech = (FrameworkElement)speechWindow.Content;
             speech.Measure(new Size(Math.Max(1, work.Width - 10), double.PositiveInfinity));
             Point location = SpeechWindow.Place(character, speech.DesiredSize, work);
-            speechWindow.Left = location.X;
-            speechWindow.Top = location.Y;
-            speechPositionLocked = true;
+            // Native window/layout rounding can vary by a fraction of a DIP.
+            // Keep subpixel noise still; real motion accumulates against the
+            // displayed position and is followed as soon as it reaches a pixel.
+            if (Double.IsNaN(speechWindow.Left) || Math.Abs(speechWindow.Left - location.X) >= 1) speechWindow.Left = location.X;
+            if (Double.IsNaN(speechWindow.Top) || Math.Abs(speechWindow.Top - location.Y) >= 1) speechWindow.Top = location.Y;
             if (!speechWindow.IsVisible) speechWindow.Show();
         }
 

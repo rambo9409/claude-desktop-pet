@@ -118,6 +118,7 @@ function Invoke-PetCompile {
             if (-not $EntryPoint) { $EntryPoint = $TestName }
             $arguments += '/main:' + $EntryPoint
             $arguments += 'tests\WpfTestRender.cs'
+            if ($TestName -eq 'SpeechLayoutTests') { $arguments += 'tests\SpeechThemeChecks.cs' }
             $arguments += 'tests\' + $TestName + '.cs'
         } else {
             $outputDirectory = Join-Path $script:PetProjectRoot 'artifacts/build'

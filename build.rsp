@@ -22,6 +22,7 @@
 /resource:assets\combat-teams.json,combat-teams.json
 /resource:assets\combat-roster.json,combat-roster.json
 src\ClaudePetMotion.cs
+src\PetSpeechWindow.cs
 src\PetAssets.cs
 src\PetMenu.cs
 src\PetMovement.cs
