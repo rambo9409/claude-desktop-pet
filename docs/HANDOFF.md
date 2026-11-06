@@ -1,6 +1,6 @@
 # AI与开发者接手说明
 
-更新于2026-11-05。项目是 Windows WPF 桌宠“原神启动”，当前发布版本V2.15，程序集2.15.0.0。按用户要求移除GPT重置预测的菜单、窗口、抓取刷新、缓存读取、编译项及专属测试；每日看点、战斗助手、角色能力与素材继续保留。当前说明与验证入口见[功能移除记录](removal-v2.15.md)，操作说明见`usage-v2.15.txt`。本轮正式构建、22组完整回归、源码和程序集清扫、正式EXE启动及发布校验均PASS。
+更新于2026-11-06。项目是 Windows WPF 桌宠“原神启动”，当前发布版本V2.16，程序集2.16.0.0。本版将珂洛换装播放快1.5倍：`KoloEasterEggSession.DurationSeconds`从4.8缩短至3.2秒，8阶段每个约0.4秒；自动180秒资格、四组双击与续点保护保持。操作说明见`usage-v2.16.txt`，当前验证见[换装加速](costume-speed-v2.16.md)。正式构建、22组完整回归、程序集时长检查、启动和发布校验全部PASS，稳定证据在`artifacts/v216/`。
 
 V2.15完整回归时间2026-11-05 10:09:43.737–10:10:41.298（UTC+08:00），21组默认加VisualSmoke共22组全部PASS，稳定记录为`artifacts/v215/full-test-run.json`。AiCharacters为297项（删除被移除工具的2项主题断言），PointerInteraction 268项、KoloEasterEgg 370项、Notebook 122项、KoloPortal 18409项。源码、编译清单及最终程序集没有预测模块或接口标记，见`removal-verification.json`；素材包保持，2.15.0.0正式EXE启动观察3秒通过。旧`gpt-reset-cache.json`不再读取或刷新，升级不主动删除用户目录。历史发布与数据源文档只作历史记录，不应恢复已删除功能。
 
@@ -40,7 +40,7 @@ V2.6已完成发布，历史17组全套通过和后续模型修正证据见 [V2.
 2. 读本文件、[工程说明](project-layout.md)、[战斗助手说明](combat-planner-v2.6.md)、[角色与资料更新](roster-updates-v2.7.md)和当前用户请求。
 3. 运行 `.\build.cmd`。构建结果是根 `原神启动.exe`，展开的编译清单是 `artifacts/build/production.rsp`。
 4. 根据变更运行相关测试，发布前跑 `.\test.cmd -SkipPreviews -IncludeVisualSmoke`。V2.15删除GptReset套件后，21组默认回归加VisualSmoke共22组。
-5. 判断测试结果以本次`artifacts/tests/latest-run.json`的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版证据汇总在`docs/removal-v2.15.md`的验证部分，并保留到`artifacts/v215/`。
+5. 判断测试结果以本次`artifacts/tests/latest-run.json`的时间、状态和套件为准。历史验证记录不能代表当前源码已通过；本版证据汇总在`docs/costume-speed-v2.16.md`，并保留到`artifacts/v216/`。
 
 ## 模块地图
 
@@ -117,7 +117,7 @@ V2.9中珂洛默认持本：`NotebookBlocksMagic`必须在目标枚举和Advance
 
 V2.11门户仅由珂洛拖拽松手触发。高于当前屏底足够距离才启动，近底部使用正常落地；自然走出窗口的掉落沿用旧路径。演出共约2.95秒，传送时重新读取工作区，处理负坐标、缩放与屏幕消失。`notebook.Pressed`期间不推进移动或传送时间；本子仍在手中或已拖离但未松手，都应保持暂停，松手再继续。取消时必须恢复Opacity、Clip和Transform，避免再次抓取或换角色后不可见。窗口魔法在门户和换装期间都必须先阻断，再枚举目标窗口。
 
-彩蛋开关仍存于 `kolo-easter-egg-enabled.txt`，默认开，原子保存。V2.12的 `KoloEasterEggSession`累计180秒可见使用，移动与quiet均计时；隐藏和最小化暂停，超过5秒的计时中断/休眠及时间回拨不计入，切换角色或改变开关重置。到期Ready保持到安全机会，不再随机，也不再要求连续待机。持本不阻止彩蛋，按住本子、拖独立本子、无支撑、菜单、窗口魔法和门户阻止当前播放；普通走路会StopWalking后播放，开始先收回本子。8帧持续4.8秒，在PrepareNotebookFrame后覆盖；末帧等于正式DeepSeek idle，再调用SwitchCharacter完成统一刷新与保存。抓取、缩放、隐藏等中断保留Ready，安全后重播；手动切换或禁用重置并阻止补触发。缩放取消入口保留在ResizePet开头。不要把“中断当前演出”误写成“清除三分钟资格”。
+彩蛋开关仍存于 `kolo-easter-egg-enabled.txt`，默认开，原子保存。V2.12的 `KoloEasterEggSession`累计180秒可见使用，移动与quiet均计时；隐藏和最小化暂停，超过5秒的计时中断/休眠及时间回拨不计入，切换角色或改变开关重置。到期Ready保持到安全机会，不再随机，也不再要求连续待机。持本不阻止彩蛋，按住本子、拖独立本子、无支撑、菜单、窗口魔法和门户阻止当前播放；普通走路会StopWalking后播放，开始先收回本子。V2.16起8帧持续3.2秒，在PrepareNotebookFrame后覆盖；末帧等于正式DeepSeek idle，再调用SwitchCharacter完成统一刷新与保存。抓取、缩放、隐藏等中断保留Ready，安全后重播；手动切换或禁用重置并阻止补触发。缩放取消入口保留在ResizePet开头。不要把“中断当前演出”误写成“清除三分钟资格”。
 
 V2.8灵感本为 `deepseek-bubbles.json`，最多100条、每条2000字，沿用原子写入和损坏备份。隐藏/切换仅收起窗口并保留草稿，退出主窗通过 `CanCloseAiAbilities` 检查未保存内容，确认后 `CloseAiAbilities` 清理。龙息专注是内存内UTC截止时间，切换/隐藏/退出即取消；不恢复成系统定时任务，不更改quiet设置。
 
@@ -134,10 +134,10 @@ V2.12记事窗直接复用DeepSeek的共享浅蓝调色板。圆角窗的自定�
 ```powershell
 .\build.cmd
 .\test.cmd -SkipPreviews -IncludeVisualSmoke
-.\package.cmd -Version 2.15 -InstructionsPath .\docs\usage-v2.15.txt
+.\package.cmd -Version 2.16 -InstructionsPath .\docs\usage-v2.16.txt
 ```
 
-`release/V2.15/原神启动-V2.15.zip`只能含EXE和使用说明。需要新增预览时独立放`release/V2.15/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。本版资源不变，沿用V2.13的208项（207PNG和1JSON）。维护V2.13跑步素材时可用`build_assets.py --refresh-v213`，只替换两位AI各4张`walk-*`，其余200项须与V2.12逐字节一致，尤其保留`stroll-*`。完整重建仍用`build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
+`release/V2.16/原神启动-V2.16.zip`只能含EXE和使用说明。需要新增预览时独立放`release/V2.16/previews/`。保留旧发布，记录ZIP与EXE SHA-256，不要把测试帧、历史构建或工程源混入用户包。本版资源不变，沿用V2.13的208项（207PNG和1JSON）。维护V2.13跑步素材时可用`build_assets.py --refresh-v213`，只替换两位AI各4张`walk-*`，其余200项须与V2.12逐字节一致，尤其保留`stroll-*`。完整重建仍用`build.cmd -RebuildAssets -Python ...`，旧版定向刷新入口保留用于维护。
 
 素材重建须保留 `transform_frame` 在横向放大、纵向缩小时的显式先横后纵采样。Pillow 13会自动换轴顺序，直接恢复单次 `resize` 会改变三位原神角色的9张历史表情图。珂洛两帧的 `excludeAtlasRects` 仅排除已核对的相邻格鞋底和头发，不能扩大到人物本身。原图、裁切配方和提示词共同构成可复现来源。
 

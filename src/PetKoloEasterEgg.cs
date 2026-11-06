@@ -12,7 +12,7 @@ namespace ClaudePet
     internal sealed class KoloEasterEggSession
     {
         internal const double RequiredUseSeconds = 180;
-        internal const double DurationSeconds = 4.8;
+        internal const double DurationSeconds = 3.2;
         private DateTime lastObservedUtc;
         private bool previouslyInUse;
         internal double UsedSeconds { get; private set; }

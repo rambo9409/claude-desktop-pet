@@ -1,4 +1,4 @@
-# V2.15 工程与构建
+# V2.16 工程与构建
 
 ## 目录
 
@@ -77,7 +77,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& './scripts/test.ps
 ## 打包
 
 ```powershell
-.\package.cmd -Version 2.15 -InstructionsPath .\docs\usage-v2.15.txt
+.\package.cmd -Version 2.16 -InstructionsPath .\docs\usage-v2.16.txt
 ```
 
 脚本检查程序集版本与目标版本一致。发布ZIP只含 `原神启动.exe` 与 `使用说明.txt`，并验证EXE哈希及ZIP条目。预览放在同版本 `previews/`，不混入运行包。
