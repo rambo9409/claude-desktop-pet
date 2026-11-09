@@ -3,7 +3,7 @@
 Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼，以及胡桃、甘雨、瓦雷莎六套 Q 版形象。原名“珂洛桌宠”。
 
 <p align="center">
-  <img src="assets/references/kolo-idle.png" width="260" alt="珂洛，桌面宠物默认形象" />
+  <img src="assets/previews/kolo-hero-v217.png" width="260" alt="珂洛，桌面宠物默认形象" />
 </p>
 
 <p align="center"><b>珂洛</b> · 默认形象，可随时切换其余五位角色</p>
