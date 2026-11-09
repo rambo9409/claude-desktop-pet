@@ -2,11 +2,13 @@
 
 Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼，以及胡桃、甘雨、瓦雷莎六套 Q 版形象。原名“珂洛桌宠”。
 
-| 字幕主题 · 深色 | 字幕主题 · 浅色 |
-| --- | --- |
-| ![六个角色的对话字幕气泡（深色壁纸）](assets/previews/speech-themes-v217-dark.png) | ![六个角色的对话字幕气泡（浅色壁纸）](assets/previews/speech-themes-v217-light.png) |
+<p align="center">
+  <img src="assets/references/kolo-idle.png" width="260" alt="珂洛，桌面宠物默认形象" />
+</p>
 
-V2.17 起，六个角色各自拥有配色、轮廓与装饰不同的对话字幕，并跟随角色移动。最新版本见 [Releases](https://github.com/rambo9409/claude-desktop-pet/releases/latest)。
+<p align="center"><b>珂洛</b> · 默认形象，可随时切换其余五位角色</p>
+
+最新版本见 [Releases](https://github.com/rambo9409/claude-desktop-pet/releases/latest)。
 
 ## 启动与升级
 
