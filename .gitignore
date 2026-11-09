@@ -5,3 +5,9 @@
 /archive/
 __pycache__/
 *.pyc
+
+# 预览动图只保留 3 张主力演示，其余不进仓库（本地副本见 archive/previews-v217-backup/）
+/assets/previews/*.gif
+!/assets/previews/stroll-preview.gif
+!/assets/previews/motion-preview.gif
+!/assets/previews/ai-v28-motion.gif
