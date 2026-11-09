@@ -2,9 +2,15 @@
 
 Windows 桌宠与小工具，内置珂洛、GPT6A·龙女、DeepSeek·小肥鱼，以及胡桃、甘雨、瓦雷莎六套 Q 版形象。原名“珂洛桌宠”。
 
+| 字幕主题 · 深色 | 字幕主题 · 浅色 |
+| --- | --- |
+| ![六个角色的对话字幕气泡（深色壁纸）](assets/previews/speech-themes-v217-dark.png) | ![六个角色的对话字幕气泡（浅色壁纸）](assets/previews/speech-themes-v217-light.png) |
+
+V2.17 起，六个角色各自拥有配色、轮廓与装饰不同的对话字幕，并跟随角色移动。最新版本见 [Releases](https://github.com/rambo9409/claude-desktop-pet/releases/latest)。
+
 ## 启动与升级
 
-解压 `release/V2.17/原神启动-V2.17.zip`，双击 `原神启动.exe`。先退出旧版再启动新版，现有角色和工具设置继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。
+从 [Releases](https://github.com/rambo9409/claude-desktop-pet/releases/latest) 下载 `ClaudeDesktopPet-V2.17.exe`，双击运行；`README-zh-V2.17.txt` 是快捷键与常见问题说明。先退出旧版再启动新版，现有角色和工具设置继续使用。运行需要 Windows 10/11 与 .NET Framework 4.8，不需要 Python、PowerShell 或管理员权限。首次运行若被 SmartScreen 拦截，点“更多信息 → 仍要运行”。
 
 ## 操作
 
